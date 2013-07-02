@@ -1,0 +1,9 @@
+Debug
+Release
+*sdf
+*.ncb
+dlls
+*.dll
+ipch
+*.suo
+*.user
