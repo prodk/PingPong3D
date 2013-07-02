@@ -19,7 +19,7 @@ void GameApp::initLibraries()
 {
 	// Initialize SDL.
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_SetVideoMode((int)flWidth, (int)flHeight, 0, SDL_OPENGL | SDL_HWSURFACE);
+    SDL_SetVideoMode((int)flWidth, (int)flHeight, 0, SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE /*| SDL_DOUBLEBUF*/);
 	SDL_WM_SetCaption(strGameName.c_str(), strGameName.c_str());
 
     // OpenGL.
@@ -46,81 +46,93 @@ void GameApp::loadData()
 
 void GameApp::setupRenderingContext()
 {
-	glClearColor(0.4f, 0.0f, 0.0f, 1.0f);
-    glClearDepth(1.0);
-    
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glFrontFace(GL_CCW); // counter clockwise polys face out.
- 
-	glAlphaFunc(GL_GREATER, (GLclampf)0.01); // Skip pixels which alpha channel is lower than 0.01.
-    glEnable(GL_TEXTURE_2D);  // Enable 2D texturing.
-    glEnable(GL_BLEND);  // Enable Blending.
-    glEnable(GL_ALPHA_TEST);  // Enable Alpha.
-    glEnable(GL_CULL_FACE);  // Make sure face culling is enabled (speed demon ;).
-	glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);  // Turn On The Blender.
-	
-	glPointSize(2); // size of points.
-    
-    glPolygonMode(GL_FRONT, GL_FILL);
-    glPolygonMode(GL_BACK, GL_NONE);
-    
-    glShadeModel(GL_SMOOTH); //Smooth shading.
+// Here working and understood code starts.
+	glClearColor(0.4f, 0.4f, 0.4f, 1.0f);	// Background color.
+	glShadeModel(GL_SMOOTH);				//Smooth shading.
 
-    // Enable Lighting.
-    glEnable(GL_LIGHTING);
-
-    // Set up light0.
-    GLfloat ambientLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    GLfloat specularLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-    GLfloat position[] = {  0.0, 40.0, -20.0, 1.0 };
-    
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
-    glLightfv(GL_LIGHT0, GL_POSITION, position);
-    
-    // Create the newly set up lightsource.
-    glEnable(GL_LIGHT0);
+// Here working and understood code ends.
 
 
-    // GLOBAL light settings.
-    GLfloat global_ambient[] = { 0.6f, 0.6f, 0.6f, 1.0f };
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-    
-    
-    // Material color tracking.
-    glEnable(GL_COLOR_MATERIAL);
-       //Make it so ambient and diffuse material properties will use glcolor
-       //Soo...  glColor3f(0.0f, 0.0f, 1.0f); would make blue reflective properties
-       //Exactly like calling:
-       //float mcolor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-       //glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mcolor);
-       //before the geometry
-    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+    //glClearDepth(1.0);						// Clear depth buffer.
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
+ //   glEnable(GL_DEPTH_TEST);
+ //   glDepthFunc(GL_LEQUAL);
+ //   glFrontFace(GL_CCW); // counter clockwise polys face out.
+ //
+	//glAlphaFunc(GL_GREATER, (GLclampf)0.01); // Skip pixels which alpha channel is lower than 0.01.
+ //   glEnable(GL_TEXTURE_2D);  // Enable 2D texturing.
+ //   glEnable(GL_BLEND);  // Enable Blending.
+ //   glEnable(GL_ALPHA_TEST);  // Enable Alpha.
+ //   glEnable(GL_CULL_FACE);  // Make sure face culling is enabled (speed demon ;).
+	//glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);  // Turn On The Blender.
+	//
+	//glPointSize(2); // size of points.
+ //   
+ //   glPolygonMode(GL_FRONT, GL_FILL);
+ //   glPolygonMode(GL_BACK, GL_NONE);
+ //   
+
+ //   // Enable Lighting.
+ //   glEnable(GL_LIGHTING);
+
+ //   // Set up light0.
+ //   GLfloat ambientLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+ //   GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+ //   GLfloat specularLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+ //   GLfloat position[] = {  0.0, 40.0, -20.0, 1.0 };
+ //   
+ //   glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+ //   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+ //   glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+ //   glLightfv(GL_LIGHT0, GL_POSITION, position);
+ //   
+ //   // Create the newly set up lightsource.
+ //   glEnable(GL_LIGHT0);
+
+ //   // GLOBAL light settings.
+ //   GLfloat global_ambient[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+ //   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
+ //   
+ //   
+ //   // Material color tracking.
+ //   glEnable(GL_COLOR_MATERIAL);
+ //      //Make it so ambient and diffuse material properties will use glcolor
+ //      //Soo...  glColor3f(0.0f, 0.0f, 1.0f); would make blue reflective properties
+ //      //Exactly like calling:
+ //      //float mcolor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+ //      //glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mcolor);
+ //      //before the geometry
+ //   glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 }
 
 void GameApp::setupMatrices()
-{
-	// Prevent division by zero. !move this into constructor.
-    //if(_h <= 0) _h = 1;
-    //if(_w <= 0) _w = 1;
-    
+{ 
+// Here working and understood code starts.
+	// glViewport can be skipped.
     glViewport(0, 0, (GLsizei)flWidth, (GLsizei)flHeight); // Set viewport to window dimensions.
+    glMatrixMode (GL_PROJECTION);
+	glLoadIdentity ();
+	gluPerspective(30.0, flWidth/flHeight, 1.5, 20.0);	// Set the same units in x and y.
+	glMatrixMode (GL_MODELVIEW);
+
+// Here working and understood code ends.
     
-    // Reset projection matrix stack.
-    glMatrixMode(GL_PROJECTION); 
-    glLoadIdentity();
-    gluPerspective(60.0f, 1.0f, 1.0f, 100.0f);
+	
+	
+	// Reset projection matrix stack.
+    //glMatrixMode(GL_PROJECTION); 
+    //glLoadIdentity();
+	//gluPerspective(60.0f, flWidth/flHeight, 1.0f, 100.0f);
+    //gluPerspective(60.0f, 1.0f, 1.0f, 100.0f);
+	//gluLookAt (0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);	
 
     // Reset texture view matrix stack.
-    glMatrixMode(GL_TEXTURE);
-    glLoadIdentity();
+    //glMatrixMode(GL_TEXTURE);
+    //glLoadIdentity();
     
     // Reset model view matrix stack
-    glMatrixMode(GL_MODELVIEW); 
-    glLoadIdentity();
+    //glMatrixMode(GL_MODELVIEW); 
+    //glLoadIdentity();
     // ... and keep it on for rendering.
 }
 
@@ -216,17 +228,61 @@ void GameApp::doLogic()
 
 void GameApp::doDrawing()
 {	
-	//glutSolidSphere(0.4, 16, 16);
+// Here working and understood code starts.
 	glClear (GL_COLOR_BUFFER_BIT);
 	glColor3f (1.0, 0.0, 1.0);
-	glLoadIdentity ();             /* clear the matrix */	
-	//gluPerspective(30.0f, 1.0f, 640./280., 15.0f);
-	gluLookAt (0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	glScalef (1.0, 2.0, 1.0);      /* modeling transformation */ 
-	glutSolidSphere (1., 32, 32);
-	glColor4f (100., 100., 100., 1.0f );
-	glutSolidCube(1.25);
-	glFlush ();
+	glLoadIdentity ();             /* clear the matrix */
+	// Move camera to the point (0,0,5) in eye coords, look at point (0,0,0), 
+	// camera orientation - normal is along (0,1,0)
+	gluLookAt (0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);	
+	//glTranslatef(0.f, 0.f, -5.f);
+	glutSolidSphere (1., 32, 32);	
+
+	//glRotatef(10.0, 1., 0., 0.0);
+	glBegin(GL_LINES);
+	// x, red
+	glColor3f(2.f, 0.f, 0.f);
+	glVertex3f(-2.f, 0.f, 0.f);
+	glVertex3f(1.f, 0.f, 0.f);
+	// y, green
+	glColor3f(0.f, 2.f, 0.f);
+	glVertex3f(0.f, -2.f, 0.f);
+	glVertex3f(0.f, 1.f, 0.f);
+	// z, blue
+	glColor3f(0.f, 0.f, 2.f);
+	glVertex3f(0.f, 0.f, -2.f);
+	glVertex3f(0.f, 0.f, 1.f);
+	glEnd();
+
+	//glPushMatrix();
+
+	glColor3f (1.0, 1.0, 1.0);
+	//glScalef (1.0, 2.0, 1.0);      /* modeling transformation */ 
+	//glRotatef(45.0, 0.0, 0.0, 1.0);
+	
+
+	glutWireCube (1.0);
+	//glPopMatrix();
+
+	glFlush();
+
+// End of working and understood code.
+
+	//glClear (GL_COLOR_BUFFER_BIT);
+	//glColor3f (1.0, 1.0, 1.0);
+	//glLoadIdentity ();             /* clear the matrix */
+           /* viewing transformation  */
+	//gluLookAt (0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	//glScalef (1.0, 2.0, 1.0);      /* modeling transformation */ 
+	//glutWireCube (1.0);
+
+	//glClear (GL_COLOR_BUFFER_BIT);
+ //  glColor3f (1.0, 1.0, 1.0);
+ //  glLoadIdentity ();             /* clear the matrix */
+ //          /* viewing transformation  */
+ //  gluLookAt (0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+ //  glScalef (1.0, 2.0, 1.0);      /* modeling transformation */ 
+ //  glutWireCube (1.0);
 
 //	glBegin(GL_LINE_LOOP); // Start drawing a line primitive  
 //glVertex3f(-1.0f, -1.0f, 0.0f); // The bottom left corner  
@@ -509,6 +565,17 @@ void GameApp::doInput()
             break;
         }
         }break;
+
+		case SDL_VIDEORESIZE:
+			SDL_SetVideoMode( sdlEvent.resize.w, sdlEvent.resize.h, 32, SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE );
+			glViewport (0, 0, (GLsizei) sdlEvent.resize.w, (GLsizei) sdlEvent.resize.h);
+			flWidth = sdlEvent.resize.w;
+			flHeight = sdlEvent.resize.h;
+			glMatrixMode (GL_PROJECTION);
+			glLoadIdentity ();
+			gluPerspective(30.0, flWidth/flHeight, 1.5, 20.0);	// Set the same units in x and y.
+			glMatrixMode (GL_MODELVIEW);			
+			break;
             
         case SDL_QUIT:
             bRunning = false;
@@ -517,7 +584,7 @@ void GameApp::doInput()
 }
 
 void GameApp::swapBuffers()
-{
+{	
 	glFlush(); // Make sure everything is through the pipes.
     SDL_GL_SwapBuffers(); // Put it on the screen.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
