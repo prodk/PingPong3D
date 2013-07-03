@@ -1,5 +1,5 @@
 // GameApp.cpp - implementation of the GameApp class.
-// (c) Nikolay Prodanov, summer 2013.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
 
 #include "PingPong3D.h"
 
@@ -8,11 +8,17 @@ GameApp::GameApp(void):
 {
 	initLibraries();
 	loadData();
+	addShapes();
 }
 
 GameApp::~GameApp(void)
 {
 	shutDown();
+	//for(int i=0; i < shapes.size(); i++){
+		//delete shapes[i];
+		//shapes[i] = NULL;
+	//}
+
 }
 
 void GameApp::initLibraries()
@@ -42,6 +48,18 @@ void GameApp::initLibraries()
 void GameApp::loadData()
 {
 	// Load sound and textures here.
+}
+
+void GameApp::addShapes()
+{
+	// Add shapes to the game.
+	vector_3d center(0.0f, 0.0f, 0.0f);			// Ball starts at the center of the scene.
+	vector_3d velocity(1e-04f, 0.0f, 0.0f);		// Random initial velocity.
+	Ball* pBall = new Ball(BALL, 0.1, center, velocity);
+	Shape* pShape = dynamic_cast<Shape*>(pBall);
+	//ball = std::tr1::shared_ptr<Ball>(pBall);
+	shapes.resize(1);
+	shapes[0] = std::tr1::shared_ptr<Shape>(pShape);
 }
 
 void GameApp::setupRenderingContext()
@@ -110,22 +128,14 @@ void GameApp::setupMatrices()
 // Here working and understood code starts.
 	// glViewport can be skipped.
     glViewport(0, 0, (GLsizei)flWidth, (GLsizei)flHeight); // Set viewport to window dimensions.
-    glMatrixMode (GL_PROJECTION);
-	glLoadIdentity ();
-	gluPerspective(30.0, flWidth/flHeight, 1.5, 20.0);	// Set the same units in x and y.
-	glMatrixMode (GL_MODELVIEW);
+    glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
+	glLoadIdentity ();				// Clean up the projection matrix.
+	gluPerspective(30.0, flWidth/flHeight, 1.5, 20.0);	// Set up the projection matrix with the same units in x and y.
+	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
 
 // Here working and understood code ends.
     
 	
-	
-	// Reset projection matrix stack.
-    //glMatrixMode(GL_PROJECTION); 
-    //glLoadIdentity();
-	//gluPerspective(60.0f, flWidth/flHeight, 1.0f, 100.0f);
-    //gluPerspective(60.0f, 1.0f, 1.0f, 100.0f);
-	//gluLookAt (0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);	
-
     // Reset texture view matrix stack.
     //glMatrixMode(GL_TEXTURE);
     //glLoadIdentity();
@@ -177,7 +187,6 @@ void GameApp::setupNewGame()
 
 int GameApp::play()
 {
-	// bRunning = true;
 	while(bRunning)
     {  
         doLogic();
@@ -191,17 +200,19 @@ int GameApp::play()
 
 void GameApp::doLogic()
 {
-	// Make sure input isnt affected by the timer.
-    doInput();
-    
+	// Make sure input isn't affected by the timer.
+    doInput();    
     updateTimers();
     
     // If the player hasnt lost, do stuff.
     if(!bGameOver)
     {
-		//playSound(samples[SAM_BRICKMOVE]);
-     
-        
+		// Move the shapes.
+		for(std::size_t i = 0; i < shapes.size(); i++)
+			shapes[i]->move(deltaTime);
+		//Ball *ball = dynamic_cast<Shape*>(shapes[0]);
+		//ball->move(deltaTime);
+		//playSound(samples[SAM_BRICKMOVE]);        
     } // if(!game_over)
     
     // Update other general logic
@@ -231,242 +242,27 @@ void GameApp::doDrawing()
 // Here working and understood code starts.
 	glClear (GL_COLOR_BUFFER_BIT);
 	glColor3f (1.0, 0.0, 1.0);
-	glLoadIdentity ();             /* clear the matrix */
+	glLoadIdentity ();             // Clear the current matrix.
 	// Move camera to the point (0,0,5) in eye coords, look at point (0,0,0), 
 	// camera orientation - normal is along (0,1,0)
 	gluLookAt (0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);	
 	//glTranslatef(0.f, 0.f, -5.f);
 	glutSolidSphere (1., 32, 32);	
 
-	//glRotatef(10.0, 1., 0., 0.0);
-	glBegin(GL_LINES);
-	// x, red
-	glColor3f(2.f, 0.f, 0.f);
-	glVertex3f(-2.f, 0.f, 0.f);
-	glVertex3f(1.f, 0.f, 0.f);
-	// y, green
-	glColor3f(0.f, 2.f, 0.f);
-	glVertex3f(0.f, -2.f, 0.f);
-	glVertex3f(0.f, 1.f, 0.f);
-	// z, blue
-	glColor3f(0.f, 0.f, 2.f);
-	glVertex3f(0.f, 0.f, -2.f);
-	glVertex3f(0.f, 0.f, 1.f);
-	glEnd();
+	drawAxes();
 
-	//glPushMatrix();
-
-	glColor3f (1.0, 1.0, 1.0);
-	//glScalef (1.0, 2.0, 1.0);      /* modeling transformation */ 
-	//glRotatef(45.0, 0.0, 0.0, 1.0);
-	
+	glColor3f (1.0, 1.0, 1.0);	
 
 	glutWireCube (1.0);
-	//glPopMatrix();
+	
+	// Draw all the shapes.
+	for(std::size_t i = 0; i < shapes.size(); i++)
+		shapes[i]->draw();
 
 	glFlush();
 
 // End of working and understood code.
 
-	//glClear (GL_COLOR_BUFFER_BIT);
-	//glColor3f (1.0, 1.0, 1.0);
-	//glLoadIdentity ();             /* clear the matrix */
-           /* viewing transformation  */
-	//gluLookAt (0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	//glScalef (1.0, 2.0, 1.0);      /* modeling transformation */ 
-	//glutWireCube (1.0);
-
-	//glClear (GL_COLOR_BUFFER_BIT);
- //  glColor3f (1.0, 1.0, 1.0);
- //  glLoadIdentity ();             /* clear the matrix */
- //          /* viewing transformation  */
- //  gluLookAt (0.0, 0.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
- //  glScalef (1.0, 2.0, 1.0);      /* modeling transformation */ 
- //  glutWireCube (1.0);
-
-//	glBegin(GL_LINE_LOOP); // Start drawing a line primitive  
-//glVertex3f(-1.0f, -1.0f, 0.0f); // The bottom left corner  
-//glVertex3f(-1.0f, 1.0f, 0.0f); // The top left corner  
-//glVertex3f(1.0f, 1.0f, 0.0f); // The top right corner  
-//glVertex3f(1.0f, -1.0f, 0.0f); // The bottom right corner  
-//glEnd();
-
-	//GLUquadricObj* cyl;
-	//
-	//// Draw the Sphere.
-	//glBegin(GL_POLYGON);
-
-	//// Set material and color.
-	////setMaterial();
-	//// Render.
-	//cyl = gluNewQuadric();
- //   gluQuadricDrawStyle(cyl, GLU_FILL);
-	//glColor3f (1.0, 1.0, 1.0);
- //   gluSphere(cyl, 20, 50, 50);
-	//glEnd();
-
-	/************************************************************
-    /* Draw the background
-    /************************************************************/
-    /*enableOrtho2D();
-        draw2DTexture(0, 0, textures[TEX_BACKGROUND]);
-    disableOrtho2D();*/
-
-    /************************************************************
-    /* Draw the 3d background and brick tray
-    /* Do it manually as it is special.
-    /************************************************************/
-    /*int i, j;
-    for(i = 0; i < BACKGROUND_H; i++)
-    {
-        for(j = 0; j < BACKGROUND_W; j++)
-        {
-            if(background[i][j] != 0)
-            {
-                cleanObject();
-                glTranslatef((j*-1)+15.5,(i*-1)+1,10);
-                glScalef(1, 1, 1);
-                    
-                switch(background[i][j])
-                {
-                    case 1:
-                        glColor4f ( score_glow, score_glow, score_glow, 1.0f );                        
-                        glutSolidCube(1);
-                    break;
-                    case 2:
-                        glColor4f ( GREY_1, GREY_1, GREY_1, 1.0f );
-                        glutSolidCube(0.95);
-                    break; 
-                    case 3:
-                        glColor4f ( GREY_2, GREY_2, GREY_2, 1.0f );
-                        glutSolidCube(0.95);
-                    break; 
-                    case 4:
-                        glColor4f ( GREY_3, GREY_3, GREY_3, 1.0f );
-                        glutSolidCube(0.95);
-                    break; 
-                }
-                
-            }
-        }   
-    }*/
-    
-    /************************************************************
-    /* Draw the gameboard
-    /************************************************************/
-    //for(i = 0; i < GAMEBOARD_H; i++)
-    //{
-    //    for(j = 0; j < GAMEBOARD_W; j++)
-    //    {
-    //        if(gameboard[i][j] != 0)
-    //        {
-    //            switch(gameboard[i][j])
-    //            {
-    //                
-    //                /* Stationary */
-    //                case 1:
-    //                    drawBlockStationary((j*-1)+4.5,(i*-1), 0.5, 0.25, 0.035);
-    //                break;
-    //                case 2:
-    //                    drawBlockStationary((j*-1)+4.5,(i*-1), 0.4, 0.4, 0.05);
-    //                break;
-    //                case 3:
-    //                    drawBlockStationary((j*-1)+4.5,(i*-1), 0.45, 0.0, 0.0);
-    //                break;
-    //                
-    //                /* Movers */
-    //                case 4:
-    //                    drawBlockMoving((j*-1)+4.5,(i*-1), 0.6, 0.3, 0.05);
-    //                break;
-    //                case 5:
-    //                    drawBlockMoving((j*-1)+4.5,(i*-1), 0.5, 0.5, 0.06);
-    //                break;
-    //                case 6:
-    //                    drawBlockMoving((j*-1)+4.5,(i*-1), 0.55, 0.0, 0.0);
-    //                break;
-    //                
-    //                /* Grey, gameover blocks. A special, draw them manually */
-    //                case 7:
-    //                    drawBlockBackground((j*-1)+4.5,(i*-1), GREY_1, GREY_1, GREY_1);
-    //                break;
-    //                case 8:
-    //                    drawBlockBackground((j*-1)+4.5,(i*-1), GREY_1, GREY_1, GREY_1);
-    //                break;
-    //                case 9:
-    //                   drawBlockBackground((j*-1)+4.5,(i*-1), GREY_1, GREY_1, GREY_1);
-    //                break;
-    //            }
-    //        }
-    //    }   
-    //}
-    
-    
-    /************************************************************
-    /* Create and draw "next brick" (ie the green one :)
-    /* It is special, so draw it manually.
-    /************************************************************/
-    //cleanObject();
-    //glTranslatef(-10.9f, 1.0f, -5.0f); /* move it over to the top right */
-    //
-    //switch(brick_type_next)
-    //{
-    //    case 0:
-    //        glTranslatef( 0.25, -8.5, 10);
-    //        glRotatef(theta*10,3.0, 2.5, 0.0f);
-    //    break;
-    //    case 1:
-    //        glTranslatef( 0.5, -9.0, 10);
-    //        glRotatef(theta*10,2.0, 2.5, 0.0f);
-    //    break;
-    //    case 2:
-    //        glTranslatef( 0.5, -8.75, 10);
-    //        glRotatef(theta*10,2, 2, 0.0f);
-    //    break;
-    //    case 3:
-    //        glTranslatef( -0.3, -9.25, 10);
-    //        glRotatef(theta*10,2, 2, 0.0f);
-    //    break;
-    //    case 4:
-    //        glTranslatef( 0, -9, 10);
-    //        glRotatef(theta*10,2.0, 2.0, 0.0f);
-    //    break;
-    //    case 5:
-    //        glTranslatef( 0.15, -9.5, 10);
-    //        glRotatef(theta*10,2.0, 2.5, 0.0f);
-    //    break;
-    //    case 6:
-    //        glTranslatef( 0.0, -8.5, 10);
-    //        glRotatef(theta*10,2.0, 1.5, 0.0f);
-    //    break;
-    //} 
-    //     
-    //glScalef(1, 1, 1);               
-		
-    //for(i = 0; i < GAMEPIECE_H; i++)
-    //{
-    //    glTranslatef( 0, 1, 0);
-    //    
-    //    for(j = 0; j < GAMEPIECE_W; j++)
-    //    {
-    //        glTranslatef( 1, 0, 0);
-    //        
-    //        if(scanBrick(brick_type_next, 0, i, j))
-    //        {
-    //            /* Draw the shell */
-    //            glScalef(1, 1, 0.9);
-    //            glColor4f ( 0.0f, 0.0f, 0.0f, 1.0f );
-    //            glutSolidCube(1.0);
-    //            glScalef(1, 1, 1.1);
-    //            
-    //            /* Draw inner green color */
-    //            glColor4f( 0.0f, 0.5f, 0.0f, 1.0f );
-    //            glutSolidCube(.95);      
-    //        }
-    //    } 
-    //         
-    //    glTranslatef( -GAMEPIECE_W, 0, 0);
-    //}
-    
                 
     /************************************************************
     /* Draw HUD (score, star rank etc)
@@ -481,6 +277,24 @@ void GameApp::doDrawing()
             drawGameOver();
             
     disableOrtho2D();*/
+}
+
+void GameApp::drawAxes()
+{
+	glBegin(GL_LINES);
+	// x, red
+	glColor3f(2.f, 0.f, 0.f);
+	glVertex3f(-2.f, 0.f, 0.f);
+	glVertex3f(1.f, 0.f, 0.f);
+	// y, green
+	glColor3f(0.f, 2.f, 0.f);
+	glVertex3f(0.f, -2.f, 0.f);
+	glVertex3f(0.f, 1.f, 0.f);
+	// z, blue
+	glColor3f(0.f, 0.f, 2.f);
+	glVertex3f(0.f, 0.f, -2.f);
+	glVertex3f(0.f, 0.f, 1.f);
+	glEnd();
 }
 
 void GameApp::doInput()
@@ -609,4 +423,3 @@ void GameApp::shutDown()
 	*/
     SDL_Quit();
 }
-
