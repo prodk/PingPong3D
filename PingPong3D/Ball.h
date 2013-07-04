@@ -1,23 +1,25 @@
 #pragma once
 
 #include "Shape.h"
-#include <cml/cml.h>
 
 //using namespace cml;
-
-// 3-d column vector, fixed length, double coordinates:
-typedef cml::vector< float, cml::fixed<3> > vector_3d;
 
 // Ball is a Shape.
 class Ball :
 	public Shape
 {
 public:
-	Ball(unsigned int idExt, float radius, vector_3d center, vector_3d velocity);
+	Ball(std::size_t idExt, float radius, vector_3d center, vector_3d velocity);
 	~Ball(void);
-	std::size_t getId();
+	std::size_t getId() const;
+
+	// Overriden virtual functions.
+	vector_3d getCenter() const;
+	float getSize() const;			// Return radius of the ball.
 	void draw();
 	void move(float deltaTime);
+	void collide(Shape *);	// If shape is null, then multiply v by -n.
+	void setVelocity(vector_3d n);
 
 private:
 	std::size_t id;
@@ -27,6 +29,6 @@ private:
 
 	// OpenGL-specific constants.
 	const int slices;
-	const int stacks;
+	const int stacks;	
 };
 

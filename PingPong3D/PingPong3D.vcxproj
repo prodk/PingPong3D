@@ -90,12 +90,14 @@
     <ClCompile Include="GameApp.cpp" />
     <ClCompile Include="PingPong3D.cpp" />
     <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="Wall.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ball.h" />
     <ClInclude Include="GameApp.h" />
     <ClInclude Include="PingPong3D.h" />
     <ClInclude Include="Shape.h" />
+    <ClInclude Include="Wall.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

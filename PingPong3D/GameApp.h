@@ -4,6 +4,7 @@
 #pragma once			// !Later replace by macro for portability between OS.
 #include <string>
 #include "Ball.h"
+#include "Wall.h"
 
 class GameApp
 {
@@ -14,7 +15,7 @@ public:
 
 	// Private methods.
 private:
-	void initLibraries();	// Initialize: SDL, OGL, sound, timers, game params, rand numbers.
+	int initLibraries();	// Initialize: SDL, OGL, sound, timers, game params, rand numbers.
 	void loadData();		// Load sounds, textures.
 	void shutDown();		// Clean up resources.
 	void setupSound();		// Init fmod library.
@@ -26,6 +27,12 @@ private:
 	void doInput();			// Keyboard/mouse.
 
 	void addShapes();
+
+	// SDL-specific.
+	int setupSDL();
+	void handleKeyDown(const SDL_keysym& keysym );
+	void handleKeyUp(const SDL_keysym& keysym );
+	void handleResize(const SDL_Event& sdle);
 	
 	// OpenGl-specific.
 	void setupRenderingContext();	// OGL initial state: depth, lights, materials, etc.
@@ -33,18 +40,29 @@ private:
 	void doDrawing();
 	void drawAxes();
 
+	// Calculate the angle used in the perspective, we use size as a unit of length.
+	float calculateAngle(float size, double zAxisDistance)
+	{
+		double radtheta, degtheta;
+		radtheta = 2.0 * std::atan2 (size/2.0, zAxisDistance);
+		degtheta = (180.0 * radtheta) / atan(1.);
+		return (degtheta);
+	}
+
 	// Private members.
 private:
-	enum {BALL};
+	enum {BALL, WALL};
 	// Game drawing related.
 	float flWidth;			// Screen width.
 	float flHeight;			// Screen height.
+	float flAngleFrustum;
 	std::string strGameName;
+	float flZaxisDistance;	// Distance from which we view the scene
+	float flLengthUnit;		// Unit of measurement of length.
 
 	// A vecor of pointers to Shapes. Ball is stored in 1st item.
 	// Use smart pointers for memory management.
 	std::vector<std::tr1::shared_ptr<Shape> > shapes;
-	//std::tr1::shared_ptr<Ball> ball;
 
 	// Game logic related.
 	bool bRunning;			// True if the game is going on.
