@@ -88,6 +88,7 @@
   <ItemGroup>
     <ClCompile Include="Ball.cpp" />
     <ClCompile Include="GameApp.cpp" />
+    <ClCompile Include="Paddle.cpp" />
     <ClCompile Include="PingPong3D.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="Wall.cpp" />
@@ -95,6 +96,7 @@
   <ItemGroup>
     <ClInclude Include="Ball.h" />
     <ClInclude Include="GameApp.h" />
+    <ClInclude Include="Paddle.h" />
     <ClInclude Include="PingPong3D.h" />
     <ClInclude Include="Shape.h" />
     <ClInclude Include="Wall.h" />

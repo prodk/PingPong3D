@@ -5,6 +5,7 @@
 #include <string>
 #include "Ball.h"
 #include "Wall.h"
+#include "Paddle.h"
 
 class GameApp
 {
@@ -51,23 +52,32 @@ private:
 
 	// Private members.
 private:
-	enum {BALL, WALL};
+	enum {BALL, WALL, PADDLE};
 	// Game drawing related.
-	float flWidth;			// Screen width.
-	float flHeight;			// Screen height.
+	float flScreenWidth;			// Screen width.
+	float flScreenHeight;			// Screen height.
 	float flAngleFrustum;
 	std::string strGameName;
 	float flZaxisDistance;	// Distance from which we view the scene
 	float flLengthUnit;		// Unit of measurement of length.
 
-	// A vecor of pointers to Shapes. Ball is stored in 1st item.
-	// Use smart pointers for memory management.
-	std::vector<std::tr1::shared_ptr<Shape> > shapes;
+	// Box sizes.
+	float flBoxWidth;		// Add these to the constructor and use when init walls.
+	float flBoxHeight;
+	float flBoxThickness;
+	//vector_3d vLeftPaddleCntr;	// Init left paddle position.
+	//vector_3d vRightPaddleCntr;
+	// int leftWallIdx;
+	// int rightWallIdx;
+	int leftPaddleIdx;
+
+
+	// A vector of pointers to Shapes. Ball is stored in the 1st item.	
+	std::vector<std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.
 
 	// Game logic related.
 	bool bRunning;			// True if the game is going on.
 	bool bGameOver;			// True if the player has lost.
-
 	float deltaTime;
 	Uint32 lastMillisec;
 	SDL_Event sdlEvent;

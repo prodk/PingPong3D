@@ -4,9 +4,12 @@
 #include "PingPong3D.h"
 
 GameApp::GameApp(void):
-	flWidth(1024),flHeight(640),strGameName("Ping Pong"),flZaxisDistance(3.0f),
-		flLengthUnit(0.5f),bRunning(true),bGameOver(false)
+	flScreenWidth(1024),flScreenHeight(640),strGameName("Ping Pong"),flZaxisDistance(2.0f),
+		flLengthUnit(0.35f),bRunning(true),bGameOver(false)
 {
+	flBoxWidth = 1.6f;		// Add these to the constructor and use when init walls.
+	flBoxHeight = 1.0f;
+	flBoxThickness = 0.5f;
 	initLibraries();	// !Check return value later.
 	loadData();
 	addShapes();
@@ -82,7 +85,7 @@ int GameApp::setupSDL()
         quit_tutorial( 1 );*/
     //}
 
-    SDL_SetVideoMode((int)flWidth, (int)flHeight, 0, SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE | SDL_DOUBLEBUF);
+    SDL_SetVideoMode((int)flScreenWidth, (int)flScreenHeight, 0, SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE | SDL_DOUBLEBUF);
 	SDL_WM_SetCaption(strGameName.c_str(), strGameName.c_str());
 }
 
@@ -94,56 +97,66 @@ void GameApp::loadData()
 void GameApp::addShapes()
 {
 	// Add shapes to the game.
-	shapes.resize(7);	// ball + 6 walls + 2 paddles
+	shapes.resize(8);	// ball + 6 walls + 2 paddles
 	// Add ball
 	vector_3d center(0.0f, 0.0f, 0.0f);			// Ball starts at the center of the scene.
-	vector_3d velocity(1e-03f, 2e-03f, 3e-03f);		// Random initial velocity.
+	vector_3d velocity(5e-03f, 6e-03f, 5e-03f);		// Random initial velocity.
 	Ball* pBall = new Ball(BALL, 0.05, center, velocity);
 	Shape* pShape = dynamic_cast<Shape*>(pBall);	
 	shapes[0] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Add walls.
 	// Left wall.
-	center = vector_3d(-1., 0., 0.);
+	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 	vector_3d n(-1., 0., 0.);
-	Wall* pWall = new Wall( WALL, 1., 1., center, n);
+	Wall* pWall = new AbsorbingWall( WALL, flBoxThickness, flBoxHeight, center, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[1] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Right wall.
-	center = vector_3d(1., 0., 0.);
+	center = vector_3d(0.5*flBoxWidth, 0., 0.);
 	n = vector_3d(1., 0., 0.);
-	pWall = new Wall( WALL, 1., 1., center, n);
+	pWall = new Wall( WALL, flBoxThickness, flBoxHeight, center, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[2] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Top wall.
-	center = vector_3d(0., 0.5, 0.);
+	center = vector_3d(0., 0.5*flBoxHeight, 0.);
 	n = vector_3d(0., 1., 0.);
-	pWall = new Wall( WALL, 2., 1., center, n);
+	pWall = new Wall( WALL, flBoxWidth, flBoxThickness, center, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[3] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Bottom wall.
-	center = vector_3d(0., -0.5, 0.);
+	center = vector_3d(0., -0.5*flBoxHeight, 0.);
 	n = vector_3d(0., -1., 0.);
-	pWall = new Wall( WALL, 2., 1., center, n);
+	pWall = new Wall( WALL, flBoxWidth, flBoxThickness, center, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[4] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Front wall.
-	center = vector_3d(0., 0., 0.5);
+	center = vector_3d(0., 0., 0.5*flBoxThickness);
 	n = vector_3d(0., 0., 1.);
-	pWall = new Wall( WALL, 2., 1., center, n);
+	pWall = new Wall( WALL, flBoxWidth, flBoxHeight, center, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[5] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Back wall.
-	center = vector_3d(0., 0., -0.5);
+	center = vector_3d(0., 0., -0.5*flBoxThickness);
 	n = vector_3d(0., 0., -1.);
-	pWall = new Wall( WALL, 2., 1., center, n);
+	pWall = new Wall( WALL, flBoxWidth, flBoxHeight, center, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[6] = std::tr1::shared_ptr<Shape>(pShape);
+
+	// User (left) paddle.
+	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
+	n = vector_3d(-1., 0., 0.);			// Norm is -x.
+	float angle = 90.0;
+	Paddle *pPaddle = new Paddle( PADDLE, center, n, 0.15*flBoxWidth, 0.01*flBoxWidth, 
+		90., 0.5*flBoxHeight, 0.5*flBoxThickness);
+	pShape = dynamic_cast<Shape*>(pPaddle);
+	shapes[7] = std::tr1::shared_ptr<Shape>(pShape);
+	leftPaddleIdx = 7;
 }
 
 void GameApp::setupRenderingContext()
@@ -161,15 +174,16 @@ void GameApp::setupRenderingContext()
 	glClearColor(0.4f, 0.4f, 0.4f, 0.0f);	// Background color.
 	glShadeModel(GL_SMOOTH);				//Smooth shading.
 
-	glViewport(0, 0, (GLsizei)flWidth, (GLsizei)flHeight); // Set viewport to window dimensions.
+	// Depth buffer.
+	glClearDepth(1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);				// Enable z-buffer.
+	glDepthFunc(GL_LEQUAL);
+
+	glViewport(0, 0, (GLsizei)flScreenWidth, (GLsizei)flScreenHeight); // Set viewport to window dimensions.
 
 // Here working and understood code ends.
 
-
-    //glClearDepth(1.0);						// Clear depth buffer.
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);    
- //   glEnable(GL_DEPTH_TEST);
- //   glDepthFunc(GL_LEQUAL);
  //   glFrontFace(GL_CCW); // counter clockwise polys face out.
  //
 	//glAlphaFunc(GL_GREATER, (GLclampf)0.01); // Skip pixels which alpha channel is lower than 0.01.
@@ -179,9 +193,9 @@ void GameApp::setupRenderingContext()
  //   glEnable(GL_CULL_FACE);  // Make sure face culling is enabled (speed demon ;).
 	//glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);  // Turn On The Blender.
 	//
-	//glPointSize(2); // size of points.
+	//glPointSize(20); // size of points.
  //   
- //   glPolygonMode(GL_FRONT, GL_FILL);
+    //glPolygonMode(GL_BACK, GL_FILL);
  //   glPolygonMode(GL_BACK, GL_NONE);
  //   
 
@@ -193,7 +207,7 @@ void GameApp::setupRenderingContext()
  //   GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
  //   GLfloat specularLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
  //   GLfloat position[] = {  0.0, 40.0, -20.0, 1.0 };
- //   
+    
  //   glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
  //   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
  //   glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
@@ -224,7 +238,7 @@ void GameApp::setupMatrices()
     glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
 	glLoadIdentity ();				// Clean up the projection matrix.
 	double angle = calculateAngle(flLengthUnit, flZaxisDistance);	// View frustum angle.
-	float ratio = (float) flWidth / (float) flHeight;
+	float ratio = (float) flScreenWidth / (float) flScreenHeight;
 	gluPerspective(angle, ratio, 1.0, 1024.0);	// Set up the projection matrix with the same units in x and y.
 	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
 
@@ -304,8 +318,9 @@ void GameApp::doLogic()
     {
 		//if(bLeftMouseDown == false){
 		// Move the shapes.
+		bool bReset = false;
 		for(std::size_t i = 0; i < shapes.size(); i++)
-			shapes[i]->move(deltaTime);
+			shapes[i]->move(deltaTime, vector_3d(0., 0., 0.), bReset);
 
 		// Detect collisions for all shapes with the ball.
 		for(std::size_t i = 0; i < shapes.size(); i++)
@@ -348,7 +363,7 @@ void GameApp::doDrawing()
 	// camera orientation - normal is along (0,1,0)
 	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	// Rotate scene a bit around y and then around new x.
-	glRotatef(-10.0f, 0.0f, 1.0f, 0.0f);
+	glRotatef(-15.0f, 0.0f, 1.0f, 0.0f);
 	glRotatef(3.0f, 1.0f, 0.0f, 0.0f);
 
 	// Bigger sphere.
@@ -445,14 +460,23 @@ void GameApp::handleKeyDown(const SDL_keysym& keysym)
 		break;
 
 		// Arrow Key Style
-	case SDLK_LEFT:{ }break; 
-	case SDLK_RIGHT:{               
+	case SDLK_LEFT:{ 
+		vector_3d dr(0., 0.0, 0.01);
+		shapes[leftPaddleIdx]->move(0., dr, false);
+				   }break; 
+	case SDLK_RIGHT:{ 
+		vector_3d dr(0., 0.0, -0.01);
+		shapes[leftPaddleIdx]->move(0., dr, false);
 					}break;
 
-	case SDLK_UP:{                
+	case SDLK_UP:{  
+		vector_3d dr(0., 0.01, 0.);
+		shapes[leftPaddleIdx]->move(0., dr, false);
 				 }break;
 
-	case SDLK_DOWN:{                   
+	case SDLK_DOWN:{
+		vector_3d dr(0., -0.01, 0.);
+		shapes[leftPaddleIdx]->move(0., dr, false);
 				   }break;
 
 		// WASD Style
@@ -509,12 +533,12 @@ void GameApp::handleResize(const SDL_Event& sdle)
 {
 	SDL_SetVideoMode( sdlEvent.resize.w, sdlEvent.resize.h, 32, SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE );
 	glViewport (0, 0, (GLsizei) sdle.resize.w, (GLsizei) sdle.resize.h);
-	flWidth = sdle.resize.w;
-	flHeight = sdle.resize.h;
+	flScreenWidth = sdle.resize.w;
+	flScreenHeight = sdle.resize.h;
 	glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
 	glLoadIdentity ();				// Clean up the projection matrix.
 	gluPerspective(calculateAngle(flLengthUnit, flZaxisDistance), 
-		flWidth/flHeight, 1.0, 1024.0);	// Set up the projection matrix with the same units in x and y.
+		flScreenWidth/flScreenHeight, 1.0, 1024.0);	// Set up the projection matrix with the same units in x and y.
 	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
 	glLoadIdentity ();
 }
