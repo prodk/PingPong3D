@@ -2,8 +2,8 @@
 // (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "Wall.h"
 
-Wall::Wall(std::size_t idExt, float w, float h, vector_3d center, vector_3d n):
-	id(idExt), width(w), height(h), vCenter(center), vNormal(n), numOfVerteces(4)
+Wall::Wall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n):
+	Shape(idExt, center), width(w), height(h), vNormal(n), numOfVerteces(4)
 {
 	setupVertices();
 }
@@ -38,16 +38,6 @@ void Wall::setupVertices()
 	}
 }
 
-std::size_t Wall::getId() const
-{
-	return id;
-}
-
-vector_3d Wall::getCenter() const
-{
-	return vCenter;
-}
-
 float Wall::getSize() const
 {
 	return width;
@@ -55,7 +45,7 @@ float Wall::getSize() const
 
 void Wall::draw()
 {
-	glColor3f (0.0, 0.0, 1.0);	
+	//glColor3f (0.0, 0.0, 1.0);	
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glBegin(GL_POLYGON);
@@ -75,32 +65,35 @@ void Wall::move(float deltaTime, vector_3d dr, bool bReset)
 
 void Wall::collide(Shape * s)
 {
-	// If it is not absorbing, then handle collisions
+	// Get the center and the radius of the ball.
 	vector_3d c = s->getCenter();
 	float r = s->getSize();
 
-	// Find the smallest distance between the wall and the ball.
+	// Find the position of the wall and of the ball's surface 
+	// along the wall's normal direction.
 	float a = cml::dot(vCenter, vNormal);
 	float b = cml::dot(vNormal*r+c,vNormal);
 
-	if(b > a){	// Collision occurred.
+	// If ball's surface is beyond the wall, then handle collision.
+	if(b >= a){	// Collision occurred.
 		s->setVelocity(vNormal);
 	}
 }
 
 // AbsorbingWall implementation.
-AbsorbingWall::AbsorbingWall(std::size_t idExt, float w, float h, vector_3d center, vector_3d n):
-Wall(idExt, w, h, center, n)
+AbsorbingWall::AbsorbingWall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n):
+Wall(idExt, center, w, h, n)
 {
 }
 
 void AbsorbingWall::collide(Shape *s)
 {
-	// If it is not absorbing, then handle collisions
+	// Get the center and the radius of the ball.
 	vector_3d c = s->getCenter();
 	float r = s->getSize();
 
-	// Find the smallest distance between the wall and the ball.
+	// Find the position of the wall and of the ball's surface 
+	// along the wall's normal direction.
 	float a = cml::dot(vCenter, vNormal);
 	float b = cml::dot(vNormal*r+c,vNormal);
 

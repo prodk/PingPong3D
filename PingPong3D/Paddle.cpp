@@ -1,10 +1,10 @@
+// Paddle.cpp - implementation of the Paddle class.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "Paddle.h"
 
-
 Paddle::Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
-	float r, float h, float a, float top, float front):
-id(idExt), vCenter(shiftCenter), vNormal(n), flRadius(r), flHeight(h), angle(a), 
-	maxCoordTop(top), maxCoordFront(front),
+	float r, float h, float a, float top, float front) : Shape(idExt, shiftCenter), 
+	vNormal(n), flRadius(r), flHeight(h), angle(a), maxCoordTop(top), maxCoordFront(front),
 	slices(32), stacks(32)
 {
 	vVelocity = vector_3d(0., 0., 0.);
@@ -14,16 +14,6 @@ Paddle::~Paddle(void)
 {
 }
 
-std::size_t Paddle::getId() const
-{
-	return id;
-}
-
-vector_3d Paddle::getCenter() const
-{ 
-	return vCenter;
-}
-
 float Paddle::getSize() const
 {
 	return flRadius;
@@ -31,20 +21,25 @@ float Paddle::getSize() const
 
 void Paddle::draw()
 {
-	glPushMatrix();
+	//glPushMatrix();
 
-	glMatrixMode (GL_MODELVIEW);	
+	//glMatrixMode (GL_MODELVIEW);	
+	/*glEnable (GL_DEPTH_TEST);
+		glCullFace(GL_BACK);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);*/
 	GLUquadricObj *quadratic;
 	quadratic = gluNewQuadric();
+	gluQuadricDrawStyle (quadratic, GLU_FILL); 
+	//gluQuadricNormals (quadratic, GLU_SMOOTH);
 	//glRotatef(angle, 0.0f, 1.0f, 0.0f);		// Rotate around y (vertical) axis.
-	glTranslatef(vCenter[0]-flHeight, vCenter[1], vCenter[2]);	// Translate to the wall.
+	glTranslatef(vCenter[0]-0.5*flHeight, vCenter[1], vCenter[2]);	// Translate to the wall.
 	//glTranslatef(-0.5*flHeight, vCenter[1], vCenter[2]);
 	glRotatef(angle, 0.0f, 1.0f, 0.0f);
 	gluCylinder(quadratic, flRadius, flRadius, flHeight, slices, stacks);
 
 	gluDeleteQuadric(quadratic);	// Important: memory leak!
 
-	glPopMatrix();
+	//glPopMatrix();
 }
 
 void Paddle::move(float deltaTime, vector_3d dr, bool bReset)

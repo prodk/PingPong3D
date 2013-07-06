@@ -1,7 +1,7 @@
 // Paddle.h - declaration of the Paddle class.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
 
-#pragma once
+#pragma once			// Replace by #define for OS portability.
 
 #include "Shape.h"
 
@@ -13,28 +13,23 @@ public:
 	~Paddle(void);
 
 	// Overriden virtual funcions.
-	std::size_t getId() const;
-	vector_3d getCenter() const;
 	float getSize() const;				// Return radius of the cylinder.
 	void draw();
 	void move(float deltaTime, vector_3d dr, bool bReset);
 	void collide(Shape *);
 
 private:
-	std::size_t id;
-	vector_3d vCenter;
 	vector_3d vNormal;
 	float flRadius;
 	float flHeight;
 	const float angle;
-
 	float maxCoordTop;
 	float maxCoordFront;
 
+	vector_3d vVelocity;
+
 	const int slices;
 	const int stacks;
-
-	vector_3d vVelocity;
 
 	// Private methods
 private:

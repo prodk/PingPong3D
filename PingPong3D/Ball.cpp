@@ -2,23 +2,13 @@
 // (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "Ball.h"
 
-Ball::Ball(std::size_t idExt, float r, vector_3d center, vector_3d velocity):
-		id(idExt),radius(r),vCenter(center),vVelocity(velocity),slices(32),stacks(32)
+Ball::Ball(std::size_t idExt, vector_3d center, float r, vector_3d velocity):
+		Shape(idExt,center),radius(r),vVelocity(velocity),slices(32),stacks(32)
 {
 }
 
 Ball::~Ball(void)
 {
-}
-
-std::size_t Ball::getId() const
-{
-	return id;
-}
-
-vector_3d Ball::getCenter() const
-{
-	return vCenter;
 }
 
 float Ball::getSize() const
@@ -30,7 +20,7 @@ void Ball::draw()
 {
 	glPushMatrix();		// Save current matrix on the stack.
 
-	glColor3f (0.0, 1.0, 0.0);	
+	//glColor3f (0.0, 1.0, 0.0);	
 	glTranslatef(vCenter[0], vCenter[1], vCenter[2]);	// Move tha ball.
 	glutSolidSphere (radius, slices, stacks);
 
@@ -43,9 +33,7 @@ void Ball::move(float deltaTime, vector_3d dr, bool bReset)
 	// Reason: timer has a separate thread, which continues working even when
 	// the main GUI threads is paused (e.g. when the window is resized). 
 	// This can lead to very big values of deltaTime.
-	//if( ( dot(vCenter, vCenter) > 1.e-06) && (dot(vCenter, n) < 1e-06 ) )	// if n is 0.
-		//vCenter = n;
-	//else
+	
 	if(bReset)
 		vCenter = vector_3d(0., 0., 0.);
 	else

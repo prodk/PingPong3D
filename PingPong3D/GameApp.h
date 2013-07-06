@@ -31,15 +31,21 @@ private:
 
 	// SDL-specific.
 	int setupSDL();
-	void handleKeyDown(const SDL_keysym& keysym );
-	void handleKeyUp(const SDL_keysym& keysym );
+	void handleKeyDown(const SDL_Event& sdle );
+	void handleKeyUp(const SDL_Event& sdle );
 	void handleResize(const SDL_Event& sdle);
+	void handleMouseMotion(const SDL_Event& sdle);
+	void handleMouseButtonDown(const SDL_Event& sdle);
+	void handleMouseButtonUp(const SDL_Event& sdle);
 	
 	// OpenGl-specific.
 	void setupRenderingContext();	// OGL initial state: depth, lights, materials, etc.
 	void setupMatrices();	// Init transforms: modelview, projection and other matrices.
 	void doDrawing();
 	void drawAxes();
+	void rotateView(float dx);
+
+	int pickObject(int x, int y);		// Returns type of the object under cursor.
 
 	// Calculate the angle used in the perspective, we use size as a unit of length.
 	float calculateAngle(float size, double zAxisDistance)
@@ -52,7 +58,8 @@ private:
 
 	// Private members.
 private:
-	enum {BALL, WALL, PADDLE};
+	enum {BALL, WALL, LEFT_PADDLE};	// enum hack.
+
 	// Game drawing related.
 	float flScreenWidth;			// Screen width.
 	float flScreenHeight;			// Screen height.
@@ -60,6 +67,19 @@ private:
 	std::string strGameName;
 	float flZaxisDistance;	// Distance from which we view the scene
 	float flLengthUnit;		// Unit of measurement of length.
+
+	// View rotation with mouse.
+	float xViewOld;			// Vars for rotate view.
+	float xView;
+	float angleView;		// angle to rotate the view.
+
+	float xPaddleOld;
+	float yPaddleOld;
+
+	bool bPaddlePicked;
+
+	const int MAXHITS;
+	const int selectRegion;	// region for picking.
 
 	// Box sizes.
 	float flBoxWidth;		// Add these to the constructor and use when init walls.
@@ -70,7 +90,6 @@ private:
 	// int leftWallIdx;
 	// int rightWallIdx;
 	int leftPaddleIdx;
-
 
 	// A vector of pointers to Shapes. Ball is stored in the 1st item.	
 	std::vector<std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.

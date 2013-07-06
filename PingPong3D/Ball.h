@@ -8,22 +8,19 @@
 class Ball : public Shape
 {
 public:
-	Ball(std::size_t idExt, float radius, vector_3d center, vector_3d velocity);
+	Ball(std::size_t idExt, vector_3d center, float radius, vector_3d velocity);
 	~Ball(void);
-	std::size_t getId() const;
 
 	// Overriden virtual functions.
-	vector_3d getCenter() const;	// Center position.
 	float getSize() const;			// Radius of the ball.
 	void draw();					// Render a ball using OGL.
-	void move(float deltaTime, vector_3d dr, bool bReset);		// Change center position.
+	void move(float deltaTime, 
+		vector_3d dr, bool bReset);	// Change center position. bReset - set vCenter to origin.
 	void collide(Shape *);			// Do nothing for Ball.
 	void setVelocity(vector_3d n);	// Reverse the velocity after a collision.
 
-private:
-	std::size_t id;
+private:	// id and vCenter are inherited from the Shape.
 	float radius;
-	vector_3d vCenter;
 	vector_3d vVelocity;
 
 	// OpenGL-specific constants.

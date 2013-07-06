@@ -4,12 +4,19 @@
 #include "PingPong3D.h"
 
 GameApp::GameApp(void):
-	flScreenWidth(1024),flScreenHeight(640),strGameName("Ping Pong"),flZaxisDistance(2.0f),
-		flLengthUnit(0.35f),bRunning(true),bGameOver(false)
+	flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong"), flZaxisDistance(2.2f),
+		flLengthUnit(0.4f), bRunning(true), bGameOver(false), MAXHITS(64), selectRegion(5)
 {
+	// !Add function to init these vars!
 	flBoxWidth = 1.6f;		// Add these to the constructor and use when init walls.
 	flBoxHeight = 1.0f;
 	flBoxThickness = 0.5f;
+	xViewOld = xView = 0.;
+	angleView = 75.;		// Initial angle of the view.
+	bPaddlePicked = false;
+
+	xPaddleOld = yPaddleOld = 0.;
+
 	initLibraries();	// !Check return value later.
 	loadData();
 	addShapes();
@@ -23,17 +30,14 @@ GameApp::~GameApp(void)
 int GameApp::initLibraries()
 {
 	// Initialize SDL.
-	if( setupSDL() < 0 ){
-		SDL_Quit();
-		return -1;
-	}
+	if( setupSDL() < 0 ){ return -1; }
     
     // OpenGL.
     setupRenderingContext();
     setupMatrices();
     
     // Setup fmod - add later.
-    //setupSound();
+    //setupSound();				// Check return value.
     
     // Set the game timer up.
     setupTimers();
@@ -43,14 +47,14 @@ int GameApp::initLibraries()
     
     // Initialize new game.
     setupNewGame();
+
+	return 0;
 }
 
 int GameApp::setupSDL()
 {
-	if( SDL_Init(SDL_INIT_VIDEO) < 0 ){
-		SDL_Quit();
+	if( SDL_Init(SDL_INIT_VIDEO) < 0 )
 		return -1;
-	}	
 
 	/* Let's get some video information. */
     const SDL_VideoInfo* info = SDL_GetVideoInfo( );
@@ -85,8 +89,11 @@ int GameApp::setupSDL()
         quit_tutorial( 1 );*/
     //}
 
-    SDL_SetVideoMode((int)flScreenWidth, (int)flScreenHeight, 0, SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE | SDL_DOUBLEBUF);
+    SDL_SetVideoMode((int)flScreenWidth, (int)flScreenHeight, 0, 
+					SDL_OPENGL | SDL_SWSURFACE | SDL_RESIZABLE | SDL_DOUBLEBUF);
 	SDL_WM_SetCaption(strGameName.c_str(), strGameName.c_str());
+
+	return 0;
 }
 
 void GameApp::loadData()
@@ -98,10 +105,11 @@ void GameApp::addShapes()
 {
 	// Add shapes to the game.
 	shapes.resize(8);	// ball + 6 walls + 2 paddles
+
 	// Add ball
 	vector_3d center(0.0f, 0.0f, 0.0f);			// Ball starts at the center of the scene.
 	vector_3d velocity(5e-03f, 6e-03f, 5e-03f);		// Random initial velocity.
-	Ball* pBall = new Ball(BALL, 0.05, center, velocity);
+	Ball* pBall = new Ball(BALL, center, 0.05*flBoxHeight, velocity);
 	Shape* pShape = dynamic_cast<Shape*>(pBall);	
 	shapes[0] = std::tr1::shared_ptr<Shape>(pShape);
 
@@ -109,42 +117,42 @@ void GameApp::addShapes()
 	// Left wall.
 	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 	vector_3d n(-1., 0., 0.);
-	Wall* pWall = new AbsorbingWall( WALL, flBoxThickness, flBoxHeight, center, n);
+	Wall* pWall = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[1] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Right wall.
 	center = vector_3d(0.5*flBoxWidth, 0., 0.);
 	n = vector_3d(1., 0., 0.);
-	pWall = new Wall( WALL, flBoxThickness, flBoxHeight, center, n);
+	pWall = new Wall( WALL, center, flBoxThickness, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[2] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Top wall.
 	center = vector_3d(0., 0.5*flBoxHeight, 0.);
 	n = vector_3d(0., 1., 0.);
-	pWall = new Wall( WALL, flBoxWidth, flBoxThickness, center, n);
+	pWall = new Wall( WALL, center, flBoxWidth, flBoxThickness, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[3] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Bottom wall.
 	center = vector_3d(0., -0.5*flBoxHeight, 0.);
 	n = vector_3d(0., -1., 0.);
-	pWall = new Wall( WALL, flBoxWidth, flBoxThickness, center, n);
+	pWall = new Wall( WALL, center, flBoxWidth, flBoxThickness, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[4] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Front wall.
 	center = vector_3d(0., 0., 0.5*flBoxThickness);
 	n = vector_3d(0., 0., 1.);
-	pWall = new Wall( WALL, flBoxWidth, flBoxHeight, center, n);
+	pWall = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[5] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Back wall.
 	center = vector_3d(0., 0., -0.5*flBoxThickness);
 	n = vector_3d(0., 0., -1.);
-	pWall = new Wall( WALL, flBoxWidth, flBoxHeight, center, n);
+	pWall = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[6] = std::tr1::shared_ptr<Shape>(pShape);
 
@@ -152,7 +160,7 @@ void GameApp::addShapes()
 	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 	n = vector_3d(-1., 0., 0.);			// Norm is -x.
 	float angle = 90.0;
-	Paddle *pPaddle = new Paddle( PADDLE, center, n, 0.15*flBoxWidth, 0.01*flBoxWidth, 
+	Paddle *pPaddle = new Paddle( LEFT_PADDLE, center, n, 0.1*flBoxWidth, 0.01*flBoxWidth, 
 		90., 0.5*flBoxHeight, 0.5*flBoxThickness);
 	pShape = dynamic_cast<Shape*>(pPaddle);
 	shapes[7] = std::tr1::shared_ptr<Shape>(pShape);
@@ -241,6 +249,7 @@ void GameApp::setupMatrices()
 	float ratio = (float) flScreenWidth / (float) flScreenHeight;
 	gluPerspective(angle, ratio, 1.0, 1024.0);	// Set up the projection matrix with the same units in x and y.
 	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
+	glLoadIdentity();
 
 // Here working and understood code ends.
     
@@ -248,11 +257,6 @@ void GameApp::setupMatrices()
     // Reset texture view matrix stack.
     //glMatrixMode(GL_TEXTURE);
     //glLoadIdentity();
-    
-    // Reset model view matrix stack
-    //glMatrixMode(GL_MODELVIEW); 
-    //glLoadIdentity();
-    // ... and keep it on for rendering.
 }
 
 void GameApp::setupTimers()
@@ -313,10 +317,9 @@ void GameApp::doLogic()
     doInput();    
     updateTimers();
     
-    // If the player hasnt lost, do stuff.
+    // If the player hasn't lost, do stuff.
     if(!bGameOver)
-    {
-		//if(bLeftMouseDown == false){
+    {		
 		// Move the shapes.
 		bool bReset = false;
 		for(std::size_t i = 0; i < shapes.size(); i++)
@@ -325,9 +328,7 @@ void GameApp::doLogic()
 		// Detect collisions for all shapes with the ball.
 		for(std::size_t i = 0; i < shapes.size(); i++)
 			shapes[i]->collide(shapes[0].get());
-		//shapes[1]->collide(shapes[0].get());
-		//shapes[0]->collide(NULL);
-		//}
+		
 		//playSound(samples[SAM_BRICKMOVE]);        
     } // if(!game_over)
     
@@ -356,15 +357,17 @@ void GameApp::doLogic()
 void GameApp::doDrawing()
 {	
 // Here working and understood code starts.
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 	glClear (GL_COLOR_BUFFER_BIT);
-	glColor3f (1.0, 0.0, 1.0);
+	//glColor3f (1.0, 0.0, 1.0);
 	glLoadIdentity ();             // Clear the current matrix.
 	// Move camera to the point (0,0,5) in eye coords, look at point (0,0,0), 
 	// camera orientation - normal is along (0,1,0)
 	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	// Rotate scene a bit around y and then around new x.
-	glRotatef(-15.0f, 0.0f, 1.0f, 0.0f);
-	glRotatef(3.0f, 1.0f, 0.0f, 0.0f);
+	//glRotatef(-15.0f, 0.0f, 1.0f, 0.0f);
+	glRotatef(angleView, 0.0f, 1.0f, 0.0f);
+	//glRotatef(3.0f, 1.0f, 0.0f, 0.0f);
 
 	// Bigger sphere.
 	//glutSolidSphere (1., 32, 32);	
@@ -375,8 +378,10 @@ void GameApp::doDrawing()
 	//glutWireCube (2.0);
 	
 	// Draw all the shapes.
-	for(std::size_t i = 0; i < shapes.size(); i++)
+	for(std::size_t i = 0; i < shapes.size(); i++){
+		//glColor3f ((float)shapes[i]->getId(), 0.0, 0.0);
 		shapes[i]->draw();
+	}
 
 	glFlush();
 
@@ -422,81 +427,126 @@ void GameApp::doInput()
 	        
     switch(sdlEvent.type)
     {
-        case SDL_KEYDOWN:
-			handleKeyDown(sdlEvent.key.keysym);
-			break;
-        
-        case SDL_KEYUP:
-			handleKeyUp(sdlEvent.key.keysym);
-			break;
-			
-		case SDL_VIDEORESIZE:
-			handleResize(sdlEvent);
-			break;			
-            
-        case SDL_QUIT:
-            bRunning = false;
-        break;
-    }
+	case SDL_MOUSEBUTTONDOWN:
+		handleMouseButtonDown(sdlEvent);
+		break;
+
+	case SDL_MOUSEBUTTONUP:
+		handleMouseButtonUp(sdlEvent);
+		break;
+
+	case SDL_MOUSEMOTION:
+		handleMouseMotion(sdlEvent);
+		break;
+	
+	case SDL_KEYDOWN:
+		handleKeyDown(sdlEvent);
+		break;
+
+	case SDL_KEYUP:
+		handleKeyUp(sdlEvent);
+		break;
+
+	case SDL_VIDEORESIZE:
+		handleResize(sdlEvent);
+		break;			
+
+	case SDL_QUIT:
+		bRunning = false;
+		break;
+	}
 }
 
-void GameApp::handleKeyDown(const SDL_keysym& keysym)
+void GameApp::handleMouseButtonDown(const SDL_Event& sdle)
 {
-	switch(keysym.sym)
+	int objName = 0;
+	switch(sdle.button.button)
 	{
-	case SDL_MOUSEMOTION:
-		//leftB=(event->button.down==SDL_BUTTON_LEFT);
-		//rightB(event->button.down==SDL_BUTTON_RIGHT);
-		//if (leftB && rightB)//{// here both buttons are pressed//}
+	case SDL_BUTTON_LEFT:
+		//bPaddlePicked = pickPaddle(sdle.button.x, sdle.button.y);
+		objName = pickObject(sdle.button.x, sdle.button.y);
+		if(objName == LEFT_PADDLE){
+			bPaddlePicked = true;
+			xPaddleOld = sdle.button.x;
+			yPaddleOld = sdle.button.y;
+		}
+		xViewOld = sdle.button.x;
 		break;
-	case SDL_MOUSEBUTTONDOWN:
-		//bLeftMouseDown = true;
-		//printf("Mouse button %d pressed at (%d,%d)\n",
-		//event.button.button, event.button.x, event.button.y);
-		break;
+	}
+}
 
+void GameApp::handleMouseButtonUp(const SDL_Event& sdle)
+{
+	switch(sdle.button.button)
+	{
+	case SDL_BUTTON_LEFT:
+		bPaddlePicked = false;
+		break;
+	}
+}
+
+void GameApp::handleMouseMotion(const SDL_Event& sdle)
+{
+	switch(sdle.motion.state)
+	{
+	case SDL_BUTTON_LEFT:
+// !Add later: Rotate view only if no objects are selected and bPaddlePicked == false.
+		if(!bPaddlePicked){
+			angleView += sdle.motion.x - xViewOld;
+			xViewOld = sdle.motion.x;
+		}
+		else{
+			vector_3d dr(0., -0.0025*(sdle.motion.y - yPaddleOld), 
+				0.0025*(sdle.motion.x - xPaddleOld) );
+			shapes[leftPaddleIdx]->move(0., dr, false);
+			xPaddleOld = sdle.motion.x;
+			yPaddleOld = sdle.motion.y;
+		}
+		break;
+	}
+}
+
+void GameApp::handleKeyDown(const SDL_Event& sdle)
+{	
+	// Check keyboard.
+	switch(sdle.key.keysym.sym)
+	{
+	case SDLK_EQUALS:		// Reset view.
+		angleView = -15.;
+		break;
 	case SDLK_ESCAPE:
 		bRunning = false;
 		break;
 
 		// Arrow Key Style
+	case SDLK_a:			// Fall through.
 	case SDLK_LEFT:{ 
 		vector_3d dr(0., 0.0, 0.01);
 		shapes[leftPaddleIdx]->move(0., dr, false);
-				   }break; 
+				   }break;
+	case SDLK_d:			// Fall through.
 	case SDLK_RIGHT:{ 
 		vector_3d dr(0., 0.0, -0.01);
 		shapes[leftPaddleIdx]->move(0., dr, false);
 					}break;
 
+	case SDLK_w:			// Fall through.
 	case SDLK_UP:{  
 		vector_3d dr(0., 0.01, 0.);
 		shapes[leftPaddleIdx]->move(0., dr, false);
 				 }break;
 
+	case SDLK_s:			// Fall through.
 	case SDLK_DOWN:{
 		vector_3d dr(0., -0.01, 0.);
 		shapes[leftPaddleIdx]->move(0., dr, false);
 				   }break;
-
-		// WASD Style
-	case SDLK_a:{               
-				}break; 
-
-	case SDLK_d:{               
-				}break;
-
-	case SDLK_w:{              
-				}break;
-
-	case SDLK_s:{                 
-				}break;
 	}
 }
 
-void GameApp::handleKeyUp(const SDL_keysym& keysym)
+void GameApp::handleKeyUp(const SDL_Event& sdle)
 {
-	switch(keysym.sym)
+	switch(sdle.key.keysym.sym)
 	{
 	case SDL_MOUSEBUTTONUP:
 		//printf("Mouse button %d pressed at (%d,%d)\n",
@@ -561,4 +611,50 @@ void GameApp::shutDown()
     FSOUND_Close();
 	*/
     SDL_Quit();
+}
+
+// Object selection using back buffer.
+int GameApp::pickObject(int x, int y)
+{
+	// Render the scene into the back buffer with colors corresponding to
+	// names of the objects.
+
+	// Code is from doDrawing except colors are handled differently.
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
+	glLoadIdentity ();             // Clear the current matrix.
+	// Move camera to the point (0,0,5) in eye coords, look at point (0,0,0), 
+	// camera orientation - normal is along (0,1,0)
+	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	// Rotate scene a bit around y and then around new x.
+	glRotatef(angleView, 0.0f, 1.0f, 0.0f);	
+	drawAxes();
+
+	// Draw all the shapes.
+	for(std::size_t i = 0; i < shapes.size(); i++)
+	{
+		int name = shapes[i]->getId();
+		//name = 0.2*name;
+			
+		glColor3f (0.3*name, 0., 0.);
+		shapes[i]->draw();
+	}
+
+	glFlush();
+
+	// Now read the pixel under cursor and analyze the color.
+	GLint viewport[4];	
+	glGetIntegerv (GL_VIEWPORT, viewport);
+
+	GLint mouse_x = x;
+	GLint mouse_y = viewport[3] - y;
+
+	float pixel[3];
+    glReadPixels(mouse_x, mouse_y, 1, 1, GL_RGB, GL_FLOAT, pixel);
+    float r = pixel[0];
+    float g = pixel[1];
+    float b = pixel[2];
+
+	int iFigureType = (int)(r/0.3);
+   
+	return iFigureType;
 }
