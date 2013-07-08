@@ -2,26 +2,15 @@
 // (c) Nikolay Prodanov, Juelich, summer 2013.
 #pragma once
 
-// Libraries/APIs.
-#ifdef WIN32			// Additional include on Windows.
-#include <Windows.h>
-#endif
-
-// Libraries.
-#include <SDL.h>
-#include <gl/GL.h>
-#include <gl/GLU.h>
-#include <glut.h>
-#include <cml/cml.h>
-
-// 3-d column vector, fixed length, double coordinates:
-typedef cml::vector< float, cml::fixed<3> > vector_3d;
+#include "Material.h"
 
 // Maybe move id, vCenter, vNormal to this class, as protected members.
 class Shape
 {
 public:
 	Shape(std::size_t idExt, vector_3d c);
+	Shape(std::size_t idExt, vector_3d c, 
+		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine);
 	virtual ~Shape(void);
 
 	// Methods that are not supposed to be overridden.
@@ -40,5 +29,6 @@ public:
 protected:
 	std::size_t id;
 	vector_3d vCenter;
+	Material material;
 };
 

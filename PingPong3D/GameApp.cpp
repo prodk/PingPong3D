@@ -160,8 +160,14 @@ void GameApp::addShapes()
 	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 	n = vector_3d(-1., 0., 0.);			// Norm is -x.
 	float angle = 90.0;
+	// Setup colors.
+	vector_3d ambient = vector_3d(0.5, 0.5, 0.0);
+	vector_3d diffuse = vector_3d(1.0, 1.0, 0.0);
+	vector_3d specular = vector_3d(0.5, 0.5, 0.0);
+	float shine = 10.;
 	Paddle *pPaddle = new Paddle( LEFT_PADDLE, center, n, 0.1*flBoxWidth, 0.01*flBoxWidth, 
-		90., 0.5*flBoxHeight, 0.5*flBoxThickness);
+		90., 0.5*flBoxHeight, 0.5*flBoxThickness,
+		ambient, diffuse, specular, shine);
 	pShape = dynamic_cast<Shape*>(pPaddle);
 	shapes[7] = std::tr1::shared_ptr<Shape>(pShape);
 	leftPaddleIdx = 7;
@@ -188,8 +194,36 @@ void GameApp::setupRenderingContext()
 	glEnable(GL_DEPTH_TEST);				// Enable z-buffer.
 	glDepthFunc(GL_LEQUAL);
 
+	// Antialiasing.
+	glEnable (GL_LINE_SMOOTH);
+	//glEnable (GL_BLEND);
+	//glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glHint (GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
+	glLineWidth (1.5);
+
 	glViewport(0, 0, (GLsizei)flScreenWidth, (GLsizei)flScreenHeight); // Set viewport to window dimensions.
 
+	 // Enable Lighting.
+   glEnable(GL_LIGHTING);
+
+   // Set up light0.
+   GLfloat ambientLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+   GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+   GLfloat specularLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+   GLfloat position[] = {  0.0, 40.0, -20.0, 1.0 };		// Adjust this position!
+    
+   glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+   glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+   glLightfv(GL_LIGHT0, GL_POSITION, position);
+   
+   // Create the newly set up lightsource.
+   glEnable(GL_LIGHT0);
+
+   glEnable(GL_LIGHT1);		// Light moving with the ball.
+
+   // Material color tracking.
+ //   glEnable(GL_COLOR_MATERIAL);
 // Here working and understood code ends.
 
  //   glFrontFace(GL_CCW); // counter clockwise polys face out.
@@ -207,30 +241,12 @@ void GameApp::setupRenderingContext()
  //   glPolygonMode(GL_BACK, GL_NONE);
  //   
 
- //   // Enable Lighting.
- //   glEnable(GL_LIGHTING);
-
- //   // Set up light0.
- //   GLfloat ambientLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
- //   GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
- //   GLfloat specularLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
- //   GLfloat position[] = {  0.0, 40.0, -20.0, 1.0 };
-    
- //   glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
- //   glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
- //   glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
- //   glLightfv(GL_LIGHT0, GL_POSITION, position);
- //   
- //   // Create the newly set up lightsource.
- //   glEnable(GL_LIGHT0);
-
- //   // GLOBAL light settings.
- //   GLfloat global_ambient[] = { 0.6f, 0.6f, 0.6f, 1.0f };
- //   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
+   // GLOBAL light settings.
+   //GLfloat global_ambient[] = { 0.6f, 0.6f, 0.6f, 1.0f };
+   //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
  //   
  //   
- //   // Material color tracking.
- //   glEnable(GL_COLOR_MATERIAL);
+ //   
  //      //Make it so ambient and diffuse material properties will use glcolor
  //      //Soo...  glColor3f(0.0f, 0.0f, 1.0f); would make blue reflective properties
  //      //Exactly like calling:
@@ -629,6 +645,7 @@ int GameApp::pickObject(int x, int y)
 	glRotatef(angleView, 0.0f, 1.0f, 0.0f);	
 	drawAxes();
 
+	glDisable(GL_LIGHTING);
 	// Draw all the shapes.
 	for(std::size_t i = 0; i < shapes.size(); i++)
 	{
@@ -655,6 +672,8 @@ int GameApp::pickObject(int x, int y)
     float b = pixel[2];
 
 	int iFigureType = (int)(r/0.3);
+
+	glEnable(GL_LIGHTING);
    
 	return iFigureType;
 }

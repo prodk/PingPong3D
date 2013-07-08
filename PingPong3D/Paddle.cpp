@@ -3,7 +3,9 @@
 #include "Paddle.h"
 
 Paddle::Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
-	float r, float h, float a, float top, float front) : Shape(idExt, shiftCenter), 
+	float r, float h, float a, float top, float front,
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine) : 
+	Shape(idExt, shiftCenter, ambient, diffuse, specular, shine), 
 	vNormal(n), flRadius(r), flHeight(h), angle(a), maxCoordTop(top), maxCoordFront(front),
 	slices(32), stacks(32)
 {
@@ -21,12 +23,16 @@ float Paddle::getSize() const
 
 void Paddle::draw()
 {
-	//glPushMatrix();
+	glPushMatrix();
 
 	//glMatrixMode (GL_MODELVIEW);	
 	/*glEnable (GL_DEPTH_TEST);
 		glCullFace(GL_BACK);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);*/
+	material.setValues();
+	
+
+	// !Move quadrics creation to the constructor!
 	GLUquadricObj *quadratic;
 	quadratic = gluNewQuadric();
 	gluQuadricDrawStyle (quadratic, GLU_FILL); 
@@ -36,10 +42,13 @@ void Paddle::draw()
 	//glTranslatef(-0.5*flHeight, vCenter[1], vCenter[2]);
 	glRotatef(angle, 0.0f, 1.0f, 0.0f);
 	gluCylinder(quadratic, flRadius, flRadius, flHeight, slices, stacks);
+	//gluDisk(quadratic, flRadius, flRadius, slices, stacks);
 
+	// Move quadrics deletion to the destructor!
 	gluDeleteQuadric(quadratic);	// Important: memory leak!
 
-	//glPopMatrix();
+
+	glPopMatrix();
 }
 
 void Paddle::move(float deltaTime, vector_3d dr, bool bReset)

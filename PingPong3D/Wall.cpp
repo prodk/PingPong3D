@@ -47,6 +47,8 @@ void Wall::draw()
 {
 	//glColor3f (0.0, 0.0, 1.0);	
 
+	material.setValues();
+
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glBegin(GL_POLYGON);
 	//glEdgeFlag(GL_TRUE);

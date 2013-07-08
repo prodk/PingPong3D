@@ -9,7 +9,8 @@ class Paddle : public Shape
 {
 public:
 	Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n, 
-				float r, float h, float a, float top, float front);
+				float r, float h, float a, float top, float front,
+				vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine);
 	~Paddle(void);
 
 	// Overriden virtual funcions.
@@ -28,11 +29,15 @@ private:
 
 	vector_3d vVelocity;
 
+	// Rendering-related.
+	//Material material;
+
 	const int slices;
 	const int stacks;
 
 	// Private methods
 private:
 	bool ptInPaddle(const vector_3d &pt) const;
+
 };
 

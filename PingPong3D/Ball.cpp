@@ -20,9 +20,26 @@ void Ball::draw()
 {
 	glPushMatrix();		// Save current matrix on the stack.
 
-	//glColor3f (0.0, 1.0, 0.0);	
+	material.setValues();
+
+	//glColor3f (0.0, 1.0, 0.0);
+	GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
+	GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular);
+	GLfloat light_position[] = { 0.0, 0.0, 0.0, 1.0 };
+	GLfloat light_direction[] = { vVelocity[0], vVelocity[1], vVelocity[2], 0.0 };
+	
+
 	glTranslatef(vCenter[0], vCenter[1], vCenter[2]);	// Move tha ball.
 	glutSolidSphere (radius, slices, stacks);
+
+	
+
+	// Set a spotlight movint with the ball.
+	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 50.0);
+	glLightfv(GL_LIGHT1, GL_POSITION, light_position);
+	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_direction);
 
 	glPopMatrix();		// Restore the matrix stack.
 }

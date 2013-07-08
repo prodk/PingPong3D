@@ -3,7 +3,14 @@
 
 #include "Shape.h"
 
-Shape::Shape(std::size_t idExt, vector_3d c):id(idExt), vCenter(c)
+// Use default constructor for the material.
+Shape::Shape(std::size_t idExt, vector_3d c) : id(idExt), vCenter(c), material()
+{
+}
+
+Shape::Shape(std::size_t idExt, vector_3d c, 
+		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine) :
+id(idExt), vCenter(c), material(ambient, diffuse, specular, shine)
 {
 }
 
