@@ -4,8 +4,8 @@
 
 Paddle::Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
 	float r, float h, float a, float top, float front,
-	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine) : 
-	Shape(idExt, shiftCenter, ambient, diffuse, specular, shine), 
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) : 
+	Shape(idExt, shiftCenter, ambient, diffuse, specular, shine, alpha), 
 	vNormal(n), flRadius(r), flHeight(h), angle(a), maxCoordTop(top), maxCoordFront(front),
 	slices(32), stacks(32)
 {
@@ -25,24 +25,43 @@ void Paddle::draw()
 {
 	glPushMatrix();
 
-	//glMatrixMode (GL_MODELVIEW);	
-	/*glEnable (GL_DEPTH_TEST);
-		glCullFace(GL_BACK);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);*/
-	material.setValues();
-	
+	material.setValues();	
 
 	// !Move quadrics creation to the constructor!
 	GLUquadricObj *quadratic;
 	quadratic = gluNewQuadric();
 	gluQuadricDrawStyle (quadratic, GLU_FILL); 
 	//gluQuadricNormals (quadratic, GLU_SMOOTH);
-	//glRotatef(angle, 0.0f, 1.0f, 0.0f);		// Rotate around y (vertical) axis.
 	glTranslatef(vCenter[0]-0.5*flHeight, vCenter[1], vCenter[2]);	// Translate to the wall.
 	//glTranslatef(-0.5*flHeight, vCenter[1], vCenter[2]);
 	glRotatef(angle, 0.0f, 1.0f, 0.0f);
 	gluCylinder(quadratic, flRadius, flRadius, flHeight, slices, stacks);
-	//gluDisk(quadratic, flRadius, flRadius, slices, stacks);
+	
+	// Inner face of the paddle sylinder.
+	glPushMatrix();
+	// Move by the cylinder thikness, from point -0.5*h to the point 0.5*h in z(x) direction.
+	glTranslatef(0., 0., flHeight);
+	drawCircle(flRadius);
+	glPopMatrix();
+
+	// Outer face of the paddle sylinder.
+	glPushMatrix();
+	//glTranslatef(0., 0., -0.5*flHeight);
+	drawCircle(flRadius);
+	glPopMatrix();
+
+	float alpha = 8., beta = 0.2;		// !Make these member variables!
+	// Thin part of the handle.
+	glPushMatrix();
+	glTranslatef(0., 0., -alpha*flHeight);
+	gluCylinder(quadratic, beta*flRadius, beta*flRadius, alpha*flHeight, slices, stacks);
+	glPopMatrix();
+
+	// Handle
+	glPushMatrix();
+	glTranslatef(0., 0., -alpha*flHeight);
+	glutSolidSphere (2*beta*flRadius, slices, stacks);
+	glPopMatrix();
 
 	// Move quadrics deletion to the destructor!
 	gluDeleteQuadric(quadratic);	// Important: memory leak!

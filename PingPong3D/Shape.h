@@ -10,7 +10,7 @@ class Shape
 public:
 	Shape(std::size_t idExt, vector_3d c);
 	Shape(std::size_t idExt, vector_3d c, 
-		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine);
+		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha);
 	virtual ~Shape(void);
 
 	// Methods that are not supposed to be overridden.

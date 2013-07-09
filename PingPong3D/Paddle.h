@@ -10,7 +10,8 @@ class Paddle : public Shape
 public:
 	Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n, 
 				float r, float h, float a, float top, float front,
-				vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine);
+				vector_3d ambient, vector_3d diffuse, vector_3d specular, 
+				float shine, float alpha);
 	~Paddle(void);
 
 	// Overriden virtual funcions.
@@ -39,5 +40,24 @@ private:
 private:
 	bool ptInPaddle(const vector_3d &pt) const;
 
-};
+// Change this function later:
+// Save vertices to an array and maybe use a display list.
+// Add more points to the array.
+void drawCircle(float radius)
+{
+	const float DEG2RAD = 3.14159/180;
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glBegin(GL_POLYGON); 
+	for (float i=0.; i < 360.; i+=0.5)
+	{
+		float degInRad = i*DEG2RAD;
+		glNormal3f(0.0, 0.0, 1.0);
+		glVertex3f(cos(degInRad)*radius, sin(degInRad)*radius, 0.0);
+	}
+
+	glEnd();
+}
+
+};	// End Paddle.
 

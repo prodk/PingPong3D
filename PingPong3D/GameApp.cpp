@@ -12,7 +12,7 @@ GameApp::GameApp(void):
 	flBoxHeight = 1.0f;
 	flBoxThickness = 0.5f;
 	xViewOld = xView = 0.;
-	angleView = 75.;		// Initial angle of the view.
+	angleView = 115.;		// Initial angle (around y) of the view.
 	bPaddlePicked = false;
 
 	xPaddleOld = yPaddleOld = 0.;
@@ -101,15 +101,89 @@ void GameApp::loadData()
 	// Load sound and textures here.
 }
 
+std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
+{
+    SDL_Surface* surface;
+    GLuint textureid;
+    int mode;
+
+	surface = IMG_Load(fileName.c_str());
+    
+    // Could not load image.
+    if (!surface) 
+    {
+        //printf("Could not load image: %s", fileName.c_str());
+        return NULL;
+    }
+    
+    // Work out what format to tell glTexImage2D to use...
+    if (surface->format->BytesPerPixel == 3) // RGB 24bit
+    { 
+        mode = GL_RGB;
+    } 
+    else if (surface->format->BytesPerPixel == 4) // RGBA 32bit.
+    { 
+        mode = GL_RGBA;
+    } 
+    else 
+    {
+        //printf("Could not determine pixel format of image: %s", fileName.c_str());
+        SDL_FreeSurface(surface);
+        return NULL;
+    }
+
+    // Create one texture name.
+    glGenTextures(1, &textureid);
+
+    // Tell opengl to use the generated texture name.
+    glBindTexture(GL_TEXTURE_2D, textureid);
+
+    // Read from the sdl surface and put it into an opengl texture.
+    glTexImage2D(GL_TEXTURE_2D, 0, mode, surface->w, surface->h, 0, mode, GL_UNSIGNED_BYTE, surface->pixels);
+
+    // Set up texture filters.
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+
+
+    // Allocate memory for Texture structure and fill it up.
+	std::tr1::shared_ptr<TEXTURE> texture(new TEXTURE());
+    
+    // Could not allocate memory.
+    if (!texture.get())
+    {
+        //printf("Could not create TEXTURE struct for image: %s", fileName.c_str());
+		return NULL;
+    }
+    
+    // Set up TEXTURE structure.
+    texture->width = surface->w;
+    texture->height = surface->h;
+    texture->id = textureid;
+    
+    
+    // Clean up.
+    SDL_FreeSurface(surface);
+    
+    // Return pointer to image structure.
+    return texture;
+}
+
 void GameApp::addShapes()
 {
 	// Add shapes to the game.
 	shapes.resize(8);	// ball + 6 walls + 2 paddles
 
 	// Add ball
+	vector_3d ambient = vector_3d(0.0, 0.5, 0.0);
+	vector_3d diffuse = vector_3d(0.0, 1.0, 0.0);
+	vector_3d specular = vector_3d(0.0, 0.0, 0.0);
+	float alpha = 1.0;	// Opaque ball.
+	float shine = 0.;
 	vector_3d center(0.0f, 0.0f, 0.0f);			// Ball starts at the center of the scene.
 	vector_3d velocity(5e-03f, 6e-03f, 5e-03f);		// Random initial velocity.
-	Ball* pBall = new Ball(BALL, center, 0.05*flBoxHeight, velocity);
+	Ball* pBall = new Ball(BALL, center, 0.05*flBoxHeight, velocity,
+		ambient, diffuse, specular, shine, alpha);
 	Shape* pShape = dynamic_cast<Shape*>(pBall);	
 	shapes[0] = std::tr1::shared_ptr<Shape>(pShape);
 
@@ -129,16 +203,28 @@ void GameApp::addShapes()
 	shapes[2] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Top wall.
+	ambient = vector_3d(0.0, 0.0, 0.5);
+	diffuse = vector_3d(0.0, 0.0, 1.0);
+	specular = vector_3d(0.0, 0.0, 0.2);
+	alpha = 0.1;	// A bit transparent wall.
+	shine = 20.;
 	center = vector_3d(0., 0.5*flBoxHeight, 0.);
 	n = vector_3d(0., 1., 0.);
-	pWall = new Wall( WALL, center, flBoxWidth, flBoxThickness, n);
+	pWall = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
+		ambient, diffuse, specular, shine, alpha);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[3] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Bottom wall.
+	ambient = vector_3d(0.0, 0.0, 0.5);
+	diffuse = vector_3d(0.0, 0.0, 1.0);
+	specular = vector_3d(0.0, 0.0, 0.2);
+	alpha = 0.1;	// Abit transparent wall.
+	shine = 20.;
 	center = vector_3d(0., -0.5*flBoxHeight, 0.);
 	n = vector_3d(0., -1., 0.);
-	pWall = new Wall( WALL, center, flBoxWidth, flBoxThickness, n);
+	pWall = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
+		ambient, diffuse, specular, shine, alpha);
 	pShape = dynamic_cast<Shape*>(pWall);
 	shapes[4] = std::tr1::shared_ptr<Shape>(pShape);
 
@@ -161,13 +247,14 @@ void GameApp::addShapes()
 	n = vector_3d(-1., 0., 0.);			// Norm is -x.
 	float angle = 90.0;
 	// Setup colors.
-	vector_3d ambient = vector_3d(0.5, 0.5, 0.0);
-	vector_3d diffuse = vector_3d(1.0, 1.0, 0.0);
-	vector_3d specular = vector_3d(0.5, 0.5, 0.0);
-	float shine = 10.;
-	Paddle *pPaddle = new Paddle( LEFT_PADDLE, center, n, 0.1*flBoxWidth, 0.01*flBoxWidth, 
+	ambient = vector_3d(0.5, 0.5, 0.0);
+	diffuse = vector_3d(1.0, 1.0, 0.0);
+	specular = vector_3d(0.5, 0.5, 0.0);
+	alpha = 0.9;	// A bit transparent paddle.
+	shine = 10.;
+	Paddle *pPaddle = new Paddle( LEFT_PADDLE, center, n, 0.05*flBoxWidth, 0.01*flBoxWidth, 
 		90., 0.5*flBoxHeight, 0.5*flBoxThickness,
-		ambient, diffuse, specular, shine);
+		ambient, diffuse, specular, shine, alpha);
 	pShape = dynamic_cast<Shape*>(pPaddle);
 	shapes[7] = std::tr1::shared_ptr<Shape>(pShape);
 	leftPaddleIdx = 7;
@@ -185,7 +272,7 @@ void GameApp::setupRenderingContext()
 	//glFrontFace( GL_CCW );
 	//glEnable( GL_CULL_FACE );
 
-	glClearColor(0.4f, 0.4f, 0.4f, 0.0f);	// Background color.
+	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);	// Background color.
 	glShadeModel(GL_SMOOTH);				//Smooth shading.
 
 	// Depth buffer.
@@ -196,10 +283,12 @@ void GameApp::setupRenderingContext()
 
 	// Antialiasing.
 	glEnable (GL_LINE_SMOOTH);
-	//glEnable (GL_BLEND);
-	//glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glHint (GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
 	glLineWidth (1.5);
+
+	// Blending (transparency).
+	glEnable (GL_BLEND);
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glViewport(0, 0, (GLsizei)flScreenWidth, (GLsizei)flScreenHeight); // Set viewport to window dimensions.
 
@@ -222,38 +311,23 @@ void GameApp::setupRenderingContext()
 
    glEnable(GL_LIGHT1);		// Light moving with the ball.
 
-   // Material color tracking.
- //   glEnable(GL_COLOR_MATERIAL);
+   // GLOBAL light settings.
+   GLfloat global_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+   glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
+
+   //glAlphaFunc(GL_GREATER, (GLclampf)0.01); // Skip pixels which alpha channel is lower than 0.01.
+   glEnable(GL_TEXTURE_2D);  // Enable 2D texturing.
+
+   glEnable(GL_ALPHA_TEST);  // Enable Alpha.
+
+  
 // Here working and understood code ends.
 
  //   glFrontFace(GL_CCW); // counter clockwise polys face out.
- //
-	//glAlphaFunc(GL_GREATER, (GLclampf)0.01); // Skip pixels which alpha channel is lower than 0.01.
- //   glEnable(GL_TEXTURE_2D);  // Enable 2D texturing.
- //   glEnable(GL_BLEND);  // Enable Blending.
- //   glEnable(GL_ALPHA_TEST);  // Enable Alpha.
- //   glEnable(GL_CULL_FACE);  // Make sure face culling is enabled (speed demon ;).
-	//glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);  // Turn On The Blender.
-	//
-	//glPointSize(20); // size of points.
- //   
-    //glPolygonMode(GL_BACK, GL_FILL);
- //   glPolygonMode(GL_BACK, GL_NONE);
- //   
+  
+ 
+	glPointSize(20); // size of points.
 
-   // GLOBAL light settings.
-   //GLfloat global_ambient[] = { 0.6f, 0.6f, 0.6f, 1.0f };
-   //glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
- //   
- //   
- //   
- //      //Make it so ambient and diffuse material properties will use glcolor
- //      //Soo...  glColor3f(0.0f, 0.0f, 1.0f); would make blue reflective properties
- //      //Exactly like calling:
- //      //float mcolor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
- //      //glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mcolor);
- //      //before the geometry
- //   glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 }
 
 void GameApp::setupMatrices()
@@ -528,7 +602,7 @@ void GameApp::handleKeyDown(const SDL_Event& sdle)
 	switch(sdle.key.keysym.sym)
 	{
 	case SDLK_EQUALS:		// Reset view.
-		angleView = -15.;
+		angleView = 115;
 		break;
 	case SDLK_ESCAPE:
 		bRunning = false;

@@ -5,6 +5,16 @@
 Wall::Wall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n):
 	Shape(idExt, center), width(w), height(h), vNormal(n), numOfVerteces(4)
 {
+	polygonMode = GL_LINE;
+	setupVertices();
+}
+
+Wall::Wall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n,
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) : 
+	Shape(idExt, center, ambient, diffuse, specular, shine, alpha), 
+	width(w), height(h), vNormal(n), numOfVerteces(4)
+{
+	polygonMode = GL_FILL;
 	setupVertices();
 }
 
@@ -49,14 +59,21 @@ void Wall::draw()
 
 	material.setValues();
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	// Set negatives normals (pointing inside the box) such that the light is reflected.
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
 	glBegin(GL_POLYGON);
 	//glEdgeFlag(GL_TRUE);
+	glNormal3f(-vNormal[0], -vNormal[1], -vNormal[2]);
     glVertex3f(v[0][0],v[0][1],v[0][2]);
     //glEdgeFlag(GL_FALSE);
+	glNormal3f(-vNormal[0], -vNormal[1], -vNormal[2]);
     glVertex3f(v[1][0],v[1][1],v[1][2]);
     //glEdgeFlag(GL_TRUE);	
+	glNormal3f(-vNormal[0], -vNormal[1], -vNormal[2]);
     glVertex3f(v[2][0],v[2][1],v[2][2]);
+
+	glNormal3f(-vNormal[0], -vNormal[1], -vNormal[2]);
 	glVertex3f(v[3][0],v[3][1],v[3][2]);
 	glEnd();
 }

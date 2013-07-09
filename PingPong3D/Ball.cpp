@@ -2,8 +2,10 @@
 // (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "Ball.h"
 
-Ball::Ball(std::size_t idExt, vector_3d center, float r, vector_3d velocity):
-		Shape(idExt,center),radius(r),vVelocity(velocity),slices(32),stacks(32)
+Ball::Ball(std::size_t idExt, vector_3d center, float r, vector_3d velocity,
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha):
+		Shape(idExt, center, ambient, diffuse, specular, shine, alpha), 
+		radius(r), vVelocity(velocity), slices(32), stacks(32)
 {
 }
 

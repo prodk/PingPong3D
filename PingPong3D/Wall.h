@@ -9,6 +9,8 @@ class Wall : public Shape
 {
 public:
 	Wall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n);
+	Wall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n,
+		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha);
 	~Wall(void);
 
 	// Overriden virtual funcions.
@@ -23,6 +25,8 @@ protected:
 	vector_3d vNormal;					// Normal to the plane of the Wall.
 	std::vector<vector_3d> v;			// Vertices.
 	const int numOfVerteces;
+
+	int polygonMode;
 
 	void setupVertices();
 };

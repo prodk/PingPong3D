@@ -8,6 +8,7 @@
 
 // Libraries.
 #include <SDL.h>
+#include <SDL_image.h>
 #include <gl/GL.h>
 #include <gl/GLU.h>
 #include <glut.h>
@@ -20,7 +21,8 @@ class Material
 {
 public:
 	Material(void);
-	explicit Material(vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine);
+	explicit Material(vector_3d ambient, vector_3d diffuse, vector_3d specular, 
+		float shine, float alpha);
 	~Material(void);
 
 	// Methods.
@@ -31,7 +33,11 @@ private:
 	vector_3d colorDiffuse;
 	vector_3d colorSpecular;
 	float flShininess;
-
-	
+	float flAlpha;
 };
 
+typedef struct
+{
+    GLuint id;
+    int width, height;
+} TEXTURE;

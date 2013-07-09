@@ -9,8 +9,8 @@ Shape::Shape(std::size_t idExt, vector_3d c) : id(idExt), vCenter(c), material()
 }
 
 Shape::Shape(std::size_t idExt, vector_3d c, 
-		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine) :
-id(idExt), vCenter(c), material(ambient, diffuse, specular, shine)
+		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) :
+id(idExt), vCenter(c), material(ambient, diffuse, specular, shine, alpha)
 {
 }
 

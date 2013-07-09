@@ -56,6 +56,9 @@ private:
 		return (degtheta);
 	}
 
+	// Data load.
+	std::tr1::shared_ptr<TEXTURE> loadTexture(std::string fileName);// Factory function
+
 	// Private members.
 private:
 	enum {BALL, WALL, LEFT_PADDLE};	// enum hack.
@@ -93,6 +96,11 @@ private:
 
 	// A vector of pointers to Shapes. Ball is stored in the 1st item.	
 	std::vector<std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.
+
+	// Data.
+	// Textures.
+	std::string strBallTexture;
+	std::vector<std::tr1::shared_ptr<TEXTURE> > textures;
 
 	// Game logic related.
 	bool bRunning;			// True if the game is going on.

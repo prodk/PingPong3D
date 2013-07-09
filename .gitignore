@@ -7,3 +7,4 @@ dlls
 ipch
 *.suo
 *.user
+data*

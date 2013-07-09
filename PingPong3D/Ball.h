@@ -8,7 +8,8 @@
 class Ball : public Shape
 {
 public:
-	Ball(std::size_t idExt, vector_3d center, float radius, vector_3d velocity);
+	Ball(std::size_t idExt, vector_3d center, float radius, vector_3d velocity,
+		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha);
 	~Ball(void);
 
 	// Overriden virtual functions.
