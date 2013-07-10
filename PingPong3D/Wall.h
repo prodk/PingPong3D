@@ -28,7 +28,33 @@ protected:
 
 	int polygonMode;
 
+	bool bDrawSpot;
+	vector_3d vSpot;
+	bool ptInWall(const vector_3d &pt) const;
+	virtual void drawSpot();
+	bool spotOnWall(Shape *s);
+
 	void setupVertices();
+
+	// Change this function later:
+// Save vertices to an array and maybe use a display list.
+// Add more points to the array.
+// Maybe make it nonmember because it is also used in Wall.
+void drawCircle(float radius)
+{
+	const float DEG2RAD = 3.14159/180;
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glBegin(GL_POLYGON); 
+	for (float i=0.; i < 360.; i+=0.5)
+	{
+		float degInRad = i*DEG2RAD;
+		glNormal3f(0.0, 0.0, 1.0);
+		glVertex3f(cos(degInRad)*radius, sin(degInRad)*radius, 0.0);
+	}
+
+	glEnd();
+}
 };
 
 // Absorbing wall is a Wall that doesn't reflect.
@@ -38,4 +64,5 @@ public:
 	AbsorbingWall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n);
 	~AbsorbingWall(void);
 	void collide(Shape *s);
+	void drawSpot();
 };

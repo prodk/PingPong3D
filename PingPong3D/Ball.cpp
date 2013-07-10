@@ -92,3 +92,8 @@ void Ball::setVelocity(vector_3d n)
 	if( std::fabs(n[2]) > 0.0f )
 		vVelocity[2] *= -1.0f;
 }
+
+vector_3d Ball::getVelocity() const
+{
+	return vVelocity;
+}

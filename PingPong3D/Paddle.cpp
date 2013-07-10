@@ -10,6 +10,9 @@ Paddle::Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
 	slices(32), stacks(32)
 {
 	vVelocity = vector_3d(0., 0., 0.);
+	// Red spot-related.
+	bDrawSpot = false;
+	vSpot = vCenter;
 }
 
 Paddle::~Paddle(void)
@@ -23,9 +26,7 @@ float Paddle::getSize() const
 
 void Paddle::draw()
 {
-	glPushMatrix();
-
-	material.setValues();	
+	glPushMatrix();	
 
 	// !Move quadrics creation to the constructor!
 	GLUquadricObj *quadratic;
@@ -35,6 +36,13 @@ void Paddle::draw()
 	glTranslatef(vCenter[0]-0.5*flHeight, vCenter[1], vCenter[2]);	// Translate to the wall.
 	//glTranslatef(-0.5*flHeight, vCenter[1], vCenter[2]);
 	glRotatef(angle, 0.0f, 1.0f, 0.0f);
+
+	// Draw collision spot.
+	if(bDrawSpot){
+		drawSpot();
+	}
+
+	material.setValues();	
 	gluCylinder(quadratic, flRadius, flRadius, flHeight, slices, stacks);
 	
 	// Inner face of the paddle sylinder.
@@ -121,4 +129,20 @@ bool Paddle::ptInPaddle(const vector_3d &pt) const
 		(pt[2] >= vCenter[2] - flRadius) && (pt[2] <= vCenter[2] + flRadius))
 		return true;
 	return false;
+}
+
+void Paddle::drawSpot()
+{
+	glPushMatrix();
+	vector_3d ambient = vector_3d(1.0, 0.0, 0.0);
+	vector_3d diffuse = vector_3d(1.0, 0.0, 0.0);
+	vector_3d specular = vector_3d(1.0, 0.0, 0.0);
+	float alpha = 1.0;	// Opaque ball.
+	float shine = 0.;
+	Material m(ambient, diffuse, specular, shine, alpha);
+	m.setValues();
+
+	glTranslatef(0., 0., 1.01*flHeight);
+	drawCircle(0.1*flRadius);
+	glPopMatrix();
 }

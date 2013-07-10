@@ -6,6 +6,11 @@ Wall::Wall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n):
 	Shape(idExt, center), width(w), height(h), vNormal(n), numOfVerteces(4)
 {
 	polygonMode = GL_LINE;
+
+	// Red spot-related.
+	bDrawSpot = false;
+	vSpot = vCenter;		// Reconsider this!
+
 	setupVertices();
 }
 
@@ -28,18 +33,21 @@ void Wall::setupVertices()
 
 	int i = 0, j = 1, k = 2;
 	// We assume that walls are perpendicular to axes.
+	// Normal to x, width in z, height in y.
 	if( std::fabs(vNormal[0]) > 0.0f ) {
 		v[0] = vector_3d(vCenter[i], vCenter[j] + 0.5*height, vCenter[k] - 0.5*width);
 		v[1] = vector_3d(vCenter[i], vCenter[j] + 0.5*height, vCenter[k] + 0.5*width);
 		v[2] = vector_3d(vCenter[i], vCenter[j] - 0.5*height, vCenter[k] + 0.5*width);
 		v[3] = vector_3d(vCenter[i], vCenter[j] - 0.5*height, vCenter[k] - 0.5*width);
 	}
+	// Normal to y, width in x, height in z.
 	else if( std::fabs(vNormal[1]) > 0.0 ) {
 		v[0] = vector_3d(vCenter[i]- 0.5*width, vCenter[j] , vCenter[k] + 0.5*height);
 		v[1] = vector_3d(vCenter[i]+ 0.5*width, vCenter[j] , vCenter[k] + 0.5*height);
 		v[2] = vector_3d(vCenter[i]+ 0.5*width, vCenter[j] , vCenter[k] - 0.5*height);
 		v[3] = vector_3d(vCenter[i]- 0.5*width, vCenter[j] , vCenter[k] - 0.5*height);
 	}
+	// Normal to z, width in x, height in y.
 	else if( std::fabs(vNormal[2]) > 0.0 ) {
 		v[0] = vector_3d(vCenter[i]- 0.5*width, vCenter[j] + 0.5*height, vCenter[k] );
 		v[1] = vector_3d(vCenter[i]+ 0.5*width, vCenter[j] + 0.5*height, vCenter[k] );
@@ -55,7 +63,12 @@ float Wall::getSize() const
 
 void Wall::draw()
 {
-	//glColor3f (0.0, 0.0, 1.0);	
+	//glColor3f (0.0, 0.0, 1.0);
+
+	// Draw collision spot.
+	if(bDrawSpot){
+		drawSpot();
+	}
 
 	material.setValues();
 
@@ -97,7 +110,86 @@ void Wall::collide(Shape * s)
 	if(b >= a){	// Collision occurred.
 		s->setVelocity(vNormal);
 	}
+
+	// Define whether to draw the intersection point.
+	bDrawSpot = spotOnWall(s);	
 }
+
+void Wall::drawSpot()
+{
+	glPushMatrix();
+	// Red opaque spot.
+	vector_3d ambient = vector_3d(0.0, 1.0, 0.0);
+	vector_3d diffuse = vector_3d(0.0, 1.0, 0.0);
+	vector_3d specular = vector_3d(0.0, 1.0, 0.0);
+	float alpha = 1.0;	// Opaque ball.
+	float shine = 0.;
+	Material m(ambient, diffuse, specular, shine, alpha);
+	m.setValues();
+
+	glTranslatef(vSpot[0], vSpot[1], vSpot[2]);
+	//drawCircle(0.009*height);
+	glutSolidSphere (0.005*height, 32, 32);
+	glPopMatrix();
+}
+
+bool Wall::ptInWall(const vector_3d &pt) const
+{
+	// If normal is to x, then check y and z.
+	if( std::fabs(vNormal[0]) > 0.0f ){
+		if( (pt[1] >= vCenter[1] - 0.5*height) &&
+			(pt[1] <= vCenter[1] + 0.5*height) &&
+			(pt[2] >= vCenter[2] - 0.5*width) &&
+			(pt[2] <= vCenter[2] + 0.5*width)
+		  )
+		  return true;
+	}
+
+	// If normal is to y, then check x and z.
+	if( std::fabs(vNormal[1]) > 0.0f ){
+		if( (pt[2] >= vCenter[2] - 0.5*height) &&
+			(pt[2] <= vCenter[2] + 0.5*height) &&
+			(pt[0] >= vCenter[0] - 0.5*width) &&
+			(pt[0] <= vCenter[0] + 0.5*width)
+		  )
+		  return true;
+	}
+
+	// If normal is to z, then check x and y.
+	if( std::fabs(vNormal[2]) > 0.0f ){
+		if( (pt[1] >= vCenter[1] - 0.5*height) &&
+			(pt[1] <= vCenter[1] + 0.5*height) &&
+			(pt[0] >= vCenter[0] - 0.5*width) &&
+			(pt[0] <= vCenter[0] + 0.5*width)
+		  )
+		  return true;
+	}
+
+	return false;
+}
+
+bool Wall::spotOnWall(Shape *s)
+{
+	bool result = false;
+
+	vector_3d c = s->getCenter();
+
+	vector_3d vel = s->getVelocity();
+	float denom = cml::dot(vel, vNormal);
+	if(denom > 0)
+	{
+		float nom = cml::dot(vCenter - c, vNormal);
+		if(nom != 0)
+		{
+			vSpot = (nom/denom)*vel + c;
+			if(ptInWall(vSpot))
+				result = true;
+		}
+	}// end if denom!=0
+
+	return result;
+}
+
 
 // AbsorbingWall implementation.
 AbsorbingWall::AbsorbingWall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n):
@@ -123,8 +215,30 @@ void AbsorbingWall::collide(Shape *s)
 		s->setVelocity(vNormal);			
 		s->move(dt, c, bReset);
 	}
+
+	// Reconsider this code duplication from Wall!
+	// Define whether to draw the intersection point.
+	bDrawSpot = spotOnWall(s);
 }
 
 AbsorbingWall::~AbsorbingWall(void)
 {
+}
+
+void AbsorbingWall::drawSpot()
+{
+	glPushMatrix();
+	// Red opaque spot.
+	vector_3d ambient = vector_3d(1.0, 0.0, 0.0);
+	vector_3d diffuse = vector_3d(1.0, 0.0, 0.0);
+	vector_3d specular = vector_3d(1.0, 0.0, 0.0);
+	float alpha = 1.0;	// Opaque ball.
+	float shine = 0.;
+	Material m(ambient, diffuse, specular, shine, alpha);
+	m.setValues();
+
+	glTranslatef(vSpot[0], vSpot[1], vSpot[2]);
+	//drawCircle(0.009*height);
+	glutSolidSphere (0.008*height, 32, 32);
+	glPopMatrix();
 }

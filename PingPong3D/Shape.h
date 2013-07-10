@@ -21,6 +21,7 @@ public:
 	virtual void move(float deltaTime, vector_3d dr, bool bReset);		// Virtual function, default: do nothing.
 	virtual void collide(Shape * s);		// Detect collision with another Shape.
 	virtual void setVelocity(vector_3d n);	// Change the direction of the velocity.
+	virtual vector_3d getVelocity() const;
 
 	// Pure virtual methods, all children have to implement them.
 	virtual void draw() = 0;				// Draw itself.

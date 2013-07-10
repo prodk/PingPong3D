@@ -8,7 +8,7 @@ GameApp::GameApp(void):
 		flLengthUnit(0.4f), bRunning(true), bGameOver(false), MAXHITS(64), selectRegion(5)
 {
 	// !Add function to init these vars!
-	flBoxWidth = 1.6f;		// Add these to the constructor and use when init walls.
+	flBoxWidth = 1.3f;		// Add these to the constructor and use when init walls.
 	flBoxHeight = 1.0f;
 	flBoxThickness = 0.5f;
 	xViewOld = xView = 0.;
@@ -99,6 +99,10 @@ int GameApp::setupSDL()
 void GameApp::loadData()
 {
 	// Load sound and textures here.
+	//textures.resize(1);
+	//std::tr1::shared_ptr<TEXTURE> tmp;
+	//tmp = loadTexture("../data/textures/wood.png");
+	//textures[0] = tmp;
 }
 
 std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
@@ -127,7 +131,7 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     } 
     else 
     {
-        //printf("Could not determine pixel format of image: %s", fileName.c_str());
+        printf("Could not determine pixel format of image: %s", fileName.c_str());
         SDL_FreeSurface(surface);
         return NULL;
     }
@@ -142,8 +146,8 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     glTexImage2D(GL_TEXTURE_2D, 0, mode, surface->w, surface->h, 0, mode, GL_UNSIGNED_BYTE, surface->pixels);
 
     // Set up texture filters.
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+   // glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 
 
     // Allocate memory for Texture structure and fill it up.
@@ -159,8 +163,7 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     // Set up TEXTURE structure.
     texture->width = surface->w;
     texture->height = surface->h;
-    texture->id = textureid;
-    
+    texture->id = textureid;    
     
     // Clean up.
     SDL_FreeSurface(surface);
@@ -181,7 +184,7 @@ void GameApp::addShapes()
 	float alpha = 1.0;	// Opaque ball.
 	float shine = 0.;
 	vector_3d center(0.0f, 0.0f, 0.0f);			// Ball starts at the center of the scene.
-	vector_3d velocity(5e-03f, 6e-03f, 5e-03f);		// Random initial velocity.
+	vector_3d velocity(-4e-03f, -2e-03f, 2e-03f);		// Random initial velocity.
 	Ball* pBall = new Ball(BALL, center, 0.05*flBoxHeight, velocity,
 		ambient, diffuse, specular, shine, alpha);
 	Shape* pShape = dynamic_cast<Shape*>(pBall);	
@@ -316,7 +319,7 @@ void GameApp::setupRenderingContext()
    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
    //glAlphaFunc(GL_GREATER, (GLclampf)0.01); // Skip pixels which alpha channel is lower than 0.01.
-   glEnable(GL_TEXTURE_2D);  // Enable 2D texturing.
+   //glEnable(GL_TEXTURE_2D);  // Enable 2D texturing.
 
    glEnable(GL_ALPHA_TEST);  // Enable Alpha.
 
@@ -345,8 +348,8 @@ void GameApp::setupMatrices()
     
 	
     // Reset texture view matrix stack.
-    //glMatrixMode(GL_TEXTURE);
-    //glLoadIdentity();
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
 }
 
 void GameApp::setupTimers()
@@ -449,23 +452,35 @@ void GameApp::doDrawing()
 // Here working and understood code starts.
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 	glClear (GL_COLOR_BUFFER_BIT);
+
+
+	/// Background.
+	//enableOrtho2D();
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
+		//GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
+		//GL_NEAREST);
+	//glEnable(GL_TEXTURE_2D);  // Enable 2D texturing.
+	//draw2DTextureEx(0., 0., -2.0f, 2.0f, textures[0].get());
+	//glDisable(GL_TEXTURE_2D);
+
+	//disableOrtho2D();
 	//glColor3f (1.0, 0.0, 1.0);
 	glLoadIdentity ();             // Clear the current matrix.
 	// Move camera to the point (0,0,5) in eye coords, look at point (0,0,0), 
 	// camera orientation - normal is along (0,1,0)
 	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	// Rotate scene a bit around y and then around new x.
-	//glRotatef(-15.0f, 0.0f, 1.0f, 0.0f);
+	
 	glRotatef(angleView, 0.0f, 1.0f, 0.0f);
 	//glRotatef(3.0f, 1.0f, 0.0f, 0.0f);
 
-	// Bigger sphere.
-	//glutSolidSphere (1., 32, 32);	
+	
 
 	drawAxes();
 
-	//glColor3f (1.0, 1.0, 1.0);
-	//glutWireCube (2.0);
+	
 	
 	// Draw all the shapes.
 	for(std::size_t i = 0; i < shapes.size(); i++){
@@ -751,3 +766,45 @@ int GameApp::pickObject(int x, int y)
    
 	return iFigureType;
 }
+
+//
+//void GameApp::draw2DTextureEx(float _x, float _y, float _z, float _alpha,  TEXTURE* _tex) 
+//{
+//    /* only use when currently rendering in ortho projection matrix */
+//    //if(rendering_ortho)
+//    //{
+//        /* Temporarily disable lighting */
+//        glDisable(GL_LIGHTING);
+//        
+//        //cleanObject();
+//        glTranslatef(_x, _y, _z);
+//        glScalef(_tex->width, _tex->height, 1.0f); /* Blow up quad to texture size */
+//        glBindTexture(GL_TEXTURE_2D, _tex->id);
+//        /* Do proper blending with alpha channel */
+//        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
+//        
+//        glColor4f ( 1.0f, 1.0f, 1.0f, _alpha );
+//        
+//        glEnable(GL_TEXTURE_2D);
+//        glBegin(GL_QUADS);
+//            /* top left */
+//            glTexCoord2f(0, 0);
+//            glVertex2f(0, 0);
+//            
+//            /* bottom left */
+//            glTexCoord2f(0, 1);
+//            glVertex2f(0, 1);
+//    
+//            /* bottom right */
+//            glTexCoord2f(1, 1);
+//            glVertex2f(1, 1);
+//            
+//            /* top right */
+//            glTexCoord2f(1, 0);
+//            glVertex2f(1, 0);
+//        glEnd();  
+//        glDisable(GL_TEXTURE_2D);
+//        
+//        glEnable(GL_LIGHTING);
+//    //}
+//}

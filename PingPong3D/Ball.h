@@ -19,6 +19,7 @@ public:
 		vector_3d dr, bool bReset);	// Change center position. bReset - set vCenter to origin.
 	void collide(Shape *);			// Do nothing for Ball.
 	void setVelocity(vector_3d n);	// Reverse the velocity after a collision.
+	vector_3d getVelocity() const;
 
 private:	// id and vCenter are inherited from the Shape.
 	float radius;

@@ -31,7 +31,8 @@ private:
 	vector_3d vVelocity;
 
 	// Rendering-related.
-	//Material material;
+	bool bDrawSpot;
+	vector_3d vSpot;
 
 	const int slices;
 	const int stacks;
@@ -39,10 +40,12 @@ private:
 	// Private methods
 private:
 	bool ptInPaddle(const vector_3d &pt) const;
+	void drawSpot();
 
 // Change this function later:
 // Save vertices to an array and maybe use a display list.
 // Add more points to the array.
+// Maybe make it nonmember because it is also used in Wall.
 void drawCircle(float radius)
 {
 	const float DEG2RAD = 3.14159/180;

@@ -59,6 +59,8 @@ private:
 	// Data load.
 	std::tr1::shared_ptr<TEXTURE> loadTexture(std::string fileName);// Factory function
 
+	//void draw2DTextureEx(float _x, float _y, float _z, float _alpha,  TEXTURE* _tex);
+
 	// Private members.
 private:
 	enum {BALL, WALL, LEFT_PADDLE};	// enum hack.
@@ -99,7 +101,7 @@ private:
 
 	// Data.
 	// Textures.
-	std::string strBallTexture;
+	//std::string strBallTexture;
 	std::vector<std::tr1::shared_ptr<TEXTURE> > textures;
 
 	// Game logic related.

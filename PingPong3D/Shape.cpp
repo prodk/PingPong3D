@@ -41,3 +41,8 @@ void Shape::collide(Shape * s)
 void Shape::setVelocity(vector_3d n)
 {
 }
+
+vector_3d Shape::getVelocity() const
+{
+	return vector_3d(0.0, 0.0, 0.0);
+}
