@@ -12,7 +12,9 @@ GameApp::GameApp(void):
 	flBoxHeight = 1.0f;
 	flBoxThickness = 0.5f;
 	xViewOld = xView = 0.;
-	angleView = 115.;		// Initial angle (around y) of the view.
+	angleViewY = 115.;		// Initial angle (around y) of the view.
+	angleViewZ = 0.;
+	flScaleAll = 1.;
 	bPaddlePicked = false;
 
 	xPaddleOld = yPaddleOld = 0.;
@@ -473,14 +475,11 @@ void GameApp::doDrawing()
 	// camera orientation - normal is along (0,1,0)
 	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	
-	glRotatef(angleView, 0.0f, 1.0f, 0.0f);
-	//glRotatef(3.0f, 1.0f, 0.0f, 0.0f);
+	glRotatef(angleViewY, 0.0f, 1.0f, 0.0f);
+	glRotatef(angleViewZ, 0.0f, 0.0f, 1.0f);
+	glScalef(flScaleAll, flScaleAll,flScaleAll);
 
-	
-
-	drawAxes();
-
-	
+	drawAxes();	
 	
 	// Draw all the shapes.
 	for(std::size_t i = 0; i < shapes.size(); i++){
@@ -577,7 +576,13 @@ void GameApp::handleMouseButtonDown(const SDL_Event& sdle)
 		}
 		xViewOld = sdle.button.x;
 		break;
-	}
+	case SDL_BUTTON_WHEELUP:
+		angleViewZ -= 0.3;			// rotate around the horizontal axis.
+		break;
+	case SDL_BUTTON_WHEELDOWN:
+		angleViewZ += 0.3;
+		break;
+	}// end switch
 }
 
 void GameApp::handleMouseButtonUp(const SDL_Event& sdle)
@@ -597,7 +602,7 @@ void GameApp::handleMouseMotion(const SDL_Event& sdle)
 	case SDL_BUTTON_LEFT:
 // !Add later: Rotate view only if no objects are selected and bPaddlePicked == false.
 		if(!bPaddlePicked){
-			angleView += sdle.motion.x - xViewOld;
+			angleViewY += sdle.motion.x - xViewOld;
 			xViewOld = sdle.motion.x;
 		}
 		else{
@@ -617,8 +622,19 @@ void GameApp::handleKeyDown(const SDL_Event& sdle)
 	switch(sdle.key.keysym.sym)
 	{
 	case SDLK_EQUALS:		// Reset view.
-		angleView = 115;
+		angleViewY = 115;
+		angleViewZ = 0.;
+		flScaleAll = 1.;
 		break;
+
+	case SDLK_p:	 //Scale.
+		flScaleAll += 0.01;
+		break;
+
+	case SDLK_m:
+		flScaleAll -= 0.01;
+		break;
+
 	case SDLK_ESCAPE:
 		bRunning = false;
 		break;
@@ -731,7 +747,10 @@ int GameApp::pickObject(int x, int y)
 	// camera orientation - normal is along (0,1,0)
 	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	// Rotate scene a bit around y and then around new x.
-	glRotatef(angleView, 0.0f, 1.0f, 0.0f);	
+	glRotatef(angleViewY, 0.0f, 1.0f, 0.0f);
+	glRotatef(angleViewZ, 0.0f, 0.0f, 1.0f);
+	glScalef(flScaleAll, flScaleAll,flScaleAll);
+
 	drawAxes();
 
 	glDisable(GL_LIGHTING);

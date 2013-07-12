@@ -75,8 +75,10 @@ private:
 
 	// View rotation with mouse.
 	float xViewOld;			// Vars for rotate view.
-	float xView;
-	float angleView;		// angle to rotate the view.
+	float xView;	//! Check whether this var is used in the code!
+	float angleViewY;		// Angle to rotate the view around Y.
+	float angleViewZ;		// Rotate view around X.
+	float flScaleAll;
 
 	float xPaddleOld;
 	float yPaddleOld;
