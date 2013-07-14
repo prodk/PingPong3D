@@ -6,13 +6,15 @@
 #include "Ball.h"
 #include "Wall.h"
 #include "Paddle.h"
+#include "Logic.h"
+#include "SdlScreen.h"
 
 class GameApp
 {
 public:
 	GameApp(void);
 	~GameApp(void);
-	int play();
+	void manageGame();	
 
 	// Private methods.
 private:
@@ -29,6 +31,8 @@ private:
 
 	void addShapes();
 
+	void play();				// Play the game.
+
 	// SDL-specific.
 	int setupSDL();
 	void handleKeyDown(const SDL_Event& sdle );
@@ -43,6 +47,9 @@ private:
 	void setupMatrices();	// Init transforms: modelview, projection and other matrices.
 	void doDrawing();
 	void drawAxes();
+	void initView();		// Avoid code duplication in doDrawing() and pickObjects().
+	void initResize();		// Avoid code dupl. in setupMatrices() and handleResize().
+
 	void rotateView(float dx);
 
 	int pickObject(int x, int y);		// Returns type of the object under cursor.
@@ -88,6 +95,9 @@ private:
 	const int MAXHITS;
 	const int selectRegion;	// region for picking.
 
+	SDL_Surface* surface;
+	std::tr1::shared_ptr<OptionsScreen> optionsScreen;
+
 	// Box sizes.
 	float flBoxWidth;		// Add these to the constructor and use when init walls.
 	float flBoxHeight;
@@ -107,8 +117,7 @@ private:
 	std::vector<std::tr1::shared_ptr<TEXTURE> > textures;
 
 	// Game logic related.
-	bool bRunning;			// True if the game is going on.
-	bool bGameOver;			// True if the player has lost.
+	Logic logic;
 	float deltaTime;
 	Uint32 lastMillisec;
 	SDL_Event sdlEvent;

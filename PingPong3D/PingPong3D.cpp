@@ -6,7 +6,7 @@
 int main(int argc, char **argv)
 {
 	GameApp game;
-	game.play();
+	game.manageGame();
 
 	return 0;
 }

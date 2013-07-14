@@ -5,7 +5,8 @@
 
 GameApp::GameApp(void):
 	flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong"), flZaxisDistance(2.2f),
-		flLengthUnit(0.4f), bRunning(true), bGameOver(false), MAXHITS(64), selectRegion(5)
+		flLengthUnit(0.4f), MAXHITS(64), selectRegion(5),
+		logic(true, true, false, false) // Show options, running/paused/over.
 {
 	// !Add function to init these vars!
 	flBoxWidth = 1.3f;		// Add these to the constructor and use when init walls.
@@ -22,6 +23,11 @@ GameApp::GameApp(void):
 	initLibraries();	// !Check return value later.
 	loadData();
 	addShapes();
+
+	// Init options screen.
+	optionsScreen = 
+		std::tr1::shared_ptr<OptionsScreen>(
+		new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures[0].get()) );
 }
 
 GameApp::~GameApp(void)
@@ -32,7 +38,7 @@ GameApp::~GameApp(void)
 int GameApp::initLibraries()
 {
 	// Initialize SDL.
-	if( setupSDL() < 0 ){ return -1; }
+	if( setupSDL() < 0 ){ return -1; }	// Change this !
     
     // OpenGL.
     setupRenderingContext();
@@ -91,7 +97,7 @@ int GameApp::setupSDL()
         quit_tutorial( 1 );*/
     //}
 
-    SDL_SetVideoMode((int)flScreenWidth, (int)flScreenHeight, 0, 
+    surface = SDL_SetVideoMode((int)flScreenWidth, (int)flScreenHeight, 0, 
 					SDL_OPENGL | SDL_SWSURFACE | SDL_RESIZABLE | SDL_DOUBLEBUF);
 	SDL_WM_SetCaption(strGameName.c_str(), strGameName.c_str());
 
@@ -101,10 +107,10 @@ int GameApp::setupSDL()
 void GameApp::loadData()
 {
 	// Load sound and textures here.
-	//textures.resize(1);
-	//std::tr1::shared_ptr<TEXTURE> tmp;
-	//tmp = loadTexture("../data/textures/wood.png");
-	//textures[0] = tmp;
+	textures.resize(1);
+	std::tr1::shared_ptr<TEXTURE> tmp;
+	tmp = loadTexture("car.png");
+	textures[0] = tmp;
 }
 
 std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
@@ -145,11 +151,13 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     glBindTexture(GL_TEXTURE_2D, textureid);
 
     // Read from the sdl surface and put it into an opengl texture.
-    glTexImage2D(GL_TEXTURE_2D, 0, mode, surface->w, surface->h, 0, mode, GL_UNSIGNED_BYTE, surface->pixels);
+	gluBuild2DMipmaps( GL_TEXTURE_2D, 3, surface->w, surface->h,
+                       mode, GL_UNSIGNED_BYTE, surface->pixels );
+    //glTexImage2D(GL_TEXTURE_2D, 0, mode, surface->w, surface->h, 0, mode, GL_UNSIGNED_BYTE, surface->pixels);
 
     // Set up texture filters.
     //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
-   // glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
 
 
     // Allocate memory for Texture structure and fill it up.
@@ -338,17 +346,9 @@ void GameApp::setupRenderingContext()
 void GameApp::setupMatrices()
 { 
 // Here working and understood code starts.	
-    glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
-	glLoadIdentity ();				// Clean up the projection matrix.
-	double angle = calculateAngle(flLengthUnit, flZaxisDistance);	// View frustum angle.
-	float ratio = (float) flScreenWidth / (float) flScreenHeight;
-	gluPerspective(angle, ratio, 1.0, 1024.0);	// Set up the projection matrix with the same units in x and y.
-	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
-	glLoadIdentity();
+	initResize();
 
-// Here working and understood code ends.
-    
-	
+// Here working and understood code ends.	
     // Reset texture view matrix stack.
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
@@ -393,17 +393,33 @@ void GameApp::setupNewGame()
 	*/
 }
 
-int GameApp::play()
+void GameApp::play()
 {
-	while(bRunning)
-    {  
-        doLogic();
+	//while(logic.bGameRunning)
+    //{  
+		if(!logic.bGamePaused)
+			doLogic();
+
         doDrawing();
         
-        swapBuffers();
-    }
+        //swapBuffers();
+    //}
+}
 
-	return 0;
+void GameApp::manageGame()
+{
+	while(logic.bAppRunning) 
+	{
+		if(logic.bShowOptions){
+			doInput(); 
+			optionsScreen->show();
+			//swapBuffers();
+		}
+		else
+			play();	
+
+		swapBuffers();
+	}
 }
 
 void GameApp::doLogic()
@@ -413,7 +429,7 @@ void GameApp::doLogic()
     updateTimers();
     
     // If the player hasn't lost, do stuff.
-    if(!bGameOver)
+    if(!logic.bGameOver)
     {		
 		// Move the shapes.
 		bool bReset = false;
@@ -452,34 +468,10 @@ void GameApp::doLogic()
 void GameApp::doDrawing()
 {	
 // Here working and understood code starts.
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
-	glClear (GL_COLOR_BUFFER_BIT);
+	initResize();
+	initView();
 
-
-	/// Background.
-	//enableOrtho2D();
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 
-		//GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 
-		//GL_NEAREST);
-	//glEnable(GL_TEXTURE_2D);  // Enable 2D texturing.
-	//draw2DTextureEx(0., 0., -2.0f, 2.0f, textures[0].get());
-	//glDisable(GL_TEXTURE_2D);
-
-	//disableOrtho2D();
-	//glColor3f (1.0, 0.0, 1.0);
-	glLoadIdentity ();             // Clear the current matrix.
-	// Move camera to the point (0,0,5) in eye coords, look at point (0,0,0), 
-	// camera orientation - normal is along (0,1,0)
-	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	
-	glRotatef(angleViewY, 0.0f, 1.0f, 0.0f);
-	glRotatef(angleViewZ, 0.0f, 0.0f, 1.0f);
-	glScalef(flScaleAll, flScaleAll,flScaleAll);
-
-	drawAxes();	
+	// Code up to here put into the InitView method. Use it also in the pickObjects.
 	
 	// Draw all the shapes.
 	for(std::size_t i = 0; i < shapes.size(); i++){
@@ -490,7 +482,6 @@ void GameApp::doDrawing()
 	glFlush();
 
 // End of working and understood code.
-
                 
     /************************************************************
     /* Draw HUD (score, star rank etc)
@@ -556,7 +547,7 @@ void GameApp::doInput()
 		break;			
 
 	case SDL_QUIT:
-		bRunning = false;
+		logic.bAppRunning = false;
 		break;
 	}
 }
@@ -575,6 +566,9 @@ void GameApp::handleMouseButtonDown(const SDL_Event& sdle)
 			yPaddleOld = sdle.button.y;
 		}
 		xViewOld = sdle.button.x;
+//!Debug.
+		//logic.bShowOptions = !logic.bShowOptions;
+//!End debug.
 		break;
 	case SDL_BUTTON_WHEELUP:
 		angleViewZ -= 0.3;			// rotate around the horizontal axis.
@@ -636,7 +630,7 @@ void GameApp::handleKeyDown(const SDL_Event& sdle)
 		break;
 
 	case SDLK_ESCAPE:
-		bRunning = false;
+		logic.bAppRunning = false;
 		break;
 
 		// Arrow Key Style
@@ -673,6 +667,14 @@ void GameApp::handleKeyUp(const SDL_Event& sdle)
 		//printf("Mouse button %d pressed at (%d,%d)\n",
 		//event.button.button, event.button.x, event.button.y);
 		break;
+
+	case SDLK_b:
+		if(logic.bShowOptions)
+			logic.bShowOptions = false;
+		else
+			logic.bShowOptions=true;
+		break;
+		swapBuffers();
 		// Arrow Key Style
 	case SDLK_LEFT:                
 		break;
@@ -696,6 +698,7 @@ void GameApp::handleKeyUp(const SDL_Event& sdle)
 
 void GameApp::swapBuffers()
 {	
+	glFlush();
     SDL_GL_SwapBuffers(); // Put it on the screen.
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 }
@@ -706,12 +709,8 @@ void GameApp::handleResize(const SDL_Event& sdle)
 	glViewport (0, 0, (GLsizei) sdle.resize.w, (GLsizei) sdle.resize.h);
 	flScreenWidth = sdle.resize.w;
 	flScreenHeight = sdle.resize.h;
-	glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
-	glLoadIdentity ();				// Clean up the projection matrix.
-	gluPerspective(calculateAngle(flLengthUnit, flZaxisDistance), 
-		flScreenWidth/flScreenHeight, 1.0, 1024.0);	// Set up the projection matrix with the same units in x and y.
-	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
-	glLoadIdentity ();
+
+	initResize();		// Avoid code duplication with setup matrices.
 }
 
 void GameApp::shutDown()
@@ -731,6 +730,10 @@ void GameApp::shutDown()
     // shutdown apis
     FSOUND_Close();
 	*/
+	if(surface != NULL){
+		SDL_FreeSurface(surface);
+		surface = NULL;
+	}
     SDL_Quit();
 }
 
@@ -739,19 +742,7 @@ int GameApp::pickObject(int x, int y)
 {
 	// Render the scene into the back buffer with colors corresponding to
 	// names of the objects.
-
-	// Code is from doDrawing except colors are handled differently.
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
-	glLoadIdentity ();             // Clear the current matrix.
-	// Move camera to the point (0,0,5) in eye coords, look at point (0,0,0), 
-	// camera orientation - normal is along (0,1,0)
-	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	// Rotate scene a bit around y and then around new x.
-	glRotatef(angleViewY, 0.0f, 1.0f, 0.0f);
-	glRotatef(angleViewZ, 0.0f, 0.0f, 1.0f);
-	glScalef(flScaleAll, flScaleAll,flScaleAll);
-
-	drawAxes();
+	initView();		// Avoid code duplication with doDrawing().
 
 	glDisable(GL_LIGHTING);
 	// Draw all the shapes.
@@ -760,7 +751,7 @@ int GameApp::pickObject(int x, int y)
 		int name = shapes[i]->getId();
 		//name = 0.2*name;
 			
-		glColor3f (0.3*name, 0., 0.);
+		glColor3f (0.3*name, 0., 0.);		// !Reconsider this later! May be too simple.
 		shapes[i]->draw();
 	}
 
@@ -784,6 +775,32 @@ int GameApp::pickObject(int x, int y)
 	glEnable(GL_LIGHTING);
    
 	return iFigureType;
+}
+
+void GameApp::initView()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
+	//glClear (GL_COLOR_BUFFER_BIT);
+	glLoadIdentity ();             // Clear the current matrix.
+	// Move camera to the point (0,0,5) in eye coords, look at point (0,0,0), 
+	// camera orientation - normal is along (0,1,0)
+	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	
+	glRotatef(angleViewY, 0.0f, 1.0f, 0.0f);
+	glRotatef(angleViewZ, 0.0f, 0.0f, 1.0f);
+	glScalef(flScaleAll, flScaleAll,flScaleAll);
+
+	drawAxes();	
+}
+
+void GameApp::initResize()
+{
+	glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
+	glLoadIdentity ();				// Clean up the projection matrix.
+	gluPerspective(calculateAngle(flLengthUnit, flZaxisDistance), 
+		flScreenWidth/flScreenHeight, 1.0, 1024.0);	// Set up the projection matrix with the same units in x and y.
+	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
+	glLoadIdentity ();
 }
 
 //
