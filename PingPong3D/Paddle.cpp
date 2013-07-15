@@ -13,10 +13,13 @@ Paddle::Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
 	// Red spot-related.
 	bDrawSpot = false;
 	vSpot = vCenter;
+
+	quadratic = gluNewQuadric();
 }
 
 Paddle::~Paddle(void)
 {
+	gluDeleteQuadric(quadratic);	// Important: memory leak!
 }
 
 float Paddle::getSize() const
@@ -29,8 +32,8 @@ void Paddle::draw()
 	glPushMatrix();	
 
 	// !Move quadrics creation to the constructor!
-	GLUquadricObj *quadratic;
-	quadratic = gluNewQuadric();
+	//GLUquadricObj *quadratic;
+	//quadratic = gluNewQuadric();
 	gluQuadricDrawStyle (quadratic, GLU_FILL); 
 	//gluQuadricNormals (quadratic, GLU_SMOOTH);
 	glTranslatef(vCenter[0]-0.5*flHeight, vCenter[1], vCenter[2]);	// Translate to the wall.
@@ -72,7 +75,7 @@ void Paddle::draw()
 	glPopMatrix();
 
 	// Move quadrics deletion to the destructor!
-	gluDeleteQuadric(quadratic);	// Important: memory leak!
+	//gluDeleteQuadric(quadratic);	// Important: memory leak!
 
 
 	glPopMatrix();

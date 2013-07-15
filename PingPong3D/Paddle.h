@@ -34,6 +34,8 @@ private:
 	bool bDrawSpot;
 	vector_3d vSpot;
 
+	GLUquadricObj *quadratic;
+
 	const int slices;
 	const int stacks;
 

@@ -11,7 +11,7 @@ SdlScreen::~SdlScreen(void)
 {
 }
 
-void SdlScreen::doInput(Logic &l)
+void SdlScreen::doInput(Logic &l, SDL_Event sdlEvent)
 {
 }
 
@@ -24,10 +24,31 @@ void SdlScreen::doDrawing()
 OptionsScreen::OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t):
 	SdlScreen(w, h, s), textures(t)
 {
+	addButtons();
 }
 
 OptionsScreen::~OptionsScreen()
 {
+}
+
+void OptionsScreen::addButtons()
+{
+	guiObjects.resize(2);
+	float x = -0.5;
+	float y = 0.5;
+	float w = 1.;
+	float h = 1.;
+	
+	// Button 1.
+	Button* pButton = new Button(x, y, w, h, textures[0]->id);
+	GuiObject* pGuiObj = dynamic_cast<GuiObject*>(pButton);	
+	guiObjects[0] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
+
+	// Button 2.
+	y = -0.5;
+	pButton = new Button(x, y, w, h, textures[0]->id);	// The same texture id.
+	pGuiObj = dynamic_cast<GuiObject*>(pButton);	
+	guiObjects[1] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
 }
 
 void OptionsScreen::doDrawing()
@@ -42,6 +63,7 @@ void OptionsScreen::doDrawing()
 	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
 	glLoadIdentity ();	
 
+	
     // select modulate to mix texture with color for shading
     glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 
@@ -52,6 +74,7 @@ void OptionsScreen::doDrawing()
     glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );   
 
 	glEnable( GL_TEXTURE_2D );
+	/*
 	glBindTexture( GL_TEXTURE_2D, textures[0]->id );
 
 	glColor4f(1.0, 0., 0., 1.0);
@@ -64,24 +87,48 @@ void OptionsScreen::doDrawing()
 	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(1.0, 1.0, 0.0);
 	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, 1.0, 0.0);	
 	glEnd();
+	*/
+	for(std::size_t i = 0; i < guiObjects.size(); i++)
+		guiObjects[i]->draw();
 
 	glFlush();
+
+	glDisable( GL_TEXTURE_2D );
 
     glPopMatrix();
 }
 
-void OptionsScreen::doInput(Logic &l)
+void OptionsScreen::doInput(Logic &logic, SDL_Event sdlEvent)
 {
-	SDL_PollEvent(&sdlEvent); // check input
+	//SDL_PollEvent(&sdlEvent); // check input
 	        
     switch(sdlEvent.type)
     {
 	case SDL_MOUSEBUTTONDOWN:
-		handleMouseButtonDown(sdlEvent, l);
+		handleMouseButtonDown(sdlEvent, logic);
 		break;
 
+	//case SDL_KEYDOWN:
+		//handleKeyDown(sdlEvent, logic);
+		//break;
+
 	case SDL_QUIT:
-		l.bAppRunning = false;
+		logic.bAppRunning = false;
+		break;
+	}
+}
+
+void OptionsScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
+{	
+	// Check keyboard.
+ 	switch(sdle.key.keysym.sym)
+	{
+	case SDLK_h:
+		if(logic.bShowOptions)
+		{
+			logic.bShowOptions = false;
+			logic.bGamePaused = false;
+		}
 		break;
 	}
 }
@@ -94,21 +141,13 @@ void OptionsScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
 	case SDL_BUTTON_LEFT:
 		if(logic.bShowOptions){
 			logic.bShowOptions = false;
-			//glClear(GL_COLOR_BUFFER_BIT);
-			//doDrawing();
-			//swapBuffers();
-			//SDL_UpdateRect(surface, 0, 0, 0, 0);
-		}
-		else{			
-			logic.bShowOptions=true;
-			//glClear(GL_COLOR_BUFFER_BIT);
-			//optionsScreen->show();
-			//swapBuffers();
-			//SDL_UpdateRect(surface, 0, 0, 0, 0);
+			logic.bGamePaused = false;
 		}
 		break;
+
 	case SDL_BUTTON_WHEELUP:
 		break;
+
 	case SDL_BUTTON_WHEELDOWN:
 		break;
 	}// end switch
@@ -141,6 +180,9 @@ void PlayScreen::initMembers()
 
 	flZaxisDistance = 2.2f;
 	flLengthUnit = 0.4f;
+
+	flScreenWidth = flWidth;
+	flScreenHeight = flHeight;
 }
 
 void PlayScreen::addShapes()
@@ -234,22 +276,25 @@ void PlayScreen::addShapes()
 	leftPaddleIdx = 7;
 }
 
-void PlayScreen::doInput(Logic &logic)
+void PlayScreen::doInput(Logic &logic, SDL_Event sdlEvent)
 {
-	SDL_PollEvent(&sdlEvent); // check input
+	//SDL_PollEvent(&sdlEvent); // check input
 	        
     switch(sdlEvent.type)
     {
 	case SDL_MOUSEBUTTONDOWN:
-		handleMouseButtonDown(sdlEvent, logic);
+		if(!logic.bGamePaused)
+			handleMouseButtonDown(sdlEvent, logic);
 		break;
 
 	case SDL_MOUSEBUTTONUP:
-		handleMouseButtonUp(sdlEvent, logic);
+		if(!logic.bGamePaused)
+			handleMouseButtonUp(sdlEvent, logic);
 		break;
 
 	case SDL_MOUSEMOTION:
-		handleMouseMotion(sdlEvent, logic);
+		if(!logic.bGamePaused)
+			handleMouseMotion(sdlEvent, logic);
 		break;
 	
 	case SDL_KEYDOWN:
@@ -275,12 +320,9 @@ void PlayScreen::doDrawing()
 	// Here working and understood code starts.
 	initResize();
 	initView();
-
-	// Code up to here put into the InitView method. Use it also in the pickObjects.
 	
 	// Draw all the shapes.
 	for(std::size_t i = 0; i < shapes.size(); i++){
-		//glColor3f ((float)shapes[i]->getId(), 0.0, 0.0);
 		shapes[i]->draw();
 	}
 
@@ -317,13 +359,12 @@ void PlayScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
 			yPaddleOld = sdle.button.y;
 		}
 		xViewOld = sdle.button.x;
-//!Debug.
-		//logic.bShowOptions = !logic.bShowOptions;
-//!End debug.
 		break;
+
 	case SDL_BUTTON_WHEELUP:
 		angleViewZ -= 0.3;			// rotate around the horizontal axis.
 		break;
+
 	case SDL_BUTTON_WHEELDOWN:
 		angleViewZ += 0.3;
 		break;
@@ -345,13 +386,11 @@ void PlayScreen::handleMouseMotion(const SDL_Event& sdle, Logic &logic)
 	switch(sdle.motion.state)
 	{
 	case SDL_BUTTON_LEFT:
-// !Add later: Rotate view only if no objects are selected and bPaddlePicked == false.
 		if(!bPaddlePicked){
 			angleViewY += sdle.motion.x - xViewOld;
 			xViewOld = sdle.motion.x;
 		}
 		else{
-// !Check here whether the game is paused!
 			vector_3d dr(0., -0.0025*(sdle.motion.y - yPaddleOld), 
 				0.0025*(sdle.motion.x - xPaddleOld) );
 			shapes[leftPaddleIdx]->move(0., dr, false);
@@ -374,19 +413,10 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 		break;
 
 	case SDLK_b:
-		if(logic.bShowOptions){
-			logic.bShowOptions = false;
-			//glClear(GL_COLOR_BUFFER_BIT);
-			//doDrawing();
-			//swapBuffers();
-			//SDL_UpdateRect(surface, 0, 0, 0, 0);
-		}
-		else{			
-			logic.bShowOptions=true;
-			//glClear(GL_COLOR_BUFFER_BIT);
-			//optionsScreen->show();
-			//swapBuffers();
-			//SDL_UpdateRect(surface, 0, 0, 0, 0);
+		if(!logic.bShowOptions)
+		{
+			logic.bShowOptions = true;
+			logic.bGamePaused = true;
 		}
 		break;
 
@@ -400,7 +430,11 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 		break;
 
 	case SDLK_v:
-		logic.bGamePaused = !logic.bGamePaused;
+		logic.bGamePaused = true;
+		break;
+
+	case SDLK_SPACE:
+		logic.bGamePaused = false;
 		break;
 
 	case SDLK_ESCAPE:
@@ -485,7 +519,6 @@ int PlayScreen::pickObject(int x, int y)
 	for(std::size_t i = 0; i < shapes.size(); i++)
 	{
 		int name = shapes[i]->getId();
-		//name = 0.2*name;
 			
 		glColor3f (0.3*name, 0., 0.);		// !Reconsider this later! May be too simple.
 		shapes[i]->draw();
@@ -602,13 +635,12 @@ void PlayScreen::doLogic(const Logic &logic)
     //}   
 }
 
-void PlayScreen::play(Logic &logic)
+void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 {
-	doInput(logic);
+	doInput(logic, sdlEvent);
+	
 	if(!logic.bGamePaused)
 		doLogic(logic);
-
-	doDrawing();
 	
-	//swapBuffers();
+	doDrawing();	
 }

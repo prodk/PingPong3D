@@ -3,6 +3,7 @@
 
 #include "PingPong3D.h"
 
+// Entry point of the game.
 int main(int argc, char **argv)
 {
 	GameApp game;

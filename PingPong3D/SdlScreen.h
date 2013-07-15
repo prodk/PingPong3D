@@ -16,7 +16,7 @@ public:
 	virtual ~SdlScreen(void) = 0;
 
 	// Public methods which should be overriden. Inherit interfaces with the default implementation.
-	virtual void doInput(Logic &l);			// Keyboard/mouse.
+	virtual void doInput(Logic &l, SDL_Event sdlEvent);			// Keyboard/mouse.
 	virtual void doDrawing();
 
 	// Public methods that should not be overriden.
@@ -38,16 +38,19 @@ public:
 	~OptionsScreen(void);
 
 	// Overridden virtual functions.
-	void doInput(Logic &l);			// Keyboard/mouse.
+	void doInput(Logic &l, SDL_Event sdlEvent);			// Keyboard/mouse.
 	void doDrawing();
 
 	// OptionsScreen-specific methods.
 	
 private:
 	void handleMouseButtonDown(const SDL_Event& sdle, Logic &l);
+	void handleKeyDown(const SDL_Event& sdle, Logic &l);
+	void addButtons();
 
 private:
 	TEXTURE_PTR_ARRAY textures;
+	std::vector<std::tr1::shared_ptr<GuiObject> > guiObjects;
 };
 
 //________________________________
@@ -59,12 +62,12 @@ public:
 	~PlayScreen(void);
 
 	// Overridden virtual functions.
-	void doInput(Logic &l);			// Keyboard/mouse.
+	void doInput(Logic &l, SDL_Event sdlEvent);			// Keyboard/mouse.
 	void doDrawing();
 
 	// PlayScreen-specific methods.
 	void doLogic(const Logic &l);
-	void play(Logic &l);			// Play the game.
+	void play(Logic &l, SDL_Event sdlEvent);			// Play the game.
 	void addShapes();
 
 	// I/O
