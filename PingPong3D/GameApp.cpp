@@ -5,8 +5,8 @@
 
 GameApp::GameApp(void):
 	flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong"), flZaxisDistance(2.2f),
-		flLengthUnit(0.4f), MAXHITS(64), selectRegion(5),
-		logic(true, true, false, false) // Show options, running/paused/over.
+		flLengthUnit(0.4f), //MAXHITS(64), selectRegion(5),
+		logic(false, true, false, false) // Show options, running/paused/over.
 {
 	// !Add function to init these vars!
 	flBoxWidth = 1.3f;		// Add these to the constructor and use when init walls.
@@ -17,7 +17,6 @@ GameApp::GameApp(void):
 	angleViewZ = 0.;
 	flScaleAll = 1.;
 	bPaddlePicked = false;
-
 	xPaddleOld = yPaddleOld = 0.;
 
 	initLibraries();	// !Check return value later.
@@ -27,7 +26,12 @@ GameApp::GameApp(void):
 	// Init options screen.
 	optionsScreen = 
 		std::tr1::shared_ptr<OptionsScreen>(
-		new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures[0].get()) );
+		new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures) );
+
+	// Init play screen.
+	playScreen = 
+		std::tr1::shared_ptr<PlayScreen>(
+		new PlayScreen(flScreenWidth, flScreenHeight, surface, textures) );
 }
 
 GameApp::~GameApp(void)
@@ -101,6 +105,8 @@ int GameApp::setupSDL()
 					SDL_OPENGL | SDL_SWSURFACE | SDL_RESIZABLE | SDL_DOUBLEBUF);
 	SDL_WM_SetCaption(strGameName.c_str(), strGameName.c_str());
 
+	// Add icon here!
+
 	return 0;
 }
 
@@ -108,9 +114,10 @@ void GameApp::loadData()
 {
 	// Load sound and textures here.
 	textures.resize(1);
-	std::tr1::shared_ptr<TEXTURE> tmp;
-	tmp = loadTexture("car.png");
-	textures[0] = tmp;
+	//std::tr1::shared_ptr<TEXTURE> tmp;
+	//tmp = loadTexture("car.png");
+	//textures[0] = tmp;
+	textures[0] = loadTexture("car.png");
 }
 
 std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
@@ -397,6 +404,8 @@ void GameApp::play()
 {
 	//while(logic.bGameRunning)
     //{  
+	    // Make sure input isn't affected by the timer.
+        doInput();
 		if(!logic.bGamePaused)
 			doLogic();
 
@@ -410,13 +419,12 @@ void GameApp::manageGame()
 {
 	while(logic.bAppRunning) 
 	{
-		if(logic.bShowOptions){
-			doInput(); 
-			optionsScreen->show();
-			//swapBuffers();
+		if(logic.bShowOptions){	
+			optionsScreen->doInput(logic);					// Put These in a separate method.
+			optionsScreen->doDrawing();
 		}
 		else
-			play();	
+			playScreen->play(logic);	
 
 		swapBuffers();
 	}
@@ -425,7 +433,7 @@ void GameApp::manageGame()
 void GameApp::doLogic()
 {
 	// Make sure input isn't affected by the timer.
-    doInput();    
+    //doInput();    
     updateTimers();
     
     // If the player hasn't lost, do stuff.
@@ -600,6 +608,7 @@ void GameApp::handleMouseMotion(const SDL_Event& sdle)
 			xViewOld = sdle.motion.x;
 		}
 		else{
+// !Check here whether the game is paused!
 			vector_3d dr(0., -0.0025*(sdle.motion.y - yPaddleOld), 
 				0.0025*(sdle.motion.x - xPaddleOld) );
 			shapes[leftPaddleIdx]->move(0., dr, false);
@@ -613,7 +622,7 @@ void GameApp::handleMouseMotion(const SDL_Event& sdle)
 void GameApp::handleKeyDown(const SDL_Event& sdle)
 {	
 	// Check keyboard.
-	switch(sdle.key.keysym.sym)
+ 	switch(sdle.key.keysym.sym)
 	{
 	case SDLK_EQUALS:		// Reset view.
 		angleViewY = 115;
@@ -627,11 +636,16 @@ void GameApp::handleKeyDown(const SDL_Event& sdle)
 
 	case SDLK_m:
 		flScaleAll -= 0.01;
+		//logic.bGamePaused = !logic.bGamePaused;
+		break;
+
+	case SDLK_v:
+		logic.bGamePaused = !logic.bGamePaused;
 		break;
 
 	case SDLK_ESCAPE:
 		logic.bAppRunning = false;
-		break;
+		break;	
 
 		// Arrow Key Style
 	case SDLK_a:			// Fall through.
@@ -669,12 +683,23 @@ void GameApp::handleKeyUp(const SDL_Event& sdle)
 		break;
 
 	case SDLK_b:
-		if(logic.bShowOptions)
+		if(logic.bShowOptions){
 			logic.bShowOptions = false;
-		else
+			//glClear(GL_COLOR_BUFFER_BIT);
+			//doDrawing();
+			//swapBuffers();
+			//SDL_UpdateRect(surface, 0, 0, 0, 0);
+		}
+		else{			
 			logic.bShowOptions=true;
+			//glClear(GL_COLOR_BUFFER_BIT);
+			//optionsScreen->show();
+			//swapBuffers();
+			//SDL_UpdateRect(surface, 0, 0, 0, 0);
+		}
 		break;
-		swapBuffers();
+		
+
 		// Arrow Key Style
 	case SDLK_LEFT:                
 		break;
@@ -730,6 +755,8 @@ void GameApp::shutDown()
     // shutdown apis
     FSOUND_Close();
 	*/
+
+	// Most object pointers (e.g. screens) are cleaned up through the smart pointers.
 	if(surface != NULL){
 		SDL_FreeSurface(surface);
 		surface = NULL;
