@@ -9,6 +9,7 @@
 // Libraries.
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 #include <gl/GL.h>
 #include <gl/GLU.h>
 #include <glut.h>

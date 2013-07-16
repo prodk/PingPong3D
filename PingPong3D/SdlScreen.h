@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Logic.h"
 #include "GuiObject.h"
 #include "Ball.h"
 #include "Wall.h"
@@ -17,7 +16,7 @@ public:
 
 	// Public methods which should be overriden. Inherit interfaces with the default implementation.
 	virtual void doInput(Logic &l, SDL_Event sdlEvent);			// Keyboard/mouse.
-	virtual void doDrawing();
+	virtual void doDrawing(Logic &logic);
 
 	// Public methods that should not be overriden.
 
@@ -34,23 +33,27 @@ protected:
 class OptionsScreen : public SdlScreen
 {
 public:
-	OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t);
+	OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt);
 	~OptionsScreen(void);
 
 	// Overridden virtual functions.
 	void doInput(Logic &l, SDL_Event sdlEvent);			// Keyboard/mouse.
-	void doDrawing();
+	void doDrawing(Logic &logic);
 
 	// OptionsScreen-specific methods.
 	
 private:
 	void handleMouseButtonDown(const SDL_Event& sdle, Logic &l);
+	void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
 	void handleKeyDown(const SDL_Event& sdle, Logic &l);
 	void addButtons();
 
 private:
+	enum{START_BUTTON, OPTIONS_BUTTON};
 	TEXTURE_PTR_ARRAY textures;
 	std::vector<std::tr1::shared_ptr<GuiObject> > guiObjects;
+	TTF_Font** fonts;
+	bool bLeftMouseButton;		// Prevent buttons captions from flickering!
 };
 
 //________________________________
@@ -58,12 +61,13 @@ private:
 class PlayScreen : public SdlScreen
 {
 public:
-	PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t);
+	PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, 
+		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	~PlayScreen(void);
 
 	// Overridden virtual functions.
 	void doInput(Logic &l, SDL_Event sdlEvent);			// Keyboard/mouse.
-	void doDrawing();
+	void doDrawing(Logic &logic);
 
 	// PlayScreen-specific methods.
 	void doLogic(const Logic &l);
@@ -98,10 +102,14 @@ public:
 private:
 	void initMembers();
 
+
 	// Public members.
 public:
 	// A vector of pointers to Shapes. Ball is stored in the 1st item.	
 	std::vector<std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.
+	// Reconsider sound:
+	FMOD::System *system;
+	std::vector<FMOD::Sound*> sounds;
 
 private:
 	enum {BALL, WALL, LEFT_PADDLE};	// enum hack.

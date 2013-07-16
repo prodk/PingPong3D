@@ -15,16 +15,18 @@ void SdlScreen::doInput(Logic &l, SDL_Event sdlEvent)
 {
 }
 
-void SdlScreen::doDrawing()
+void SdlScreen::doDrawing(Logic &logic)
 {
 }
 
 /*________________________________*/
 // OptionsScreen implementation.
-OptionsScreen::OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t):
-	SdlScreen(w, h, s), textures(t)
+OptionsScreen::OptionsScreen(float w, float h, SDL_Surface* s, 
+	TEXTURE_PTR_ARRAY t, TTF_Font** fnt):
+	SdlScreen(w, h, s), textures(t), fonts(fnt)
 {
 	addButtons();
+	bLeftMouseButton = true;
 }
 
 OptionsScreen::~OptionsScreen()
@@ -37,21 +39,23 @@ void OptionsScreen::addButtons()
 	float x = -0.5;
 	float y = 0.5;
 	float w = 1.;
-	float h = 1.;
+	float h = 0.5;
+	std::string name = "Start";
 	
 	// Button 1.
-	Button* pButton = new Button(x, y, w, h, textures[0]->id);
+	Button* pButton = new Button(x, y, w, h, START_BUTTON, name, textures[0]->id);
 	GuiObject* pGuiObj = dynamic_cast<GuiObject*>(pButton);	
 	guiObjects[0] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
 
 	// Button 2.
 	y = -0.5;
-	pButton = new Button(x, y, w, h, textures[0]->id);	// The same texture id.
+	name = "Options";
+	pButton = new Button(x, y, w, h, OPTIONS_BUTTON, name, textures[0]->id);	// The same texture id.
 	pGuiObj = dynamic_cast<GuiObject*>(pButton);	
 	guiObjects[1] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
 }
 
-void OptionsScreen::doDrawing()
+void OptionsScreen::doDrawing(Logic &logic)
 {	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 
@@ -63,33 +67,10 @@ void OptionsScreen::doDrawing()
 	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
 	glLoadIdentity ();	
 
-	
-    // select modulate to mix texture with color for shading
-    glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-
-    // when texture area is small, bilinear filter the closest mipmap
-    //glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-                     //GL_LINEAR_MIPMAP_NEAREST );
-    // when texture area is large, bilinear filter the first mipmap
-    glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );   
-
 	glEnable( GL_TEXTURE_2D );
-	/*
-	glBindTexture( GL_TEXTURE_2D, textures[0]->id );
-
-	glColor4f(1.0, 0., 0., 1.0);
-	//gluLookAt (0.0, 0.0, 0., 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	glTranslatef(-0.5, -0.5, 0.);
-
-	glBegin( GL_QUADS );
-	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
-	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(1.0, 0.0, 0.0);
-	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(1.0, 1.0, 0.0);
-	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, 1.0, 0.0);	
-	glEnd();
-	*/
+	
 	for(std::size_t i = 0; i < guiObjects.size(); i++)
-		guiObjects[i]->draw();
+		guiObjects[i]->draw(fonts[0], logic);
 
 	glFlush();
 
@@ -100,17 +81,25 @@ void OptionsScreen::doDrawing()
 
 void OptionsScreen::doInput(Logic &logic, SDL_Event sdlEvent)
 {
-	//SDL_PollEvent(&sdlEvent); // check input
-	        
+	//int typePrevious = -1;
+
     switch(sdlEvent.type)
     {
 	case SDL_MOUSEBUTTONDOWN:
+		bLeftMouseButton = true;
 		handleMouseButtonDown(sdlEvent, logic);
 		break;
 
-	//case SDL_KEYDOWN:
-		//handleKeyDown(sdlEvent, logic);
-		//break;
+	case SDL_MOUSEBUTTONUP:
+		if(bLeftMouseButton){			
+			handleMouseButtonUp(sdlEvent, logic);
+			bLeftMouseButton = false;
+		}
+		break;
+
+	case SDL_KEYDOWN:
+		handleKeyDown(sdlEvent, logic);
+		break;
 
 	case SDL_QUIT:
 		logic.bAppRunning = false;
@@ -130,20 +119,34 @@ void OptionsScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 			logic.bGamePaused = false;
 		}
 		break;
+	case SDLK_k:
+		//for(std::size_t i = 0; i < guiObjects.size(); i++)
+			//guiObjects[i]->handleKeyDown(logic);
+		break;
 	}
 }
 
 void OptionsScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
 {
-	int objName = 0;
+	//int objName = 0;
 	switch(sdle.button.button)
 	{
 	case SDL_BUTTON_LEFT:
-		if(logic.bShowOptions){
-			logic.bShowOptions = false;
-			logic.bGamePaused = false;
-		}
-		break;
+		//if(logic.bShowOptions){
+			//logic.bShowOptions = false;
+			//logic.bGamePaused = false;
+		//}
+		//{
+			// Normalize screen coordinates.
+			// OpenGL coords (used for rendering) go from -1 to 1 with the origin in the middle.
+			// While clicking coords have (0, 0) in the upper left corner.
+			//float xnorm = (sdle.button.x - 0.5*flWidth) / (0.5*flWidth);
+			//float ynorm = (0.5*flHeight - sdle.button.y) / (0.5*flHeight);
+			
+			//for(std::size_t i = 0; i < guiObjects.size(); i++)
+				//guiObjects[i]->handleMouseButtonDown(logic, xnorm, ynorm);
+		//}
+		//break;
 
 	case SDL_BUTTON_WHEELUP:
 		break;
@@ -153,10 +156,33 @@ void OptionsScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
 	}// end switch
 }
 
+void OptionsScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
+{
+	switch(sdle.button.button)
+	{
+	case SDL_BUTTON_LEFT:
+		{
+			// Normalize screen coordinates.
+			// OpenGL coords (used for rendering) go from -1 to 1 with the origin in the middle.
+			// While clicking coords have (0, 0) in the upper left corner.
+			float xnorm = (sdle.button.x - 0.5*flWidth) / (0.5*flWidth);
+			float ynorm = (0.5*flHeight - sdle.button.y) / (0.5*flHeight);
+			
+			for(std::size_t i = 0; i < guiObjects.size(); i++){
+				guiObjects[i]->handleMouseButtonUp(logic, xnorm, ynorm);
+				//guiObjects[i]->draw(fonts[0]);	// Redraw shapes.
+				//guiObjects[i]->draw(fonts[0]);	// Redraw shapes.
+			}
+		}
+		break;
+	}// end switch
+}
+
 /*________________________________*/
 // PlayScreen implementation.
-PlayScreen::PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t):
-	SdlScreen(w, h, s), textures(t)
+PlayScreen::PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t,
+	 FMOD::System *sys,std::vector<FMOD::Sound*> snd):
+	SdlScreen(w, h, s), textures(t), system(sys), sounds(snd)
 {
 	initMembers();
 	addShapes();
@@ -203,12 +229,15 @@ void PlayScreen::addShapes()
 	Shape* pShape = dynamic_cast<Shape*>(pBall);	
 	shapes[0] = std::tr1::shared_ptr<Shape>(pShape);
 
+	// !Reconsider this code: add some method to avoid code duplication.
+
 	// Add walls.
 	// Left wall.
 	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 	vector_3d n(-1., 0., 0.);
 	Wall* pWall = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
+	pShape->setSound(system, sounds[2]);
 	shapes[1] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Right wall.
@@ -216,6 +245,7 @@ void PlayScreen::addShapes()
 	n = vector_3d(1., 0., 0.);
 	pWall = new Wall( WALL, center, flBoxThickness, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
+	pShape->setSound(system, sounds[1]);
 	shapes[2] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Top wall.
@@ -229,6 +259,7 @@ void PlayScreen::addShapes()
 	pWall = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
 		ambient, diffuse, specular, shine, alpha);
 	pShape = dynamic_cast<Shape*>(pWall);
+	pShape->setSound(system, sounds[1]);
 	shapes[3] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Bottom wall.
@@ -242,6 +273,7 @@ void PlayScreen::addShapes()
 	pWall = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
 		ambient, diffuse, specular, shine, alpha);
 	pShape = dynamic_cast<Shape*>(pWall);
+	pShape->setSound(system, sounds[1]);
 	shapes[4] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Front wall.
@@ -249,6 +281,7 @@ void PlayScreen::addShapes()
 	n = vector_3d(0., 0., 1.);
 	pWall = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
+	pShape->setSound(system, sounds[1]);
 	shapes[5] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// Back wall.
@@ -256,6 +289,7 @@ void PlayScreen::addShapes()
 	n = vector_3d(0., 0., -1.);
 	pWall = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
+	pShape->setSound(system, sounds[1]);
 	shapes[6] = std::tr1::shared_ptr<Shape>(pShape);
 
 	// User (left) paddle.
@@ -272,6 +306,7 @@ void PlayScreen::addShapes()
 		90., 0.5*flBoxHeight, 0.5*flBoxThickness,
 		ambient, diffuse, specular, shine, alpha);
 	pShape = dynamic_cast<Shape*>(pPaddle);
+	pShape->setSound(system, sounds[3]);
 	shapes[7] = std::tr1::shared_ptr<Shape>(pShape);
 	leftPaddleIdx = 7;
 }
@@ -315,7 +350,7 @@ void PlayScreen::doInput(Logic &logic, SDL_Event sdlEvent)
 	}
 }
 
-void PlayScreen::doDrawing()
+void PlayScreen::doDrawing(Logic &logic)
 {
 	// Here working and understood code starts.
 	initResize();
@@ -642,5 +677,5 @@ void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 	if(!logic.bGamePaused)
 		doLogic(logic);
 	
-	doDrawing();	
+	doDrawing(logic);	
 }

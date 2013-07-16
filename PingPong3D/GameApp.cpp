@@ -13,14 +13,11 @@ GameApp::GameApp(void):
 
 	// Init options screen.
 	optionsScreen = std::tr1::shared_ptr<OptionsScreen>(
-		new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures) );
+		new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0]) );
 
 	// Init play screen.
 	playScreen = std::tr1::shared_ptr<PlayScreen>(
-		new PlayScreen(flScreenWidth, flScreenHeight, surface, textures) );
-
-	// Init frustum.
-	//playScreen->initView();
+		new PlayScreen(flScreenWidth, flScreenHeight, surface, textures, system, sounds) );
 }
 
 GameApp::~GameApp(void)
@@ -38,7 +35,7 @@ int GameApp::initLibraries()
     setupMatrices();
     
     // Setup fmod - add later.
-    //setupSound();				// Check return value.
+    setupSound();				// Check return value.
     
     // Set the game timer up.
     setupTimers();
@@ -96,14 +93,33 @@ int GameApp::setupSDL()
 
 	// Add icon here!
 
+	
+
+
 	return 0;
 }
 
-void GameApp::loadData()
+int GameApp::loadData()
 {
-	// Load sound and textures here.
+	// Load textures here.
 	textures.resize(1);
-	textures[0] = loadTexture("Button.png");
+	textures[0] = loadTexture("Button.png");	// Check the return value later!
+
+	// Sounds.
+	sounds.resize(4);
+	FMOD_RESULT result;
+	result = system->createStream("optionscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[0]);
+	result = system->createStream("normalwall.wav", FMOD_DEFAULT, 0, &sounds[1]);
+	result = system->createStream("absorbwall.wav", FMOD_DEFAULT, 0, &sounds[2]);
+	result = system->createStream("paddle.wav", FMOD_DEFAULT, 0, &sounds[3]);
+
+	// Load fonts.
+	fonts.resize(1);
+	if( TTF_Init() == -1 ) { return -1; }
+	fonts[0] = TTF_OpenFont( "Line-01.ttf", 28 );
+	if( fonts[0] == NULL ){ return -1;}
+
+	return 0;
 }
 
 std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
@@ -274,23 +290,21 @@ void GameApp::setupNewGame()
 
 void GameApp::manageGame()
 {
+	//if(logic.bShowOptions)
+		//playSound(system, sounds[0]);
 	while(logic.bAppRunning) 
-	{
+	{		
 		SDL_PollEvent(&sdlEvent);	// Important: use only one PollEvent!!!
 
 		if(logic.bShowOptions){
-			optionsScreen->doInput(logic, sdlEvent);	// Put These in a separate method.
-			optionsScreen->doDrawing();
-			swapBuffers();			
+			optionsScreen->doDrawing(logic);	
+			optionsScreen->doInput(logic, sdlEvent);	// Put These in a separate method.			
+		}		
+		else{
+			playScreen->play(logic, sdlEvent);			
 		}
-		else {
-			playScreen->play(logic, sdlEvent);
-			/*playScreen->doInput(logic, sdlEvent);
-			if(!logic.bGamePaused)
-				playScreen->doLogic(logic);
-			playScreen->doDrawing();*/
-			swapBuffers();			
-		}// End else.		
+		
+		swapBuffers();
 	}
 }
 
@@ -313,21 +327,27 @@ void GameApp::swapBuffers()
 
 void GameApp::shutDown()
 {
-	// free texture structs 
-	/*
-    int i;
-    for(i = 0; i < TEXTURE_COUNT; i++)
-        free(textures[i]);
-        
-    // glDeleteTextures( 1, &texture ); // Not really needed in this case. OGL deletes its own stuff
+	FMOD_RESULT result;	
 
-    // free sample data
-    for(i = 0; i < SAMPLE_COUNT; i++)
-        FSOUND_Sample_Free(samples[i]);
+	// Cleanup textures.
+	std::size_t i;
+	for(i = 0; i < textures.size(); i++)
+		glDeleteTextures(1, &(textures[i].get()->id));
 
-    // shutdown apis
-    FSOUND_Close();
-	*/
+	// Cleanup sounds.
+	for(i = 0; i < sounds.size(); i++){
+		result = sounds[i]->release();
+		if (result != FMOD_OK)
+	{
+		fprintf(stderr, "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+	}
+	system->release();
+
+	// Cleanup fonts.
+	for(i = 0; i < fonts.size(); i++)
+		TTF_CloseFont(fonts[i]);
 
 	// Most object pointers (e.g. screens) are cleaned up through the smart pointers.
 	if(surface != NULL){
@@ -336,6 +356,7 @@ void GameApp::shutDown()
 	}
     SDL_Quit();
 }
+
 
 //
 //void GameApp::draw2DTextureEx(float _x, float _y, float _z, float _alpha,  TEXTURE* _tex) 
@@ -378,3 +399,32 @@ void GameApp::shutDown()
 //        glEnable(GL_LIGHTING);
 //    //}
 //}
+
+int GameApp::setupSound()
+{
+	FMOD_RESULT result;
+	
+	result = FMOD::System_Create(&system);		// Create the main system object.
+	if (result != FMOD_OK)
+	{
+		fprintf(stderr, "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+
+	//result = system->setSpeakerMode(FMOD_SPEAKERMODE_5POINT1);	// Set the output to 5.1.
+//ERRCHECK(result);
+
+result = system->setSoftwareChannels(100);		// Allow 100 software mixed voices to be audible at once.
+//ERRCHECK(result);
+
+//result = system->init(10, FMOD_INIT_NORMAL, 0);		// Initialize FMOD with 200 virtual voices.
+//ERRCHECK(result);
+
+
+	result = system->init(100, FMOD_INIT_NORMAL, 0);	// Initialize FMOD.
+	if (result != FMOD_OK)
+	{
+		fprintf(stderr, "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+}

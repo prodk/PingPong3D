@@ -8,3 +8,7 @@ ipch
 *.suo
 *.user
 data*
+*.mp3
+*.wav
+*.ogg
+*.ttf

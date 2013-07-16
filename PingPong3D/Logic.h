@@ -12,5 +12,6 @@ public:
 	bool bAppRunning;		// True if the game is going on.
 	bool bGamePaused;
 	bool bGameOver;			// True if the player has lost.
+
 };
 

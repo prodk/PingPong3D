@@ -15,12 +15,18 @@ public:
 	// Private methods.
 private:
 	int initLibraries();	// Initialize: SDL, OGL, sound, timers, game params, rand numbers.
-	void loadData();		// Load sounds, textures.
-	void setupSound();		// Init fmod library.
+	int loadData();		// Load sounds, textures.
+	
 	void setupTimers();
 	void updateTimers();
 	void setupNewGame();	// Init game-specific variables/objects.
 	void shutDown();		// Clean up resources.
+
+	std::vector<FMOD::Sound*> sounds;
+	FMOD::System *system;
+	int setupSound();		// Init fmod library.
+
+
 
 	// SDL-specific.
 	int setupSDL();
@@ -66,6 +72,7 @@ private:
 	// Data.
 	std::string strGameName;
 	SDL_Surface* surface;
+	std::vector<TTF_Font* > fonts;
 	// Textures.
 	std::vector<std::tr1::shared_ptr<TEXTURE> > textures;
 };
