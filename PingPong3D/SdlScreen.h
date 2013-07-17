@@ -33,7 +33,8 @@ protected:
 class OptionsScreen : public SdlScreen
 {
 public:
-	OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt);
+	OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
+		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	~OptionsScreen(void);
 
 	// Overridden virtual functions.
@@ -41,6 +42,7 @@ public:
 	void doDrawing(Logic &logic);
 
 	// OptionsScreen-specific methods.
+	std::vector<std::tr1::shared_ptr<GuiObject> > & getGuiObjects();
 	
 private:
 	void handleMouseButtonDown(const SDL_Event& sdle, Logic &l);
@@ -49,7 +51,11 @@ private:
 	void addButtons();
 
 private:
-	enum{START_BUTTON, OPTIONS_BUTTON};
+	// Reconsider sound:
+	FMOD::System *system;
+	std::vector<FMOD::Sound*> sounds;
+
+	enum{START_BUTTON, OPTIONS_BUTTON, BACKGR_SOUND_BUTTON, ACT_SOUND_BUTTON};
 	TEXTURE_PTR_ARRAY textures;
 	std::vector<std::tr1::shared_ptr<GuiObject> > guiObjects;
 	TTF_Font** fonts;
@@ -64,6 +70,8 @@ public:
 	PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, 
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	~PlayScreen(void);
+
+	std::vector<std::tr1::shared_ptr<Shape> > & getShapes();
 
 	// Overridden virtual functions.
 	void doInput(Logic &l, SDL_Event sdlEvent);			// Keyboard/mouse.

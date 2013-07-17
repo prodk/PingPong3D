@@ -5,19 +5,23 @@
 
 GameApp::GameApp(void):
 	flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong"), 
-		flZaxisDistance(2.2f), flLengthUnit(0.4f),
-		logic(true, true, false, false) // Show options, running/paused/over.
+		flZaxisDistance(2.2f), flLengthUnit(0.4f), bBackgroundSound(true),
+		logic(true, true, false, false, true, true) // Show options, running/paused/over/sounds.
 {
 	initLibraries();	// !Check return value later.
 	loadData();
 
 	// Init options screen.
 	optionsScreen = std::tr1::shared_ptr<OptionsScreen>(
-		new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0]) );
+		new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+		system, sounds) );
 
 	// Init play screen.
 	playScreen = std::tr1::shared_ptr<PlayScreen>(
 		new PlayScreen(flScreenWidth, flScreenHeight, surface, textures, system, sounds) );
+
+	// Register observers from the Observer pattern to manage the sound.
+	registerObservers();
 }
 
 GameApp::~GameApp(void)
@@ -106,12 +110,21 @@ int GameApp::loadData()
 	textures[0] = loadTexture("Button.png");	// Check the return value later!
 
 	// Sounds.
-	sounds.resize(4);
+	sounds.resize(5);
 	FMOD_RESULT result;
 	result = system->createStream("optionscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[0]);
 	result = system->createStream("normalwall.wav", FMOD_DEFAULT, 0, &sounds[1]);
 	result = system->createStream("absorbwall.wav", FMOD_DEFAULT, 0, &sounds[2]);
 	result = system->createStream("paddle.wav", FMOD_DEFAULT, 0, &sounds[3]);
+	result = system->createStream("playscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[4]);
+
+	// Start paused sounds.
+	// Options.
+	if( (sounds[0] != NULL) && (system != NULL) )
+		result = system->playSound(sounds[0], 0, true, &channelOptions);
+	// Play sound.
+	if( (sounds[4] != NULL) && (system != NULL) )
+		result = system->playSound(sounds[4], 0, true, &channelPlay);
 
 	// Load fonts.
 	fonts.resize(1);
@@ -290,8 +303,8 @@ void GameApp::setupNewGame()
 
 void GameApp::manageGame()
 {
-	//if(logic.bShowOptions)
-		//playSound(system, sounds[0]);
+	playBackgroundSound();
+
 	while(logic.bAppRunning) 
 	{		
 		SDL_PollEvent(&sdlEvent);	// Important: use only one PollEvent!!!
@@ -426,5 +439,47 @@ result = system->setSoftwareChannels(100);		// Allow 100 software mixed voices t
 	{
 		fprintf(stderr, "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
 		exit(-1);
+	}
+
+	return FMOD_OK;
+}
+
+void GameApp::notify(Subject* s)
+{
+	bBackgroundSound = ((Logic*) s)->bBackgroundSound;
+	playBackgroundSound();	// Play according to the new options.
+}
+
+void GameApp::registerObservers()
+{
+	logic.registerObserver( dynamic_cast<Observer*>(this) );	// Add the GameApp instance.
+	// Register GUI controls.
+	std::vector<std::tr1::shared_ptr<GuiObject> > guis = optionsScreen->getGuiObjects();
+	for(std::size_t i = 0; i < guis.size(); i++)
+		logic.registerObserver( dynamic_cast<Observer*>(guis[i].get()) );
+	// Register shapes.
+	std::vector<std::tr1::shared_ptr<Shape> > shapes = playScreen->getShapes();
+	for(std::size_t i = 0; i < shapes.size(); i++)
+		logic.registerObserver( dynamic_cast<Observer*>(shapes[i].get()) );
+}
+
+void GameApp::playBackgroundSound()
+{
+	if(bBackgroundSound)
+	{
+		// Try to stop playing here before starting a new type of the sound.
+		if(logic.bShowOptions){
+			channelPlay->setPaused(true);
+			channelOptions->setPaused(false);
+		}
+		else{
+			channelOptions->setPaused(true);
+			channelPlay->setPaused(false);
+		}
+	}
+	else	// Pause all the sounds.
+	{
+		channelOptions->setPaused(true);
+		channelPlay->setPaused(true);
 	}
 }

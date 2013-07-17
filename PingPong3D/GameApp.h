@@ -5,12 +5,13 @@
 #include <string>
 #include "SdlScreen.h"
 
-class GameApp
+class GameApp : public Observer
 {
 public:
 	GameApp(void);
 	~GameApp(void);
-	void manageGame();	
+	void manageGame();
+	void notify(Subject* s);
 
 	// Private methods.
 private:
@@ -21,11 +22,12 @@ private:
 	void updateTimers();
 	void setupNewGame();	// Init game-specific variables/objects.
 	void shutDown();		// Clean up resources.
+	void registerObservers();
 
 	std::vector<FMOD::Sound*> sounds;
 	FMOD::System *system;
 	int setupSound();		// Init fmod library.
-
+	void playBackgroundSound();
 
 
 	// SDL-specific.
@@ -62,6 +64,10 @@ private:
 	Logic logic;
 	std::tr1::shared_ptr<OptionsScreen> optionsScreen;
 	std::tr1::shared_ptr<PlayScreen> playScreen;
+
+	bool bBackgroundSound;
+	FMOD::Channel *channelOptions;
+	FMOD::Channel *channelPlay;
 
 	// Timers.
 	float deltaTime;

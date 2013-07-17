@@ -5,7 +5,7 @@
 
 /*________________________________*/
 // GuiObject class declaration.
-class GuiObject
+class GuiObject : public Observer
 {
 public:
 	GuiObject(std::size_t idExt);
@@ -15,10 +15,20 @@ public:
 	virtual void handleMouseButtonDown(Logic &logic, float x, float y) = 0;
 	virtual void handleKeyDown(Logic &logic) = 0;
 
+	virtual void notify(Subject* s);// {bPlaySound = ((Logic*) s)->bActionsSound;};
+
+	FMOD_RESULT setSound(FMOD::System *sys, FMOD::Sound *snd);
+	//void playSound();
+
 	std::size_t getId();
 
 protected:
 	std::size_t id;
+	bool bPlaySound;
+	// Reconsider sound:
+	FMOD::Sound* sound;
+	FMOD::System *system;
+	FMOD::Channel *channel;	// Channel is used for manipulation of the sound.
 };
 
 /*________________________________*/
@@ -47,6 +57,5 @@ private:
 	int textureId;
 	std::string name;
 	std::string caption;
-	//bool bPressed;
-	enum{START_BUTTON, OPTIONS_BUTTON};
+	enum{START_BUTTON, OPTIONS_BUTTON, BACKGR_SOUND_BUTTON, ACT_SOUND_BUTTON};
 };

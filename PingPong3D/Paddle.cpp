@@ -123,7 +123,9 @@ void Paddle::collide(Shape *s)
 	if(b > a){	// Collision is probable to occur.
 		if( ptInPaddle(c) )	{			// If the collision point is inside the paddle area.
 			s->setVelocity(vNormal);
-			playSound(system, sound);
+
+			if(bPlaySound)
+				::playSound(system, sound, 0);
 		}
 	}
 }

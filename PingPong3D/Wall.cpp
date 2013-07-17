@@ -109,7 +109,9 @@ void Wall::collide(Shape * s)
 	// If ball's surface is beyond the wall, then handle collision.
 	if(b >= a){	// Collision occurred.
 		s->setVelocity(vNormal);
-		playSound(system, sound);
+
+		if(bPlaySound)			// Maybe use channels for managing sounds!
+			::playSound(system, sound, 0);
 	}
 
 	// Define whether to draw the intersection point.
@@ -215,7 +217,9 @@ void AbsorbingWall::collide(Shape *s)
 		bool bReset = true;
 		s->setVelocity(vNormal);			
 		s->move(dt, c, bReset);
-		playSound(system, sound);
+		if(bPlaySound)			// Maybe use channels for managing sounds!
+			::playSound(system, sound, 0);
+		//playSound();
 	}
 
 	// Reconsider this code duplication from Wall!

@@ -1,8 +1,9 @@
 #include "Logic.h"
 
 
-Logic::Logic(bool opts, bool run, bool pause, bool over) :
-	bShowOptions(opts), bAppRunning(run), bGamePaused(pause), bGameOver(over)
+Logic::Logic(bool opts, bool run, bool pause, bool over, bool bsound, bool asound) :
+	bShowOptions(opts), bAppRunning(run), bGamePaused(pause), bGameOver(over),
+		bBackgroundSound(bsound), bActionsSound(asound)
 {
 }
 

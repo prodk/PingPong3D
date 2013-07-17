@@ -3,7 +3,7 @@
 /*________________________________*/
 // GuiObject class implementation.
 GuiObject::GuiObject(std::size_t idExt) :
-id(idExt)
+id(idExt), bPlaySound(true)
 {
 }
 
@@ -17,13 +17,37 @@ std::size_t GuiObject::getId()
 	return id;
 }
 
+FMOD_RESULT GuiObject::setSound(FMOD::System *sys, FMOD::Sound *snd)
+{
+	if(sys == NULL) return FMOD_ERR_FILE_BAD;
+	if(snd == NULL) return FMOD_ERR_FILE_BAD;
+	system = sys;
+	sound = snd;
+
+	// Start paused sound.
+	//FMOD_RESULT result = system->playSound(sound, 0, true, &channel);
+
+	return FMOD_OK;
+}
+
+void GuiObject::notify(Subject* s) 
+{
+	bPlaySound = ((Logic*) s)->bActionsSound;
+}
+
+//void GuiObject::playSound()
+//{
+//	if(bPlaySound)
+//		channel->setPaused(false);
+//}
+
 /*________________________________*/
 //Button class implementation.
 Button::Button(float xExt, float yExt, float wExt, float hExt, 
 	std::size_t idExt, std::string n, int tid) :
 GuiObject(idExt), x(xExt), y(yExt), w(wExt), h(hExt), name(n), textureId(tid)
 {
-	caption = name + "Off";
+	caption = name;	
 }
 
 Button::~Button()
@@ -66,11 +90,8 @@ int Button::drawText(TTF_Font *font, Logic &logic)
 	textColor.r = 1;
     textColor.g = 0;
     textColor.b = 0;
-
-	if(logic.bGamePaused)
-		text = TTF_RenderText_Blended(font, caption.c_str(), textColor);
-	else
-		text = TTF_RenderText_Blended(font, name.c_str(), textColor);
+	
+	text = TTF_RenderText_Blended(font, caption.c_str(), textColor);
 	SDL_Delay(25);			// Small delay to prevent from full CPU load.
 
 	if (text->format->BytesPerPixel == 3) // RGB 24bit.
@@ -130,31 +151,57 @@ int Button::drawText(TTF_Font *font, Logic &logic)
 void Button::handleMouseButtonUp(Logic &logic, float x, float y)
 {
 	if( ptInRect(x, y) )
-	{
-		if(id == START_BUTTON){
+	{		
+		switch(id)
+		{ 
+		case START_BUTTON:
 			logic.bShowOptions = false;
 			logic.bGamePaused = false;
-		}
+			// Tell registered observers to change their settings.
+			logic.notifyObservers();
+			break;
+
+		case OPTIONS_BUTTON:
+			logic.notifyObservers();
+			break;
+
+		case BACKGR_SOUND_BUTTON:
+			if(logic.bBackgroundSound){
+				logic.bBackgroundSound = false;
+				caption = name + "Off";
+			}
+			else{
+				logic.bBackgroundSound = true;
+				caption = name;
+			}
+			// Tell registered observers to change their settings.
+			logic.notifyObservers();
+			break;
+
+		case ACT_SOUND_BUTTON:
+			if(logic.bActionsSound){
+				logic.bActionsSound = false;
+				caption = name + "Off";
+			}
+			else{
+				logic.bActionsSound = true;
+				caption = name;
+			}
+			// Tell registered observers to change their settings.
+			logic.notifyObservers();
+			break;
+		}// end switch(id)
+
+		if(bPlaySound)
+			::playSound(system, sound, 0);		// Maybe use channels for managing sounds!
+		//playSound();
 	}// End if ptInRect.
 }
 
 void Button::handleMouseButtonDown(Logic &logic, float x, float y)
 {
 	if( ptInRect(x, y) )
-	{
-		//if(logic.bShowOptions){
-			//logic.bShowOptions = false;
-			//logic.bGamePaused = false;
-		//}
-
-		/*if(bPressed){
-			bPressed = false;
-			caption = name;
-		}
-		else{
-			bPressed = true;
-			caption = name + "Off";
-		}*/
+	{		
 	}// End if ptInRect.
 }
 

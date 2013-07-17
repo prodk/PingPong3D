@@ -103,6 +103,7 @@
     <ClInclude Include="GuiObject.h" />
     <ClInclude Include="Logic.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="Observer.h" />
     <ClInclude Include="Paddle.h" />
     <ClInclude Include="PingPong3D.h" />
     <ClInclude Include="SdlScreen.h" />

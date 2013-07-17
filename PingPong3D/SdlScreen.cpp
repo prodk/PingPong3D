@@ -22,8 +22,9 @@ void SdlScreen::doDrawing(Logic &logic)
 /*________________________________*/
 // OptionsScreen implementation.
 OptionsScreen::OptionsScreen(float w, float h, SDL_Surface* s, 
-	TEXTURE_PTR_ARRAY t, TTF_Font** fnt):
-	SdlScreen(w, h, s), textures(t), fonts(fnt)
+	TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
+	FMOD::System *sys, std::vector<FMOD::Sound*> snd):
+	SdlScreen(w, h, s), textures(t), fonts(fnt), system(sys), sounds(snd)
 {
 	addButtons();
 	bLeftMouseButton = true;
@@ -35,24 +36,44 @@ OptionsScreen::~OptionsScreen()
 
 void OptionsScreen::addButtons()
 {
-	guiObjects.resize(2);
-	float x = -0.5;
+	guiObjects.resize(4);
+	float x = -1;
 	float y = 0.5;
 	float w = 1.;
-	float h = 0.5;
+	float h = 0.25;
 	std::string name = "Start";
+
+	// Later put the code for adding a button into a method to avoid code duplication!
 	
-	// Button 1.
+	// Button 0.
 	Button* pButton = new Button(x, y, w, h, START_BUTTON, name, textures[0]->id);
 	GuiObject* pGuiObj = dynamic_cast<GuiObject*>(pButton);	
-	guiObjects[0] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
+	pButton->setSound(system, sounds[1]);
+	guiObjects[START_BUTTON] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
 
-	// Button 2.
-	y = -0.5;
+	// Button 1.
+	y = 0.125;
 	name = "Options";
 	pButton = new Button(x, y, w, h, OPTIONS_BUTTON, name, textures[0]->id);	// The same texture id.
-	pGuiObj = dynamic_cast<GuiObject*>(pButton);	
-	guiObjects[1] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
+	pGuiObj = dynamic_cast<GuiObject*>(pButton);
+	pButton->setSound(system, sounds[1]);
+	guiObjects[OPTIONS_BUTTON] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
+
+	// Button 2.
+	y = -0.25;
+	name = "Background Sound";
+	pButton = new Button(x, y, w, h, BACKGR_SOUND_BUTTON, name, textures[0]->id);	// The same texture id.
+	pGuiObj = dynamic_cast<GuiObject*>(pButton);
+	pButton->setSound(system, sounds[1]);
+	guiObjects[BACKGR_SOUND_BUTTON] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
+
+	// Button 3.
+	y = -0.625;
+	name = "Actions Sound";
+	pButton = new Button(x, y, w, h, ACT_SOUND_BUTTON, name, textures[0]->id);	// The same texture id.
+	pGuiObj = dynamic_cast<GuiObject*>(pButton);
+	pButton->setSound(system, sounds[1]);
+	guiObjects[ACT_SOUND_BUTTON] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
 }
 
 void OptionsScreen::doDrawing(Logic &logic)
@@ -170,12 +191,15 @@ void OptionsScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
 			
 			for(std::size_t i = 0; i < guiObjects.size(); i++){
 				guiObjects[i]->handleMouseButtonUp(logic, xnorm, ynorm);
-				//guiObjects[i]->draw(fonts[0]);	// Redraw shapes.
-				//guiObjects[i]->draw(fonts[0]);	// Redraw shapes.
 			}
 		}
 		break;
 	}// end switch
+}
+
+std::vector<std::tr1::shared_ptr<GuiObject> > & OptionsScreen::getGuiObjects()
+{
+	return guiObjects;
 }
 
 /*________________________________*/
@@ -453,6 +477,7 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 			logic.bShowOptions = true;
 			logic.bGamePaused = true;
 		}
+		logic.notifyObservers();	// Tell observers to change their sound behavior.
 		break;
 
 	case SDLK_p:	 //Scale.
@@ -678,4 +703,9 @@ void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 		doLogic(logic);
 	
 	doDrawing(logic);	
+}
+
+std::vector<std::tr1::shared_ptr<Shape> > & PlayScreen::getShapes()
+{
+	return shapes;
 }
