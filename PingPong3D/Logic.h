@@ -1,4 +1,8 @@
-#pragma once	// Change this to #define later!
+// Logic.h - declaration of the Logic class.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
+#ifndef LOGIC_H
+#define LOGIC_H
+
 #include "Observer.h"
 
 class Logic : public Subject
@@ -17,3 +21,4 @@ public:
 	bool bActionsSound;
 };
 
+#endif // LOGIC_H

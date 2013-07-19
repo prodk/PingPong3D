@@ -1,7 +1,8 @@
 // GameApp.h - GameApp class declaration.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
+#ifndef GAMEAPP_H
+#define GAMEAPP_H
 
-#pragma once			// !Later replace by macro for portability between OS.
 #include <string>
 #include "SdlScreen.h"
 
@@ -10,34 +11,33 @@ class GameApp : public Observer
 public:
 	GameApp(void);
 	~GameApp(void);
-	void manageGame();
-	void notify(Subject* s);
+	void manageGame();		// Check what screens should be shown.
+	void notify(Subject* s);// A callback function which is invoked by the Subject in the Observer pattern.
 
 	// Private methods.
 private:
 	int initLibraries();	// Initialize: SDL, OGL, sound, timers, game params, rand numbers.
-	int loadData();		// Load sounds, textures.
+	int loadData();			// Load sounds, textures.
 	
 	void setupTimers();
 	void updateTimers();
 	void setupNewGame();	// Init game-specific variables/objects.
 	void shutDown();		// Clean up resources.
-	void registerObservers();
+	void registerObservers();	// Register what objects should be tracked by the Subject.
 
 	std::vector<FMOD::Sound*> sounds;
 	FMOD::System *system;
 	int setupSound();		// Init fmod library.
 	void playBackgroundSound();
 
-
 	// SDL-specific.
 	int setupSDL();
 
 	// OpenGl-specific.
 	void setupRenderingContext();	// OGL initial state: depth, lights, materials, etc.
-	void setupMatrices();	// Init transforms: modelview, projection and other matrices.
-	void initResize();		// Avoid code dupl. in setupMatrices() and handleResize().
-	void swapBuffers();		// Swap double buffers.
+	void setupMatrices();			// Init transforms: modelview, projection and other matrices.
+	void initResize();				// Avoid code dupl. in setupMatrices() and handleResize().
+	void swapBuffers();				// Swap double buffers.
 
 	// Calculate the angle used in the perspective, we use size as a unit of length.
 	float calculateAngle(float size, double zAxisDistance)
@@ -82,3 +82,5 @@ private:
 	// Textures.
 	std::vector<std::tr1::shared_ptr<TEXTURE> > textures;
 };
+
+#endif // GAMEAPP_H

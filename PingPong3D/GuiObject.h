@@ -1,4 +1,7 @@
-#pragma once
+// GuiObject.h - declaration of the GuiObject class and all its child classes.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
+#ifndef GUIOBJECT_H
+#define GUIOBJECT_H
 
 #include "Shape.h"
 #include "Logic.h"
@@ -15,20 +18,18 @@ public:
 	virtual void handleMouseButtonDown(Logic &logic, float x, float y) = 0;
 	virtual void handleKeyDown(Logic &logic) = 0;
 
-	virtual void notify(Subject* s);// {bPlaySound = ((Logic*) s)->bActionsSound;};
+	virtual void notify(Subject* s);
 
 	FMOD_RESULT setSound(FMOD::System *sys, FMOD::Sound *snd);
-	//void playSound();
 
 	std::size_t getId();
 
 protected:
 	std::size_t id;
 	bool bPlaySound;
-	// Reconsider sound:
 	FMOD::Sound* sound;
 	FMOD::System *system;
-	FMOD::Channel *channel;	// Channel is used for manipulation of the sound.
+	FMOD::Channel *channel;	// Maybe delete later.
 };
 
 /*________________________________*/
@@ -59,3 +60,5 @@ private:
 	std::string caption;
 	enum{START_BUTTON, OPTIONS_BUTTON, BACKGR_SOUND_BUTTON, ACT_SOUND_BUTTON};
 };
+
+#endif // GUIOBJECT_H

@@ -76,11 +76,3 @@ void Shape::notify(Subject* s)
 {
 	bPlaySound = ((Logic*) s)->bActionsSound;
 }
-
-/*
-void Shape::playSound()
-{
-	if(bPlaySound)
-		channel->setPaused(false);
-}
-*/

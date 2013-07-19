@@ -1,4 +1,8 @@
-#pragma once
+// Observer.h - declaration of the Observer class.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
+#ifndef OBSERVER_H
+#define OBSERVER_H
+
 #include <vector>
 
 class Subject;			// Forward declaration.
@@ -30,3 +34,5 @@ public:
 private:
 	std::vector<Observer*> observers;
 };
+
+#endif // OBSERVER_H

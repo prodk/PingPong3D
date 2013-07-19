@@ -1,6 +1,7 @@
 // Shape.h - abstract Shape class declaration.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
-#pragma once
+#ifndef SHAPE_H
+#define SHAPE_H
 
 #include <fmod.hpp>
 #include <fmod_common.h>
@@ -9,8 +10,6 @@
 #include "Material.h"
 #include "Logic.h"
 
-//std::vector<FMOD::Sound*> sounds;
-//FMOD::System *system;
 // Use a global non-member function to play sound.
 FMOD_RESULT playSound(FMOD::System *system, FMOD::Sound *sound, FMOD::Channel *channel);
 
@@ -24,7 +23,7 @@ public:
 		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha);
 	virtual ~Shape(void);
 
-	void notify(Subject* s);// {bPlaySound = ((Logic*) s)->bActionsSound;};
+	void notify(Subject* s);
 
 	// Methods that are not supposed to be overridden.
 	std::size_t getId() const;
@@ -55,3 +54,4 @@ protected:
 	FMOD::Channel *channel;	// Channel is used for manipulation of the sound.
 };
 
+#endif // SHAPE_H

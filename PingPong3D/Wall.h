@@ -1,6 +1,7 @@
 // Wall.h - declaration of the Wall and AbsorbingWall classes.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
-#pragma once
+#ifndef WALL_H
+#define WALL_H
 
 #include "Shape.h"
 
@@ -70,3 +71,5 @@ public:
 
 	//void notify(Subject* s) {bPlaySound = ((Logic*) s)->bActionsSound;};
 };
+
+#endif // WALL_H

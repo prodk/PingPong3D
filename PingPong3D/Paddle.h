@@ -1,7 +1,7 @@
 // Paddle.h - declaration of the Paddle class.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
-
-#pragma once			// Replace by #define for OS portability.
+#ifndef PADDLE_H
+#define PADDLE_H
 
 #include "Shape.h"
 
@@ -18,7 +18,7 @@ public:
 	float getSize() const;				// Return radius of the cylinder.
 	void draw();
 	void move(float deltaTime, vector_3d dr, bool bReset);
-	void collide(Shape *);
+	void collide(Shape *);				// Collision detection.
 
 private:
 	vector_3d vNormal;
@@ -66,3 +66,4 @@ void drawCircle(float radius)
 
 };	// End Paddle.
 
+#endif // PADDLE_H

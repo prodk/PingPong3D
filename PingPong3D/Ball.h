@@ -1,6 +1,7 @@
 // Ball.h - declaration of Ball class.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
-#pragma once
+#ifndef BALL_H
+#define BALL_H
 
 #include "Shape.h"
 
@@ -30,3 +31,4 @@ private:	// id and vCenter are inherited from the Shape.
 	const int stacks;	
 };
 
+#endif // BALL_H

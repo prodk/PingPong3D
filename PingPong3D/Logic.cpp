@@ -1,3 +1,5 @@
+// Logic.cpp - implementation of the Logic class.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "Logic.h"
 
 

@@ -1,4 +1,8 @@
-#pragma once
+// SdlScreen.h - declaration of the SdlScreen class and all its children.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
+
+#ifndef SDL_SCREEN		// Replace by #define for portability.
+#define SDL_SCREEN
 
 #include "GuiObject.h"
 #include "Ball.h"
@@ -155,3 +159,5 @@ private:
 
 	TEXTURE_PTR_ARRAY textures;
 };
+
+#endif // SDL_SCREEN

@@ -1,4 +1,4 @@
-// Wall.cpp - implementation of the Wall class.
+// Wall.cpp - implementation of the Wall and AbsorbingWall classes.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "Wall.h"
 

@@ -1,5 +1,11 @@
+// Material.h - declaration of the Material class.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
 
-#pragma once
+// Here we also define TEXTURE structure.
+// Most of the headers files are included here, because Material.h is included 
+// in the Shape.h, and Shape is used in most of the other classes.
+#ifndef MATERIAL_H
+#define MATERIAL_H
 
 // Libraries/APIs.
 #ifdef WIN32			// Additional include on Windows.
@@ -42,3 +48,5 @@ typedef struct
     GLuint id;
     int width, height;
 } TEXTURE;
+
+#endif // MATERIAL_H

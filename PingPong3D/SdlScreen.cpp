@@ -1,3 +1,5 @@
+// SdlScreen.cpp - implementation of the SdlScreen class and all its child classes.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "SdlScreen.h"
 
 /*________________________________*/

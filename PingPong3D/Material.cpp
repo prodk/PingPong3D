@@ -1,3 +1,5 @@
+// Material.cpp - implementation of the Material class.
+// (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "Material.h"
 
 // Default constructor.
