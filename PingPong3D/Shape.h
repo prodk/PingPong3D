@@ -13,7 +13,6 @@
 // Use a global non-member function to play sound.
 FMOD_RESULT playSound(FMOD::System *system, FMOD::Sound *sound, FMOD::Channel *channel);
 
-// Maybe move id, vCenter, vNormal to this class, as protected members.
 // Inherit from the Observer abstract class to use Shape in the Observer pattern.
 class Shape : public Observer
 {
@@ -23,17 +22,15 @@ public:
 		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha);
 	virtual ~Shape(void);
 
-	void notify(Subject* s);
+	void notify(Subject* s);				// Callback (hook) method in the Observer.
 
-	// Methods that are not supposed to be overridden.
+	// Methods that are not overridden.
 	std::size_t getId() const;
-	vector_3d getCenter() const;// Return the coordinates of the Shape's center.
-
+	vector_3d & getCenter();			// Return the coordinates of the Shape's center.
 	FMOD_RESULT setSound(FMOD::System *sys, FMOD::Sound *snd);
-	//void playSound();
 
 	// Virtual methods.
-	virtual void move(float deltaTime, vector_3d dr, bool bReset);		// Virtual function, default: do nothing.
+	virtual void move(float deltaTime, vector_3d dr, bool bReset);	//Default: do nothing.
 	virtual void collide(Shape * s);		// Detect collision with another Shape.
 	virtual void setVelocity(vector_3d n);	// Change the direction of the velocity.
 	virtual vector_3d getVelocity() const;
@@ -48,7 +45,6 @@ protected:
 	Material material;
 
 	bool bPlaySound;
-	// Reconsider sound:
 	FMOD::Sound* sound;
 	FMOD::System *system;
 	FMOD::Channel *channel;	// Channel is used for manipulation of the sound.

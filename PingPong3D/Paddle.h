@@ -12,15 +12,15 @@ public:
 				float r, float h, float a, float top, float front,
 				vector_3d ambient, vector_3d diffuse, vector_3d specular, 
 				float shine, float alpha);
-	~Paddle(void);
+	virtual ~Paddle(void);
 
 	// Overriden virtual funcions.
 	float getSize() const;				// Return radius of the cylinder.
 	void draw();
-	void move(float deltaTime, vector_3d dr, bool bReset);
-	void collide(Shape *);				// Collision detection.
+	virtual void move(float deltaTime, vector_3d dr, bool bReset);
+	virtual void collide(Shape *);				// Collision detection.
 
-private:
+protected:
 	vector_3d vNormal;
 	float flRadius;
 	float flHeight;
@@ -40,7 +40,7 @@ private:
 	const int stacks;
 
 	// Private methods
-private:
+protected:
 	bool ptInPaddle(const vector_3d &pt) const;
 	void drawSpot();
 
@@ -65,5 +65,22 @@ void drawCircle(float radius)
 }
 
 };	// End Paddle.
+
+class ComputerPaddle : public Paddle
+{
+public:
+	ComputerPaddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n, 
+				float r, float h, float a, float top, float front,
+				vector_3d ambient, vector_3d diffuse, vector_3d specular, 
+				float shine, float alpha);
+	~ComputerPaddle(void);
+
+	void move(float deltaTime, vector_3d dr, bool bReset);
+	void collide(Shape * s);	
+
+private:
+	vector_3d vCollisionSpot;
+	float flVelocity;
+};
 
 #endif // PADDLE_H

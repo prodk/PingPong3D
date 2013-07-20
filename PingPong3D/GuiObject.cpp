@@ -156,47 +156,35 @@ void Button::handleMouseButtonUp(Logic &logic, float x, float y)
 	{		
 		switch(id)
 		{ 
-		case START_BUTTON:
-			logic.bShowOptions = false;
-			logic.bGamePaused = false;
-			// Tell registered observers to change their settings.
-			logic.notifyObservers();
+		case START_BTN:
+			logic.bShowStartScreen = false;
+			logic.bShowOptionsScreen = false;
+			logic.bShowPlayScreen = true;
+			logic.bGamePaused = false;			
+			logic.notifyObservers(); // Tell registered observers to change their settings.
 			break;
 
-		case OPTIONS_BUTTON:
-			logic.notifyObservers();
+		case OPTIONS_BTN:
+			logic.bShowStartScreen = false;
+			logic.bShowOptionsScreen = true;
+			logic.bShowPlayScreen = false;
+			//logic.notifyObservers();
 			break;
 
-		case BACKGR_SOUND_BUTTON:
-			if(logic.bBackgroundSound){
-				logic.bBackgroundSound = false;
-				caption = name + "Off";
-			}
-			else{
-				logic.bBackgroundSound = true;
-				caption = name;
-			}
-			// Tell registered observers to change their settings.
-			logic.notifyObservers();
+		case HOWTO_BTN:
+			logic.bShowStartScreen = false;
+			logic.bShowOptionsScreen = false;
+			logic.bShowHowtoScreen = true;			
+			//logic.notifyObservers(); // Tell registered observers to change their settings.
 			break;
 
-		case ACT_SOUND_BUTTON:
-			if(logic.bActionsSound){
-				logic.bActionsSound = false;
-				caption = name + "Off";
-			}
-			else{
-				logic.bActionsSound = true;
-				caption = name;
-			}
-			// Tell registered observers to change their settings.
-			logic.notifyObservers();
+		case TRAIN_BTN:
+			//logic.notifyObservers(); // Tell registered observers to change their settings.
 			break;
 		}// end switch(id)
 
 		if(bPlaySound)
-			::playSound(system, sound, 0);		// Maybe use channels for managing sounds!
-		//playSound();
+			::playSound(system, sound, channel);
 	}// End if ptInRect.
 }
 
@@ -213,6 +201,184 @@ void Button::handleKeyDown(Logic &logic)
 }
 
 bool Button::ptInRect(float ptx, float pty)
+{
+	float xMin = 0.;
+	float xMax = xMin + w;
+	float yMin = 0.;
+	float yMax = yMin + h;
+
+	if( (ptx >= x) && (ptx <= x + w) && (pty >= y ) && (pty <= y+h) )
+		return true;
+
+	return false;
+}
+
+/*________________________________*/
+// OptionsButton class implementation.
+OptionsButton::OptionsButton(float xExt, float yExt, float wExt, float hExt, 
+	std::size_t idExt, std::string n, int tid) :
+GuiObject(idExt), x(xExt), y(yExt), w(wExt), h(hExt), name(n), textureId(tid)
+{
+	caption = name;	
+}
+
+OptionsButton::~OptionsButton()
+{
+}
+
+void OptionsButton::draw(TTF_Font *font, Logic &logic)
+{		
+	glPushMatrix();
+	glDisable(GL_LIGHTING);
+
+	glBindTexture( GL_TEXTURE_2D, textureId );
+	
+	glColor4f(1.0, 0., 0., 1.0);
+	glTranslatef(x, y, 0.);
+
+	glBegin( GL_QUADS );
+	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
+	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(w, 0.0, 0.0);
+	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(w, h, 0.0);
+	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, h, 0.0);	
+	glEnd();	
+
+	glEnable(GL_LIGHTING);
+	glPopMatrix();
+	
+	// Print button's text.
+	drawText(font, logic);
+}
+
+int OptionsButton::drawText(TTF_Font *font, Logic &logic)
+{
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
+	int mode;
+
+	SDL_Color textColor;
+	SDL_Surface *text;
+	GLuint textTexture;
+
+	textColor.r = 1;
+    textColor.g = 0;
+    textColor.b = 0;
+	
+	text = TTF_RenderText_Blended(font, caption.c_str(), textColor);
+	SDL_Delay(25);			// Small delay to prevent from full CPU load.
+
+	if (text->format->BytesPerPixel == 3) // RGB 24bit.
+    { 
+        mode = GL_RGB;
+    } 
+    else if (text->format->BytesPerPixel == 4) // RGBA 32bit.
+    { 
+        mode = GL_RGBA;
+    } 
+    else 
+    {
+        printf("Could not determine pixel format of the surface");
+        SDL_FreeSurface(text);
+        return NULL;
+    }
+
+	// Draw the surface onto the OGL screen using gextures.
+    glPushMatrix();
+	glDisable(GL_LIGHTING);
+
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0.0f, 1.0f, 1.0f, 1.0f);
+
+    glGenTextures(1, &textTexture);
+    glBindTexture(GL_TEXTURE_2D, textTexture);
+
+	// Create texture bound to our text surface.
+    glTexImage2D(GL_TEXTURE_2D, 0, 4, text->w, text->h, 0, mode, GL_UNSIGNED_BYTE, text->pixels );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	
+    glColor3f(0.0f, 1.0f, 1.0f);
+
+    glTranslatef(x, y, 0.0f);
+
+	// Draw.
+    glBegin( GL_QUADS );
+	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
+	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(w, 0.0, 0.0);
+	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(w, h, 0.0);
+	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, h, 0.0);	
+	glEnd();
+	
+	glEnable(GL_LIGHTING);
+
+	glPopMatrix();
+
+    SDL_FreeSurface(text);
+    glDeleteTextures(1, &textTexture);
+
+	return 0;
+}
+
+void OptionsButton::handleMouseButtonUp(Logic &logic, float x, float y)
+{
+	if( ptInRect(x, y) )
+	{		
+		switch(id)
+		{		
+		case BACKGRSND_BTN:
+			if(logic.bBackgroundSound){
+				logic.bBackgroundSound = false;
+				caption = name + "Off";
+			}
+			else{
+				logic.bBackgroundSound = true;
+				caption = name;
+			}
+			logic.notifyObservers(); // Tell registered observers to change their settings.
+			break;
+
+		case ACTIONSND_BTN:
+			if(logic.bActionsSound){
+				logic.bActionsSound = false;
+				caption = name + "Off";
+			}
+			else{
+				logic.bActionsSound = true;
+				caption = name;
+			}
+			logic.notifyObservers(); // Tell registered observers to change their settings.
+			break;
+
+		case ROUND_BTN:
+			// Change round here.
+			// logic.notifyObservers(); 
+			break;
+
+		case BACK_BTN:
+			logic.bShowOptionsScreen = false;
+			logic.bShowStartScreen = true;
+			break;
+		}// end switch(id)
+
+		if(bPlaySound)
+			::playSound(system, sound, channel);
+	}// End if ptInRect.
+}
+
+void OptionsButton::handleMouseButtonDown(Logic &logic, float x, float y)
+{
+	if( ptInRect(x, y) )
+	{		
+	}// End if ptInRect.
+}
+
+void OptionsButton::handleKeyDown(Logic &logic)
+{
+	
+}
+
+bool OptionsButton::ptInRect(float ptx, float pty)
 {
 	float xMin = 0.;
 	float xMax = xMin + w;

@@ -1,6 +1,7 @@
 // Wall.cpp - implementation of the Wall and AbsorbingWall classes.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "Wall.h"
+#include "Ball.h"
 
 Wall::Wall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n):
 	Shape(idExt, center), width(w), height(h), vNormal(n), numOfVerteces(4)
@@ -115,7 +116,9 @@ void Wall::collide(Shape * s)
 	}
 
 	// Define whether to draw the intersection point.
-	bDrawSpot = spotOnWall(s);	
+	bDrawSpot = spotOnWall(s);
+	if(bDrawSpot)
+		((Ball*)s)->setCollisionSpot(vSpot);
 }
 
 void Wall::drawSpot()
@@ -225,6 +228,8 @@ void AbsorbingWall::collide(Shape *s)
 	// Reconsider this code duplication from Wall!
 	// Define whether to draw the intersection point.
 	bDrawSpot = spotOnWall(s);
+	if(bDrawSpot)
+		((Ball*)s)->setCollisionSpot(vSpot);
 }
 
 AbsorbingWall::~AbsorbingWall(void)

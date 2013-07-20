@@ -62,7 +62,9 @@ private:
 
 	// Game logic related.
 	Logic logic;
+	std::tr1::shared_ptr<StartScreen> startScreen;
 	std::tr1::shared_ptr<OptionsScreen> optionsScreen;
+	std::tr1::shared_ptr<HowtoScreen> howtoScreen;
 	std::tr1::shared_ptr<PlayScreen> playScreen;
 
 	bool bBackgroundSound;

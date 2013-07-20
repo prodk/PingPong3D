@@ -1,6 +1,7 @@
 // Paddle.cpp - implementation of the Paddle class.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
 #include "Paddle.h"
+#include "Ball.h"
 
 Paddle::Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
 	float r, float h, float a, float top, float front,
@@ -36,7 +37,7 @@ void Paddle::draw()
 	//quadratic = gluNewQuadric();
 	gluQuadricDrawStyle (quadratic, GLU_FILL); 
 	//gluQuadricNormals (quadratic, GLU_SMOOTH);
-	glTranslatef(vCenter[0]-0.5*flHeight, vCenter[1], vCenter[2]);	// Translate to the wall.
+	glTranslatef(vCenter[0]+vNormal[0]*0.5*flHeight, vCenter[1], vCenter[2]);	// Translate to the wall.
 	//glTranslatef(-0.5*flHeight, vCenter[1], vCenter[2]);
 	glRotatef(angle, 0.0f, 1.0f, 0.0f);
 
@@ -152,4 +153,58 @@ void Paddle::drawSpot()
 	glTranslatef(0., 0., 1.01*flHeight);
 	drawCircle(0.1*flRadius);
 	glPopMatrix();
+}
+
+/*----*/
+// ComputerPaddle implementation.
+ComputerPaddle::ComputerPaddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
+	float r, float h, float a, float top, float front,
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) : 
+	Paddle(idExt, shiftCenter, n, r, h, a, top, front,
+		ambient, diffuse, specular, shine, alpha)
+{
+	flVelocity = 0.05;
+}
+
+ComputerPaddle::~ComputerPaddle(void)
+{
+}
+
+void ComputerPaddle::move(float deltaTime, vector_3d dr, bool bReset)
+{
+	if( vCenter[1] + flRadius >= maxCoordTop ){		// Top constraint.
+		vVelocity = vector_3d(0., 0., 0.);
+		vCenter[1] = maxCoordTop - 1.01*flRadius;
+	}
+	else if( vCenter[1] - flRadius <= -maxCoordTop ){	// Bottom constraint.
+		vVelocity = vector_3d(0., 0., 0.);
+		vCenter[1] = -maxCoordTop + 1.01*flRadius;
+	}
+	else if( vCenter[2] + flRadius >= maxCoordFront ){		// Front constraint.
+		vVelocity = vector_3d(0., 0., 0.);
+		vCenter[2] = maxCoordFront - 1.01*flRadius;
+	}
+	else if( vCenter[2] - flRadius <= -maxCoordFront ){	// Back constraint.
+		vVelocity = vector_3d(0., 0., 0.);
+		vCenter[2] = -maxCoordFront + 1.01*flRadius;
+	}
+	else
+	{
+		//vVelocity += dr;
+		//vCenter += vVelocity;
+		// React only if the spot is
+		//if(vSpot[0] > 0.0){
+			// Move the paddle to the projections of the collision spot on the yz plane.
+			vector_3d deltaSpot = vCollisionSpot  - vCenter;
+
+			vCenter[1] += flVelocity*deltaSpot[1];
+			vCenter[2] += flVelocity*deltaSpot[2];
+		//}
+	}
+}
+
+void ComputerPaddle::collide(Shape * s)
+{
+	Paddle::collide(s);
+	vCollisionSpot = ((Ball*) s)->getCollisionSpot();
 }

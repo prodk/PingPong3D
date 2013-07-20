@@ -97,3 +97,13 @@ vector_3d Ball::getVelocity() const
 {
 	return vVelocity;
 }
+
+void Ball::setCollisionSpot(vector_3d & spot)
+{
+	vSpot = spot;
+}
+
+vector_3d Ball::getCollisionSpot() const
+{
+	return vSpot;
+}

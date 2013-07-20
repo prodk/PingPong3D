@@ -3,10 +3,16 @@
 #include "Logic.h"
 
 
-Logic::Logic(bool opts, bool run, bool pause, bool over, bool bsound, bool asound) :
-	bShowOptions(opts), bAppRunning(run), bGamePaused(pause), bGameOver(over),
-		bBackgroundSound(bsound), bActionsSound(asound)
+Logic::Logic(bool startscreen , bool options, bool howto, bool play, 
+	bool run, bool pause, bool over, bool bsound, bool asound) :
+	bShowStartScreen(startscreen), bShowOptionsScreen(options), 
+	bShowHowtoScreen(howto), bShowPlayScreen(play),
+	bAppRunning(run), bGamePaused(pause), bGameOver(over),
+	bBackgroundSound(bsound), bActionsSound(asound)
 {
+	bTrain = false;
+	flBackroundVolume = 1.;
+	flActionVolume = 1.;
 }
 
 
