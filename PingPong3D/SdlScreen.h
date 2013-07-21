@@ -76,7 +76,7 @@ class OptionsScreen : public SdlScreen
 {
 public:
 	OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
-		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
+		FMOD::System *sys, std::vector<FMOD::Sound*> snd, Logic &logic);
 	~OptionsScreen(void);
 
 	// Overridden virtual functions.
@@ -89,7 +89,7 @@ public:
 private:
 	void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
 	void handleKeyDown(const SDL_Event& sdle, Logic &l);
-	void addButtons();
+	void addButtons(Logic & logic);
 
 private:
 	enum{BACKGRSND_BTN, ACTIONSND_BTN, ROUND_BTN, BACK_BTN};

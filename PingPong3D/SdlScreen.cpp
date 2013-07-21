@@ -519,10 +519,12 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 
 	case SDLK_v:
 		logic.bGamePaused = true;
+		logic.notifyObservers();
 		break;
 
 	case SDLK_SPACE:
 		logic.bGamePaused = false;
+		logic.notifyObservers();
 		break;
 
 	case SDLK_ESCAPE:
@@ -632,20 +634,22 @@ void PlayScreen::initView()
 
 void PlayScreen::drawAxes() const
 {
+	glDisable(GL_LIGHTING);
 	glBegin(GL_LINES);
 	// x, red
-	glColor3f(2.f, 0.f, 0.f);
-	glVertex3f(-2.f, 0.f, 0.f);
-	glVertex3f(1.f, 0.f, 0.f);
+	/*glColor3f(2.f, 0.f, 0.f);
+	glVertex3f(-0.5f, 0.f, 0.f);
+	glVertex3f(0.5f, 0.f, 0.f);*/
 	// y, green
 	glColor3f(0.f, 2.f, 0.f);
-	glVertex3f(0.f, -2.f, 0.f);
-	glVertex3f(0.f, 1.f, 0.f);
+	glVertex3f(0.f, -0.5f, 0.f);
+	glVertex3f(0.f, 0.5f, 0.f);
 	// z, blue
-	glColor3f(0.f, 0.f, 2.f);
-	glVertex3f(0.f, 0.f, -20.f);
-	glVertex3f(0.f, 0.f, 1.f);
+	/*glColor3f(0.f, 0.f, 2.f);
+	glVertex3f(0.f, 0.f, -0.5f);
+	glVertex3f(0.f, 0.f, 0.5f);*/
 	glEnd();
+	glEnable(GL_LIGHTING);
 }
 
 void PlayScreen::doLogic(const Logic &logic)
@@ -706,10 +710,10 @@ std::vector<std::tr1::shared_ptr<Shape> > & PlayScreen::getShapes()
 // OptionsScreen implementation.
 OptionsScreen::OptionsScreen(float w, float h, SDL_Surface* s, 
 	TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
-	FMOD::System *sys, std::vector<FMOD::Sound*> snd):
+	FMOD::System *sys, std::vector<FMOD::Sound*> snd, Logic &logic):
 	SdlScreen(w, h, s, t, fnt, sys, snd), iNumOfButtons(4)
 {
-	addButtons();
+	addButtons(logic);
 	bLeftMouseButton = false;
 }
 
@@ -717,27 +721,29 @@ OptionsScreen::~OptionsScreen()
 {
 }
 
-void OptionsScreen::addButtons()
+void OptionsScreen::addButtons(Logic &logic)
 {
 	guiObjects.resize(iNumOfButtons);
 	float x = -0.5;
 	float y = 0.5;
 	float w = 1.;
 	float h = 0.25;
-	std::string name = "Background Sound Vol";
+	std::string name = "Background Sound";
 
 	// Later put the code for adding a button into a method to avoid code duplication!
 	
 	// Button 0.
-	OptionsButton* pButton = new OptionsButton(x, y, w, h, BACKGRSND_BTN, name, textures[0]->id);
+	OptionsButton* pButton = new OptionsButton(x, y, w, h, 
+		BACKGRSND_BTN, name, textures[0]->id, logic);
 	GuiObject* pGuiObj = dynamic_cast<GuiObject*>(pButton);	
 	pButton->setSound(system, sounds[1]);
 	guiObjects[BACKGRSND_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
 
 	// Button 1.
 	y = 0.125;
-	name = "Actions Sound Vol";
-	pButton = new OptionsButton(x, y, w, h, ACTIONSND_BTN, name, textures[0]->id);	// The same texture id.
+	name = "Actions Sound";
+	pButton = new OptionsButton(x, y, w, h, 
+		ACTIONSND_BTN, name, textures[0]->id, logic);	// The same texture id.
 	pGuiObj = dynamic_cast<GuiObject*>(pButton);
 	pButton->setSound(system, sounds[1]);
 	guiObjects[ACTIONSND_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
@@ -745,7 +751,8 @@ void OptionsScreen::addButtons()
 	// Button 2.
 	y = -0.25;
 	name = "Round";
-	pButton = new OptionsButton(x, y, w, h, ROUND_BTN, name, textures[0]->id);	// The same texture id.
+	pButton = new OptionsButton(x, y, w, h, 
+		ROUND_BTN, name, textures[0]->id, logic);	// The same texture id.
 	pGuiObj = dynamic_cast<GuiObject*>(pButton);
 	pButton->setSound(system, sounds[1]);
 	guiObjects[ROUND_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
@@ -753,7 +760,8 @@ void OptionsScreen::addButtons()
 	// Button 3.
 	y = -0.625;
 	name = "Back";
-	pButton = new OptionsButton(x, y, w, h, BACK_BTN, name, textures[0]->id);	// The same texture id.
+	pButton = new OptionsButton(x, y, w, h, 
+		BACK_BTN, name, textures[0]->id, logic);	// The same texture id.
 	pGuiObj = dynamic_cast<GuiObject*>(pButton);
 	pButton->setSound(system, sounds[1]);
 	guiObjects[BACK_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);

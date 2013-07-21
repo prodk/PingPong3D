@@ -1,9 +1,10 @@
-// Logic.h - declaration of the Logic class.
+// Logic.h - declaration of the Logic and RoundParameters classes.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
 #ifndef LOGIC_H
 #define LOGIC_H
 
 #include "Observer.h"
+#include "Material.h"
 
 class Logic : public Subject
 {
@@ -26,8 +27,22 @@ public:
 	bool bActionsSound;
 	bool bTrain;
 
-	float flBackroundVolume;
-	float flActionVolume;
+	std::size_t iRound;
+	std::size_t iRoundMax;	// Make this constant!
+	int iUserScore;
+	int iCompScore;
+};
+
+class RoundParameters
+{
+public:
+	RoundParameters();
+	~RoundParameters();
+
+	// Members.
+	Material ballMaterial;
+	Material paddleMaterial;
+	Material wallMaterial;
 };
 
 #endif // LOGIC_H

@@ -21,7 +21,7 @@ private:
 	
 	void setupTimers();
 	void updateTimers();
-	void setupNewGame();	// Init game-specific variables/objects.
+	//void setupNewGame();	// Init game-specific variables/objects.
 	void shutDown();		// Clean up resources.
 	void registerObservers();	// Register what objects should be tracked by the Subject.
 

@@ -190,9 +190,7 @@ void ComputerPaddle::move(float deltaTime, vector_3d dr, bool bReset)
 	}
 	else
 	{
-		//vVelocity += dr;
-		//vCenter += vVelocity;
-		// React only if the spot is
+		// React only if the spot is at the computer's half.
 		//if(vSpot[0] > 0.0){
 			// Move the paddle to the projections of the collision spot on the yz plane.
 			vector_3d deltaSpot = vCollisionSpot  - vCenter;

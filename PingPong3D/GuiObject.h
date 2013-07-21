@@ -25,6 +25,8 @@ public:
 	// Fixed implementation methods.
 	FMOD_RESULT setSound(FMOD::System *sys, FMOD::Sound *snd);
 	std::size_t getId();
+	int drawText(const std::string & txt, GLfloat x, GLfloat y, GLfloat w, GLfloat h,
+	TTF_Font *font, Logic &logic);
 
 protected:
 	std::size_t id;
@@ -50,11 +52,11 @@ public:
 
 private:
 	//void addButtons();
-	int drawText(TTF_Font *font, Logic &logic);
+	//int drawText(TTF_Font *font, Logic &logic);
 	bool ptInRect(float ptx, float pty);
 
 private:
-	enum{START_BTN, OPTIONS_BTN, HOWTO_BTN, TRAIN_BTN};
+	enum{START_BTN, OPTIONS_BTN, HOWTO_BTN, TRAIN_BTN, BACK_BTN};
 	float x;
 	float y;
 	float w;
@@ -69,7 +71,8 @@ private:
 class OptionsButton : public GuiObject
 {
 public:
-	OptionsButton(float x, float y, float w, float h, std::size_t idExt, std::string n, int tid);
+	OptionsButton(float x, float y, float w, float h, std::size_t idExt, 
+		std::string n, int tid, Logic &logic);
 	~OptionsButton();
 	
 	// Overridden virtual methods.
@@ -80,7 +83,7 @@ public:
 
 private:
 	//void addButtons();
-	int drawText(TTF_Font *font, Logic &logic);
+	//int drawText(TTF_Font *font, Logic &logic);
 	bool ptInRect(float ptx, float pty);
 
 private:
@@ -89,6 +92,8 @@ private:
 	float y;
 	float w;
 	float h;
+	float xSmall;			// Where to draw the small part of the button.
+	float wSmall;			// Width of the small button.
 	int textureId;
 	std::string name;
 	std::string caption;	// Button text.

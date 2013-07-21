@@ -7,7 +7,7 @@ GameApp::GameApp(void):
 	flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong"), 
 	flZaxisDistance(2.2f), flLengthUnit(0.4f), bBackgroundSound(false),
 	//Logic(start, options, howto, play, run, pause, over, bsound, asound);
-	logic(false, false, false, true, true, false, false,  bBackgroundSound, true) // Show options, running/paused/over/sounds.
+	logic(true, false, false, false, true, false, false,  bBackgroundSound, true) // Show options, running/paused/over/sounds.
 {
 	initLibraries();	// !Check return values and exceptions later! Don't leak exceptions!
 	loadData();
@@ -20,7 +20,7 @@ GameApp::GameApp(void):
 
 	optionsScreen = std::tr1::shared_ptr<OptionsScreen>(
 		new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
-		system, sounds) );
+		system, sounds, logic) );
 
 	howtoScreen = std::tr1::shared_ptr<HowtoScreen>(
 		new HowtoScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
@@ -60,7 +60,7 @@ int GameApp::initLibraries()
     std::srand ((unsigned int)time(NULL));
     
     // Initialize new game.
-    setupNewGame();
+    //setupNewGame();
 
 	return 0;
 }
@@ -264,8 +264,8 @@ void GameApp::updateTimers()
     }
 }
 
-void GameApp::setupNewGame()
-{
+//void GameApp::setupNewGame()
+//{
 	/*
 	// Clear board
     int i, j;
@@ -282,7 +282,7 @@ void GameApp::setupNewGame()
     level = 1;
     game_over = false;
 	*/
-}
+//}
 
 void GameApp::manageGame()
 {
@@ -432,6 +432,9 @@ int GameApp::setupSound()
 void GameApp::notify(Subject* s)	// Observer pattern callback hook method.
 {
 	bBackgroundSound = ((Logic*) s)->bBackgroundSound;
+
+	//FMOD_RESULT result;
+
 	playBackgroundSound();						// Play according to the new options.
 }
 
@@ -459,15 +462,18 @@ void GameApp::registerObservers()
 void GameApp::playBackgroundSound()
 {
 	if(bBackgroundSound)
-	{
+	{		
 		// Try to stop playing here before starting a new type of the sound.
 		if(logic.bShowStartScreen || logic.bShowOptionsScreen || logic.bShowHowtoScreen){
-			channelPlay->setPaused(true);
+			channelPlay->setPaused(true);			
 			channelOptions->setPaused(false);
 		}
-		else if(logic.bShowPlayScreen){
+		else if(logic.bShowPlayScreen){			
 			channelOptions->setPaused(true);
-			channelPlay->setPaused(false);
+			if(!logic.bGamePaused)
+				channelPlay->setPaused(false);
+			else
+				channelPlay->setPaused(true);
 		}
 	}
 	else	// Pause all the sounds.

@@ -11,8 +11,10 @@ Logic::Logic(bool startscreen , bool options, bool howto, bool play,
 	bBackgroundSound(bsound), bActionsSound(asound)
 {
 	bTrain = false;
-	flBackroundVolume = 1.;
-	flActionVolume = 1.;
+	iRound = 1;
+	iRoundMax = 10;
+	iUserScore = 0;
+	iCompScore = 0;
 }
 
 
