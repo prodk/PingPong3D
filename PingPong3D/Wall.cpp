@@ -108,7 +108,7 @@ void Wall::collide(Shape * s)
 	float b = cml::dot(vNormal*r+c,vNormal);
 
 	// If ball's surface is beyond the wall, then handle collision.
-	if(b >= a){	// Collision occurred.
+	if(b > a){	// Collision occurred.
 		s->setVelocity(vNormal);
 
 		if(bPlaySound)			// Maybe use channels for managing sounds!

@@ -26,23 +26,37 @@ public:
 	bool bBackgroundSound;
 	bool bActionsSound;
 	bool bTrain;
+	bool bNewRound;
 
 	std::size_t iRound;
 	std::size_t iRoundMax;	// Make this constant!
 	int iUserScore;
 	int iCompScore;
+
+	int iMaxScore;			// !Make this const.
 };
 
 class RoundParameters
 {
 public:
-	RoundParameters();
+	RoundParameters(float w, float h, float bv, float bdv, float pv, float pr);
 	~RoundParameters();
 
 	// Members.
-	Material ballMaterial;
-	Material paddleMaterial;
-	Material wallMaterial;
+	//Material ballMaterial;
+	//Material paddleMaterial;
+	//Material wallMaterial;
+
+	float flBoxWidth;
+	float flBoxHeight;
+	float flBallVelocity;
+	float flBallDeltaVel;
+	float flComputerPaddleVel;
+	float flPaddleRadius;
+
+	// Add textures and lights later.
 };
+
+typedef std::vector<std::tr1::shared_ptr<RoundParameters> > RoundParamsVector;
 
 #endif // LOGIC_H

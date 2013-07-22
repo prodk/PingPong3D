@@ -115,13 +115,14 @@ void Paddle::collide(Shape *s)
 	float r = s->getSize();
 
 	vector_3d surfacePoint = vCenter;
-	surfacePoint[0] -= 0.5*flHeight*vNormal[0];
+	//surfacePoint[0] -= 0.5*flHeight*vNormal[0];
+	surfacePoint[0] = surfacePoint[0] - vNormal[0]*0.5*flHeight - vNormal[0]*flHeight;
 
 	// Find the smallest distance between the wall and the ball.
 	float a = cml::dot(surfacePoint, vNormal);
 	float b = cml::dot(vNormal*r+c,vNormal);
 
-	if(b > a){	// Collision is probable to occur.
+	if(b >= a){	// Collision is probable to occur.
 		if( ptInPaddle(c) )	{			// If the collision point is inside the paddle area.
 			s->setVelocity(vNormal);
 

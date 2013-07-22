@@ -12,12 +12,26 @@ Logic::Logic(bool startscreen , bool options, bool howto, bool play,
 {
 	bTrain = false;
 	iRound = 1;
-	iRoundMax = 10;
+	iRoundMax = 9;
 	iUserScore = 0;
 	iCompScore = 0;
+	iMaxScore = 5;
+	bNewRound = true;
 }
 
 
 Logic::~Logic(void)
+{
+}
+
+/*______________*/
+// RoundParameters implementation.
+RoundParameters::RoundParameters(float w, float h, float bv, float bdv, float pv, float pr):
+	flBoxWidth(w), flBoxHeight(h), flBallVelocity(bv), flBallDeltaVel(bdv),
+	flComputerPaddleVel(pv), flPaddleRadius(pr)
+{
+}
+
+RoundParameters::~RoundParameters()
 {
 }

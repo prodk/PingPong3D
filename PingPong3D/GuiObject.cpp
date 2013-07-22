@@ -157,7 +157,8 @@ void Button::handleMouseButtonUp(Logic &logic, float x, float y)
 			logic.bShowStartScreen = false;
 			logic.bShowOptionsScreen = false;
 			logic.bShowPlayScreen = true;
-			logic.bGamePaused = false;			
+			logic.bGamePaused = false;
+			logic.bTrain = false;
 			logic.notifyObservers(); // Tell registered observers to change their settings.
 			break;
 
@@ -176,7 +177,12 @@ void Button::handleMouseButtonUp(Logic &logic, float x, float y)
 			break;
 
 		case TRAIN_BTN:
-			//logic.notifyObservers(); // Tell registered observers to change their settings.
+			logic.bShowStartScreen = false;
+			logic.bShowOptionsScreen = false;
+			logic.bShowPlayScreen = true;
+			logic.bGamePaused = false;
+			logic.bTrain = true;
+			logic.notifyObservers();
 			break;
 		}// end switch(id)
 

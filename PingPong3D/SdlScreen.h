@@ -8,6 +8,7 @@
 #include "Ball.h"
 #include "Wall.h"
 #include "Paddle.h"
+#include <map>
 
 typedef std::vector<std::tr1::shared_ptr<TEXTURE> > TEXTURE_PTR_ARRAY;
 
@@ -135,7 +136,8 @@ class PlayScreen : public SdlScreen
 {
 public:
 	PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt, 
-		FMOD::System *sys, std::vector<FMOD::Sound*> snd, int nofshapes);
+		FMOD::System *sys, std::vector<FMOD::Sound*> snd, int nofshapes, 
+		RoundParamsVector & rp);
 	~PlayScreen(void);
 
 	// Overridden virtual functions.
@@ -145,8 +147,9 @@ public:
 	// PlayScreen-specific methods.
 	void doLogic(const Logic &l);
 	void play(Logic &l, SDL_Event sdlEvent);			// Play the game.
-	void addShapes();
-	std::vector<std::tr1::shared_ptr<Shape> > & getShapes();
+	//void addShapes(const Logic &l);
+	std::map<std::size_t, std::tr1::shared_ptr<Shape> > & getShapes();
+	void setupNewRound(Logic &logic);
 
 	// I/O.
 	void handleKeyDown(const SDL_Event& sdle, Logic &l);
@@ -173,12 +176,12 @@ public:
 
 	// Private methods.
 private:
-	void initMembers();
-
+	void initMembers(const Logic &l);
+	void addShapes(const Logic &l);
 	// Public members.
 public:
 	// A vector of pointers to Shapes. Ball is stored in the 1st item.	
-	std::vector<std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.
+	std::map<std::size_t, std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.
 	
 	// Private members.
 private:
@@ -200,18 +203,24 @@ private:
 	float yPaddleOld;
 
 	bool bPaddlePicked;
+	RoundParamsVector roundParams;
+	std::size_t iCurRound;
 
 	// Box sizes.
 	float flBoxWidth;		// Add these to the constructor and use when init walls.
 	float flBoxHeight;
 	float flBoxThickness;
+	float flPaddleRadius;
+	float flBallVel;
+	float flBallDeltaVel;
+	float flCompPaddleVel;
 	//vector_3d vLeftPaddleCntr;	// Init left paddle position.
 	//vector_3d vRightPaddleCntr;
 	// int leftWallIdx;
 	// int rightWallIdx;
 	int leftPaddleIdx;
 	int rightPaddleIdx;
-	int iNumOfShapes;		// It's not const because it depends on the user's choice.
+	int iNumOfShapes;		// !Delete after introducing map instead of vector. It's not const because it depends on the user's choice.
 };
 
 #endif // SDL_SCREEN

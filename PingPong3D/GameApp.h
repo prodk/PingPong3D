@@ -21,6 +21,7 @@ private:
 	
 	void setupTimers();
 	void updateTimers();
+	void setupRoundParams();
 	//void setupNewGame();	// Init game-specific variables/objects.
 	void shutDown();		// Clean up resources.
 	void registerObservers();	// Register what objects should be tracked by the Subject.
@@ -66,6 +67,7 @@ private:
 	std::tr1::shared_ptr<OptionsScreen> optionsScreen;
 	std::tr1::shared_ptr<HowtoScreen> howtoScreen;
 	std::tr1::shared_ptr<PlayScreen> playScreen;
+	RoundParamsVector roundParams;
 
 	bool bBackgroundSound;
 	FMOD::Channel *channelOptions;

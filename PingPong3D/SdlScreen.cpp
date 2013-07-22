@@ -240,40 +240,45 @@ std::vector<std::tr1::shared_ptr<GuiObject> > & StartScreen::getGuiObjects()
 /*________________________________*/
 // PlayScreen implementation.
 PlayScreen::PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt, 
-	 FMOD::System *sys,std::vector<FMOD::Sound*> snd, int nofshapes) :
-	 SdlScreen(w, h, s, t, fnt, sys, snd), iNumOfShapes(nofshapes)
+	 FMOD::System *sys,std::vector<FMOD::Sound*> snd, int nofshapes,
+	 std::vector<std::tr1::shared_ptr<RoundParameters> > & rp) :
+	 SdlScreen(w, h, s, t, fnt, sys, snd), iNumOfShapes(nofshapes), roundParams(rp)
 {
-	initMembers();
-	addShapes();
+	//initMembers();
+	//addShapes();
 }
 
 PlayScreen::~PlayScreen()
 {
 }
 
-void PlayScreen::initMembers()
+void PlayScreen::initMembers(const Logic &logic)
 {
-	flBoxWidth = 1.3f;		// Add these to the constructor and use when init walls.
-	flBoxHeight = 1.0f;
-	flBoxThickness = 0.5f;
+	iCurRound = logic.iRound - 1;
+	flBoxWidth = roundParams[iCurRound]->flBoxWidth ;//1.3f;		// Add these to the constructor and use when init walls.
+	flBoxHeight = roundParams[iCurRound]->flBoxHeight;//1.0f;
+	flBoxThickness = 0.5*roundParams[iCurRound]->flBoxHeight;//0.5f;
+	flPaddleRadius = roundParams[iCurRound]->flPaddleRadius;//0.05*flBoxWidth;
+	flBallVel = roundParams[iCurRound]->flBallVelocity;
+	flBallDeltaVel = roundParams[iCurRound]->flBallDeltaVel;
+	flCompPaddleVel = roundParams[iCurRound]->flComputerPaddleVel;
+
 	xViewOld = 0.; //xView = 0.;
 	angleViewY = 115.;		// Initial angle (around y) of the view.
 	angleViewZ = 0.;
 	flScaleAll = 1.;
 	bPaddlePicked = false;
 	xPaddleOld = yPaddleOld = 0.;
-
 	flZaxisDistance = 2.2f;
 	flLengthUnit = 0.4f;
-
-	//flScreenWidth = flWidth;
-	//flScreenHeight = flHeight;
 }
 
-void PlayScreen::addShapes()
+void PlayScreen::addShapes(const Logic &logic)
 {
+	// Cleanup the shapes from the previous round.
+	shapes.clear();// .resize(0);
 	// Add shapes to the game.
-	shapes.resize(iNumOfShapes);	// ball + 6 walls + 2 paddles
+	//shapes.resize(iNumOfShapes);	// ball + 6 walls + 2 paddles
 
 	// Add ball.
 	vector_3d ambient = vector_3d(0.0, 0.5, 0.0);
@@ -282,30 +287,40 @@ void PlayScreen::addShapes()
 	float alpha = 1.0;				// Opaque ball.
 	float shine = 0.;
 	vector_3d center(0.0f, 0.0f, 0.0f);				// Ball starts at the center of the scene.
-	vector_3d velocity(-4e-03f, -2e-03f, 2e-03f);	// !ADD Random initial velocity.
-	Ball* pBall = new Ball(BALL, center, 0.05*flBoxHeight, velocity,
+	vector_3d velocity(0.4*flBallVel, 0.2*flBallVel, 0.2*flBallVel);// !ADD Random initial velocity.
+	Ball* pBall = new Ball(BALL, center, 0.05*flBoxHeight, velocity, flBallDeltaVel,
 		ambient, diffuse, specular, shine, alpha);
-	Shape* pShape = dynamic_cast<Shape*>(pBall);	
-	shapes[0] = std::tr1::shared_ptr<Shape>(pShape);
-
+	Shape* pShape = dynamic_cast<Shape*>(pBall);
+	//shapes[0] = std::tr1::shared_ptr<Shape>(pShape);
+	shapes.insert(std::make_pair(BALL, std::tr1::shared_ptr<Shape>(pShape)));	
+	
 	// !Reconsider this code: add some method to avoid code duplication.
 
 	// Add walls.
 	// Left wall.
 	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
-	vector_3d n(-1., 0., 0.);
+	vector_3d n = vector_3d(-1., 0., 0.);
 	Wall* pWall = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	pShape->setSound(system, sounds[2]);
-	shapes[1] = std::tr1::shared_ptr<Shape>(pShape);
+	//shapes[1] = std::tr1::shared_ptr<Shape>(pShape);
+	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 	// Right wall.
 	center = vector_3d(0.5*flBoxWidth, 0., 0.);
 	n = vector_3d(1., 0., 0.);
-	pWall = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
+	if(!logic.bTrain){
+		pWall = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
+		pShape->setSound(system, sounds[2]);
+	}
+	else{
+		pWall = new Wall( WALL, center, flBoxThickness, flBoxHeight, n);
+		pShape->setSound(system, sounds[1]);
+	}
 	pShape = dynamic_cast<Shape*>(pWall);
-	pShape->setSound(system, sounds[2]);
-	shapes[2] = std::tr1::shared_ptr<Shape>(pShape);
+	
+	//shapes[2] = std::tr1::shared_ptr<Shape>(pShape);
+	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 	// Top wall.
 	ambient = vector_3d(0.0, 0.0, 0.5);
@@ -319,7 +334,8 @@ void PlayScreen::addShapes()
 		ambient, diffuse, specular, shine, alpha);
 	pShape = dynamic_cast<Shape*>(pWall);
 	pShape->setSound(system, sounds[1]);
-	shapes[3] = std::tr1::shared_ptr<Shape>(pShape);
+	//shapes[3] = std::tr1::shared_ptr<Shape>(pShape);
+	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 	// Bottom wall.
 	ambient = vector_3d(0.0, 0.0, 0.5);
@@ -333,7 +349,8 @@ void PlayScreen::addShapes()
 		ambient, diffuse, specular, shine, alpha);
 	pShape = dynamic_cast<Shape*>(pWall);
 	pShape->setSound(system, sounds[1]);
-	shapes[4] = std::tr1::shared_ptr<Shape>(pShape);
+	//shapes[4] = std::tr1::shared_ptr<Shape>(pShape);
+	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 	// Front wall.
 	center = vector_3d(0., 0., 0.5*flBoxThickness);
@@ -341,7 +358,8 @@ void PlayScreen::addShapes()
 	pWall = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	pShape->setSound(system, sounds[1]);
-	shapes[5] = std::tr1::shared_ptr<Shape>(pShape);
+	//shapes[5] = std::tr1::shared_ptr<Shape>(pShape);
+	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 	// Back wall.
 	center = vector_3d(0., 0., -0.5*flBoxThickness);
@@ -349,9 +367,10 @@ void PlayScreen::addShapes()
 	pWall = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
 	pShape = dynamic_cast<Shape*>(pWall);
 	pShape->setSound(system, sounds[1]);
-	shapes[6] = std::tr1::shared_ptr<Shape>(pShape);
+	//shapes[6] = std::tr1::shared_ptr<Shape>(pShape);
+	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
-	// User (left) paddle.
+		// User (left) paddle.
 	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 	n = vector_3d(-1., 0., 0.);			// Norm is -x.
 	float angle = 90.0;
@@ -361,30 +380,34 @@ void PlayScreen::addShapes()
 	specular = vector_3d(0.5, 0.5, 0.0);
 	alpha = 0.9;	// A bit transparent paddle.
 	shine = 10.;
-	Paddle *pPaddle = new Paddle( LEFT_PADDLE, center, n, 0.05*flBoxWidth, 0.01*flBoxWidth, 
+	Paddle *pPaddle = new Paddle( LEFT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
 		angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
 		ambient, diffuse, specular, shine, alpha);
 	pShape = dynamic_cast<Shape*>(pPaddle);
 	pShape->setSound(system, sounds[3]);
 	leftPaddleIdx = 7;
-	shapes[leftPaddleIdx] = std::tr1::shared_ptr<Shape>(pShape);
+	//shapes[leftPaddleIdx] = std::tr1::shared_ptr<Shape>(pShape);
+	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 	// Computer (right) paddle.
-	center = vector_3d(0.5*flBoxWidth, 0., 0.);
-	n = vector_3d(1., 0., 0.);			// Norm is x.
-	angle = -90.0;
-	// Setup colors.
-	ambient = vector_3d(0.5, 0.0, 0.5);
-	diffuse = vector_3d(1.0, 0.0, 1.0);
-	specular = vector_3d(0.5, 0.0, 0.5);
-	pPaddle = 
-		new ComputerPaddle( RIGHT_PADDLE, center, n, 0.05*flBoxWidth, 0.01*flBoxWidth, 
-		angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
-		ambient, diffuse, specular, shine, alpha);
-	pShape = dynamic_cast<Shape*>(pPaddle);
-	pShape->setSound(system, sounds[3]);
-	rightPaddleIdx = 8;
-	shapes[rightPaddleIdx] = std::tr1::shared_ptr<Shape>(pShape);	
+	if(!logic.bTrain){
+		center = vector_3d(0.5*flBoxWidth, 0., 0.);
+		n = vector_3d(1., 0., 0.);			// Norm is x.
+		angle = -90.0;
+		// Setup colors.
+		ambient = vector_3d(0.5, 0.0, 0.5);
+		diffuse = vector_3d(1.0, 0.0, 1.0);
+		specular = vector_3d(0.5, 0.0, 0.5);
+		pPaddle = 
+			new ComputerPaddle( RIGHT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
+			angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
+			ambient, diffuse, specular, shine, alpha);
+		pShape = dynamic_cast<Shape*>(pPaddle);
+		pShape->setSound(system, sounds[3]);
+		rightPaddleIdx = 8;
+		//shapes[rightPaddleIdx] = std::tr1::shared_ptr<Shape>(pShape);
+		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
+	}
 }
 
 void PlayScreen::doInput(Logic &logic, SDL_Event sdlEvent)
@@ -504,7 +527,8 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 		if(!logic.bShowStartScreen)
 		{
 			logic.bShowStartScreen = true;
-			logic.bGamePaused = true;
+			//logic.bGamePaused = true;
+			logic.bNewRound = true;		// Start from scratch.
 		}
 		logic.notifyObservers();	// Tell observers to change their sound behavior.
 		break;
@@ -519,6 +543,7 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 
 	case SDLK_v:
 		logic.bGamePaused = true;
+		logic.bNewRound = false;		// May be redundant! Check later!
 		logic.notifyObservers();
 		break;
 
@@ -693,6 +718,11 @@ void PlayScreen::doLogic(const Logic &logic)
 
 void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 {
+	if(logic.bNewRound){
+		logic.bNewRound = false;
+		setupNewRound(logic);
+	}
+
 	doInput(logic, sdlEvent);
 	
 	if(!logic.bGamePaused)
@@ -701,7 +731,7 @@ void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 	doDrawing(logic);	
 }
 
-std::vector<std::tr1::shared_ptr<Shape> > & PlayScreen::getShapes()
+std::map<std::size_t, std::tr1::shared_ptr<Shape> > & PlayScreen::getShapes()
 {
 	return shapes;
 }
@@ -966,4 +996,10 @@ void HowtoScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
 		logic.bAppRunning = false;
 		break;
 	}// end switch
+}
+
+void PlayScreen::setupNewRound(Logic &logic)
+{
+	initMembers(logic);
+	addShapes(logic);
 }

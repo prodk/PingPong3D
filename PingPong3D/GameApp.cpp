@@ -5,12 +5,14 @@
 
 GameApp::GameApp(void):
 	flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong"), 
-	flZaxisDistance(2.2f), flLengthUnit(0.4f), bBackgroundSound(false),
+	flZaxisDistance(2.2f), flLengthUnit(0.4f), bBackgroundSound(true),
 	//Logic(start, options, howto, play, run, pause, over, bsound, asound);
 	logic(true, false, false, false, true, false, false,  bBackgroundSound, true) // Show options, running/paused/over/sounds.
 {
 	initLibraries();	// !Check return values and exceptions later! Don't leak exceptions!
 	loadData();
+
+	setupRoundParams();	// Set the parameters of all the rounds.
 
 	// Later - Put these into a method createScreens();
 	// Init options screen.
@@ -30,7 +32,7 @@ GameApp::GameApp(void):
 	int iNumOfShapes = 9;		// Put this into the GameState class.
 	playScreen = std::tr1::shared_ptr<PlayScreen>(
 		new PlayScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
-		system, sounds, iNumOfShapes) );
+		system, sounds, iNumOfShapes, roundParams) );
 
 	// Register observers from the Observer pattern to manage the sound.
 	registerObservers();
@@ -454,7 +456,7 @@ void GameApp::registerObservers()
 		logic.registerObserver( dynamic_cast<Observer*>(guis[i].get()) );
 
 	// Register shapes.
-	std::vector<std::tr1::shared_ptr<Shape> > shapes = playScreen->getShapes();
+	std::map<std::size_t, std::tr1::shared_ptr<Shape> > shapes = playScreen->getShapes();
 	for(std::size_t i = 0; i < shapes.size(); i++)
 		logic.registerObserver( dynamic_cast<Observer*>(shapes[i].get()) );
 }
@@ -480,5 +482,30 @@ void GameApp::playBackgroundSound()
 	{
 		channelOptions->setPaused(true);
 		channelPlay->setPaused(true);
+	}
+}
+
+void GameApp::setupRoundParams()
+{
+	roundParams.resize(logic.iRoundMax);
+
+	float flBoxWidth = 1.3f;		// Add these to the constructor and use when init walls.
+	float flBoxHeight = 1.0f;
+	float flBoxThickness = 0.5f;
+	//float flPaddleRadius = 0.05*flBoxWidth;
+	float flBallVel = 8e-03;
+	float flCompPaddleVel = 0.01;
+
+	std::size_t nRounds = roundParams.size();
+
+	for(std::size_t i = 0; i < nRounds; i++){
+		RoundParameters *pParams =
+			new RoundParameters(flBoxWidth*(1. - 1./(double)(nRounds - i + 1.)), 
+			flBoxHeight, 
+			flBallVel*(1. + 1./(double)(nRounds - i + 1.)), 
+			0.1*flBallVel*(1. + 1./(double)(1. + i)),
+			flCompPaddleVel*(i + 1.), 
+			0.05*flBoxWidth);
+		roundParams[i] = std::tr1::shared_ptr<RoundParameters>(pParams);
 	}
 }
