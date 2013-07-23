@@ -18,7 +18,7 @@ public:
 	float getSize() const;				// Return width of the wall.
 	void draw();
 	void move(float deltaTime, vector_3d dr, bool bReset);
-	void collide(Shape *);
+	bool collide(Shape *);
 
 	//virtual void notify(Subject* s) {bPlaySound = ((Logic*) s)->bActionsSound;};
 
@@ -66,7 +66,7 @@ class AbsorbingWall : public Wall
 public:
 	AbsorbingWall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n);
 	~AbsorbingWall(void);
-	void collide(Shape *s);
+	bool collide(Shape *s);
 	void drawSpot();
 
 	//void notify(Subject* s) {bPlaySound = ((Logic*) s)->bActionsSound;};

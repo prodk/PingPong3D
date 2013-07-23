@@ -34,9 +34,7 @@ void Ball::draw()
 	
 
 	glTranslatef(vCenter[0], vCenter[1], vCenter[2]);	// Move tha ball.
-	glutSolidSphere (radius, slices, stacks);
-
-	
+	glutSolidSphere (radius, slices, stacks);	
 
 	// Set a spotlight movint with the ball.
 	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 50.0);
@@ -57,30 +55,6 @@ void Ball::move(float deltaTime, vector_3d dr, bool bReset)
 		vCenter = vector_3d(0., 0., 0.);
 	else
 		vCenter = vCenter + vVelocity*2;	
-}
-
-// If shape is null, then multiply v by -n.
-void Ball::collide(Shape * s)
-{
-	// if(s == 0) v*=-n;
-	//glLoadIdentity ();             // Clear the current matrix.
-	// x
-	//if(vCenter[0]+radius > 1.0f)
-		//vVelocity[0] *= -1.0f;
-	//if(vCenter[0]-radius < -1.0f)
-		//vVelocity[0] *= -1.0f;
-
-	// y
-	//if(vCenter[1]+radius > 1.0f)
-		//vVelocity[1] *= -1.0f;
-	//if(vCenter[1]-radius < -1.0f)
-		//vVelocity[1] *= -1.0f;
-
-	// z
-	//if(vCenter[2]+radius > 1.0f)
-		//vVelocity[2] *= -1.0f;
-	//if(vCenter[2]-radius < -1.0f)
-		//vVelocity[2] *= -1.0f;
 }
 
 void Ball::setVelocity(vector_3d n)

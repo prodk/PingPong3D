@@ -96,8 +96,9 @@ void Wall::move(float deltaTime, vector_3d dr, bool bReset)
 {
 }
 
-void Wall::collide(Shape * s)
+bool Wall::collide(Shape * s)
 {
+	bool collided = false;
 	// Get the center and the radius of the ball.
 	vector_3d c = s->getCenter();
 	float r = s->getSize();
@@ -111,14 +112,17 @@ void Wall::collide(Shape * s)
 	if(b > a){	// Collision occurred.
 		s->setVelocity(vNormal);
 
-		if(bPlaySound)			// Maybe use channels for managing sounds!
-			::playSound(system, sound, 0);
+		collided = true;
+		//if(bPlaySound)			// Maybe use channels for managing sounds!
+			//::playSound(system, sound, 0);
 	}
 
 	// Define whether to draw the intersection point.
 	bDrawSpot = spotOnWall(s);
 	if(bDrawSpot)
 		((Ball*)s)->setCollisionSpot(vSpot);
+
+	return collided;
 }
 
 void Wall::drawSpot()
@@ -203,8 +207,9 @@ Wall(idExt, center, w, h, n)
 {
 }
 
-void AbsorbingWall::collide(Shape *s)
+bool AbsorbingWall::collide(Shape *s)
 {
+	bool collided = false;
 	// Get the center and the radius of the ball.
 	vector_3d c = s->getCenter();
 	float r = s->getSize();
@@ -220,9 +225,10 @@ void AbsorbingWall::collide(Shape *s)
 		bool bReset = true;
 		s->setVelocity(vNormal);			
 		s->move(dt, c, bReset);
-		if(bPlaySound)			// Maybe use channels for managing sounds!
-			::playSound(system, sound, 0);
-		//playSound();
+
+		collided = true;
+		//if(bPlaySound)			// Maybe use channels for managing sounds!
+			//::playSound(system, sound, 0);
 	}
 
 	// Reconsider this code duplication from Wall!
@@ -230,6 +236,8 @@ void AbsorbingWall::collide(Shape *s)
 	bDrawSpot = spotOnWall(s);
 	if(bDrawSpot)
 		((Ball*)s)->setCollisionSpot(vSpot);
+
+	return collided;
 }
 
 AbsorbingWall::~AbsorbingWall(void)

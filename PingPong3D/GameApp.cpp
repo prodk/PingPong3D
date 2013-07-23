@@ -5,7 +5,7 @@
 
 GameApp::GameApp(void):
 	flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong"), 
-	flZaxisDistance(2.2f), flLengthUnit(0.4f), bBackgroundSound(true),
+	flZaxisDistance(1.f), flLengthUnit(0.25f), bBackgroundSound(true),
 	//Logic(start, options, howto, play, run, pause, over, bsound, asound);
 	logic(true, false, false, false, true, false, false,  bBackgroundSound, true) // Show options, running/paused/over/sounds.
 {
@@ -444,21 +444,30 @@ void GameApp::registerObservers()
 {
 	logic.registerObserver( dynamic_cast<Observer*>(this) );	// Add the GameApp instance.
 
+	// Add screens instead of GUI controls!
+	logic.registerObserver( dynamic_cast<Observer*>(startScreen.get()) );
+	logic.registerObserver( dynamic_cast<Observer*>(optionsScreen.get()) );
+	logic.registerObserver( dynamic_cast<Observer*>(howtoScreen.get()) );
+	logic.registerObserver( dynamic_cast<Observer*>(playScreen.get()) );
+
+	// Shapes are registered/unregistered in the PlayScreen, when they are created/destroyed.
+
 	// Register GUI controls.
 	// Start screen controls.
-	std::vector<std::tr1::shared_ptr<GuiObject> > guis = startScreen->getGuiObjects();
-	for(std::size_t i = 0; i < guis.size(); i++)
-		logic.registerObserver( dynamic_cast<Observer*>(guis[i].get()) );
+	//std::map<std::size_t, std::tr1::shared_ptr<GuiObject> > guis = startScreen->getGuiObjects();
+	//for(std::size_t i = 0; i < guis.size(); i++)
+		//logic.registerObserver( dynamic_cast<Observer*>(guis[i].get()) );
 
 	// Options screen.
-	guis = optionsScreen->getGuiObjects();
-	for(std::size_t i = 0; i < guis.size(); i++)
-		logic.registerObserver( dynamic_cast<Observer*>(guis[i].get()) );
+	//guis = optionsScreen->getGuiObjects();
+	//for(std::size_t i = 0; i < guis.size(); i++)
+		//logic.registerObserver( dynamic_cast<Observer*>(guis[i].get()) );
 
 	// Register shapes.
+	/*typedef std::map<std::size_t, std::tr1::shared_ptr<Shape> >::iterator map_iter;
 	std::map<std::size_t, std::tr1::shared_ptr<Shape> > shapes = playScreen->getShapes();
-	for(std::size_t i = 0; i < shapes.size(); i++)
-		logic.registerObserver( dynamic_cast<Observer*>(shapes[i].get()) );
+	for(map_iter iterator = shapes.begin(); iterator != shapes.end(); iterator++)
+		logic.registerObserver( dynamic_cast<Observer*>(iterator->second.get()) );*/
 }
 
 void GameApp::playBackgroundSound()

@@ -18,7 +18,7 @@ public:
 	float getSize() const;				// Return radius of the cylinder.
 	void draw();
 	virtual void move(float deltaTime, vector_3d dr, bool bReset);
-	virtual void collide(Shape *);				// Collision detection.
+	virtual bool collide(Shape *);				// Collision detection.
 
 protected:
 	vector_3d vNormal;
@@ -76,7 +76,7 @@ public:
 	~ComputerPaddle(void);
 
 	void move(float deltaTime, vector_3d dr, bool bReset);
-	void collide(Shape * s);	
+	bool collide(Shape * s);	
 
 private:
 	vector_3d vCollisionSpot;

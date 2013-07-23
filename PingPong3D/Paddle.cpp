@@ -108,8 +108,9 @@ void Paddle::move(float deltaTime, vector_3d dr, bool bReset)
 	}
 }
 
-void Paddle::collide(Shape *s)
+bool Paddle::collide(Shape *s)
 {
+	bool collided = false;
 	// If it is not absorbing, then handle collisions
 	vector_3d c = s->getCenter();
 	float r = s->getSize();
@@ -126,10 +127,13 @@ void Paddle::collide(Shape *s)
 		if( ptInPaddle(c) )	{			// If the collision point is inside the paddle area.
 			s->setVelocity(vNormal);
 
-			if(bPlaySound)
-				::playSound(system, sound, 0);
+			collided = true;
+			//if(bPlaySound)
+				//::playSound(system, sound, 0);
 		}
 	}
+
+	return collided;
 }
 
 bool Paddle::ptInPaddle(const vector_3d &pt) const
@@ -202,8 +206,10 @@ void ComputerPaddle::move(float deltaTime, vector_3d dr, bool bReset)
 	}
 }
 
-void ComputerPaddle::collide(Shape * s)
+bool ComputerPaddle::collide(Shape * s)
 {
-	Paddle::collide(s);
+	bool collided = Paddle::collide(s);
 	vCollisionSpot = ((Ball*) s)->getCollisionSpot();
+
+	return collided;
 }

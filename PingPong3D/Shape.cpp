@@ -45,8 +45,9 @@ void Shape::move(float deltaTime, vector_3d dr, bool bReset)
 {
 }
 
-void Shape::collide(Shape * s)
+bool Shape::collide(Shape * s)
 {
+	return false;
 }
 
 void Shape::setVelocity(vector_3d n)
@@ -72,8 +73,7 @@ FMOD_RESULT Shape::setSound(FMOD::System *sys, FMOD::Sound *snd)
 	return FMOD_OK;
 }
 
-// Observer pattern method.
-void Shape::notify(Subject* s) 
+void Shape::playSound()
 {
-	bPlaySound = ((Logic*) s)->bActionsSound;
+	::playSound(system, sound, 0);
 }

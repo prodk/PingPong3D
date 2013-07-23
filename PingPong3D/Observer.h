@@ -24,6 +24,11 @@ public:
         observers.push_back(o);
     }
 
+	void unregisterObserver()
+    {
+        observers.pop_back();
+    }
+
 	void notifyObservers()
     {
         std::vector<Observer*>::iterator iter;
