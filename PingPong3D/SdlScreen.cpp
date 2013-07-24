@@ -16,10 +16,15 @@ SdlScreen::~SdlScreen(void)
 {
 }
 
+void SdlScreen::setScreenSize(float w, float h)
+{
+	flWidth = w;
+	flHeight = h;
+}
+
 int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w, GLfloat h,
 	TTF_Font *font, Logic &logic)
 {
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 	int mode;
 
 	SDL_Color textColor;
@@ -43,17 +48,15 @@ int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
     } 
     else 
     {
-        printf("Could not determine pixel format of the surface");
+        std::cerr << "Could not determine pixel format of the surface" << std::endl;
         SDL_FreeSurface(text);
-        return NULL;
+        exit(1);
     }
 
 	// Draw the surface onto the OGL screen using gextures.
     glPushMatrix();
 	glDisable(GL_LIGHTING);
 
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f(0.0f, 1.0f, 1.0f, 1.0f);
 
     glGenTextures(1, &textTexture);
@@ -111,6 +114,10 @@ void SdlScreen::doInput(Logic &logic, SDL_Event sdlEvent)
 		handleKeyDown(sdlEvent, logic);
 		break;
 
+	case SDL_KEYUP:
+		handleKeyUp(sdlEvent, logic);
+		break;
+
 	case SDL_VIDEORESIZE:
 		handleResize(sdlEvent, logic);
 		break;			
@@ -125,12 +132,18 @@ void SdlScreen::handleKeyDown(const SDL_Event& sdle, Logic &l)
 {
 }
 
+void SdlScreen::handleKeyUp(const SDL_Event& sdle, Logic &l)
+{
+}
+
 void SdlScreen::handleResize(const SDL_Event& sdle, Logic &l)
 {
 	SDL_SetVideoMode( sdlEvent.resize.w, sdlEvent.resize.h, 32, SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE );
 	glViewport (0, 0, (GLsizei) sdle.resize.w, (GLsizei) sdle.resize.h);
 	flWidth = sdle.resize.w;
 	flHeight = sdle.resize.h;
+	l.flScreenWidth = flWidth;
+	l.flScreenHeight = flHeight;
 }
 
 void SdlScreen::handleMouseMotion(const SDL_Event& sdle, Logic &l)
@@ -157,6 +170,9 @@ ButtonScreen::ButtonScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t
 		SdlScreen(w, h, s, t, fnt, sys, snd)
 {
 	bPlayButtonSound = true;
+	bMouseOverButton = false;
+	bKeyDown = false;
+	iPrevFocusButton = -1;
 }
 
 ButtonScreen::~ButtonScreen()
@@ -165,6 +181,7 @@ ButtonScreen::~ButtonScreen()
 
 int ButtonScreen::pressButton(float x, float y)
 {
+	// Move this typedef into the class declaration.
 	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
 	
 	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++){
@@ -172,6 +189,26 @@ int ButtonScreen::pressButton(float x, float y)
 			iterator->second->setPressed(true);
 			return iterator->second->getId();
 		}
+	}
+
+	return -1;
+}
+
+void ButtonScreen::setUnpressed()
+{
+	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
+	
+	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++)
+		iterator->second->setPressed(false);	
+}
+
+int ButtonScreen::getHighlightedButton()
+{
+	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
+	
+	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++){
+		if( iterator->second->hasFocus() )
+			return iterator->second->getId();		
 	}
 
 	return -1;
@@ -207,14 +244,12 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 		logic.bShowStartScreen = false;
 		logic.bShowOptionsScreen = true;
 		logic.bShowPlayScreen = false;
-		//logic.notifyObservers();
 		break;
 
 	case HOWTO_BTN:
 		logic.bShowStartScreen = false;
 		logic.bShowOptionsScreen = false;
-		logic.bShowHowtoScreen = true;			
-		//logic.notifyObservers(); // Tell registered observers to change their settings.
+		logic.bShowHowtoScreen = true;
 		break;
 
 	case TRAIN_BTN:
@@ -239,7 +274,6 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 		break;
 
 	case ACTIONSND_BTN:
-		//logic.bActionsSound = !logic.bActionsSound;
 		if(logic.bActionsSound){
 			logic.bActionsSound = false;
 			((OptionsButton*)guiObjects[id].get())->setCaption(std::string("Off"));
@@ -253,7 +287,6 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 
 	case ROUND_BTN:
 		logic.iRound = logic.iRound % logic.iRoundMax + 1;
-		//caption = std::to_string((_ULonglong)logic.iRound);
 		((OptionsButton*)guiObjects[id].get())->setCaption(std::to_string((_ULonglong)logic.iRound));
 		logic.notifyObservers(); 
 		break;
@@ -267,11 +300,6 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 	if(bPlayButtonSound)
 		::playSound(system, sounds[1], channel);
 }
-
-//std::map<std::size_t, std::tr1::shared_ptr<GuiObject> > & ButtonScreen::getGuiObjects()
-//{
-//	return guiObjects;
-//}
 
 void ButtonScreen::doDrawing(Logic &logic)
 {
@@ -343,6 +371,98 @@ void ButtonScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
 		}
 		break;
 	}// end switch
+	setUnpressed();
+}
+
+void ButtonScreen::handleMouseMotion(const SDL_Event& sdle, Logic &logic)
+{
+	if(bMouseOverButton)
+		bMouseOverButton = false;
+	else {
+		bMouseOverButton = true;		
+		float xnorm = (sdle.button.x - 0.5*flWidth) / (0.5*flWidth);
+		float ynorm = (0.5*flHeight - sdle.button.y) / (0.5*flHeight);
+		int btnId = pickButton(xnorm,ynorm);
+		if( (btnId >= 0) && (btnId != iPrevFocusButton) && (iPrevFocusButton >= 0) ){
+			guiObjects[getHighlightedButton()]->setFocus(false);
+			guiObjects[iPrevFocusButton]->setFocus(false);
+			guiObjects[btnId]->setFocus(true);
+			iPrevFocusButton = btnId;
+		}
+	}
+}
+
+void ButtonScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
+{	
+	bKeyDown = true;
+
+ 	switch(sdle.key.keysym.sym)
+	{
+	case SDLK_RETURN:		// Press the highlighted button.
+		{
+			int btnId = getHighlightedButton();			
+			if(btnId >= 0)
+				guiObjects[btnId]->setPressed(true);
+		}
+		break;
+	}
+}
+
+void ButtonScreen::handleKeyUp(const SDL_Event& sdle, Logic &logic)
+{	
+	map_iter iter;
+
+ 	switch(sdle.key.keysym.sym)
+	{
+	case SDLK_RETURN:		// Press the highlighted button.
+		if(bKeyDown)
+		{
+			int btnId = getHighlightedButton();
+			if( btnId >= 0 ){
+				guiObjects[btnId]->setPressed(false);
+				processButton(btnId, logic);
+				bKeyDown = false;
+			}
+			bKeyDown = false;
+		}
+		break;
+
+	case SDLK_UP:
+		if(bKeyDown)
+		{
+			int btnId = getHighlightedButton();
+			if( btnId >= 0 ){
+				iter = guiObjects.find(btnId);	// Get iterator to the current element.
+				iter->second->setFocus(false);
+
+				if( iter == guiObjects.begin() )
+					iter = --(guiObjects.end());
+				else					
+					--iter;
+				iter->second->setFocus(true);
+			}
+			bKeyDown = false;
+		}
+		break;
+
+	case SDLK_DOWN:
+		if(bKeyDown)
+		{
+			int btnId = getHighlightedButton();
+			if( btnId >= 0 ){
+				iter = guiObjects.find(btnId);	// Get iterator to the current element.
+				iter->second->setFocus(false);
+
+				if( iter == --(guiObjects.end()) )
+					iter = guiObjects.begin();
+				else					
+					++iter;
+				iter->second->setFocus(true);
+			}
+			bKeyDown = false;
+		}
+		break;
+	}
 }
 
 void ButtonScreen::notify(Subject* s)
@@ -356,10 +476,11 @@ void ButtonScreen::notify(Subject* s)
 StartScreen::StartScreen(float w, float h, SDL_Surface* s, 
 	TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 	FMOD::System *sys, std::vector<FMOD::Sound*> snd):
-	ButtonScreen(w, h, s, t, fnt, sys, snd)//, iNumOfButtons(4)
+	ButtonScreen(w, h, s, t, fnt, sys, snd)
 {
 	addButtons();
 	bLeftMouseButton = false;
+	iPrevFocusButton = START_BTN;
 }
 
 StartScreen::~StartScreen()
@@ -368,8 +489,7 @@ StartScreen::~StartScreen()
 
 void StartScreen::addButtons()
 {
-	//guiObjects.resize(iNumOfButtons);
-	float x = -1;
+	float x = -0.5;
 	float y = 0.5;
 	float w = 1.;
 	float h = 0.25;
@@ -377,108 +497,36 @@ void StartScreen::addButtons()
 
 	// Later put the code for adding a button into a method to avoid code duplication!
 	
-	// Button 0.
-	Button* pButton = new Button(x, y, w, h, START_BTN, name, textures[0]->id);
-	GuiObject* pGuiObj = dynamic_cast<GuiObject*>(pButton);	
-	//pButton->setSound(system, sounds[1]);
-	//guiObjects[START_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
-	guiObjects.insert(std::make_pair(START_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+	try {
+		// Button 0.
+		GuiObject* pGuiObj = new Button(x, y, w, h, START_BTN, name, textures[0]->id);	
+		pGuiObj->setFocus(true);
+		guiObjects.insert(std::make_pair(START_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
-	// Button 1.
-	y = 0.125;
-	name = "Options";
-	pButton = new Button(x, y, w, h, OPTIONS_BTN, name, textures[0]->id);	// The same texture id.
-	pGuiObj = dynamic_cast<GuiObject*>(pButton);
-	//pButton->setSound(system, sounds[1]);
-	//guiObjects[OPTIONS_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
-	guiObjects.insert(std::make_pair(OPTIONS_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+		// Button 1.
+		y = 0.125;
+		name = "Options";
+		pGuiObj = new Button(x, y, w, h, OPTIONS_BTN, name, textures[0]->id);	// The same texture id.
+		guiObjects.insert(std::make_pair(OPTIONS_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
-	// Button 2.
-	y = -0.25;
-	name = "How to play";
-	pButton = new Button(x, y, w, h, HOWTO_BTN, name, textures[0]->id);	// The same texture id.
-	pGuiObj = dynamic_cast<GuiObject*>(pButton);
-	//pButton->setSound(system, sounds[1]);
-	//guiObjects[HOWTO_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
-	guiObjects.insert(std::make_pair(HOWTO_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+		// Button 2.
+		y = -0.25;
+		name = "How to play";
+		pGuiObj = new Button(x, y, w, h, HOWTO_BTN, name, textures[0]->id);	// The same texture id.
+		guiObjects.insert(std::make_pair(HOWTO_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
-	// Button 3.
-	y = -0.625;
-	name = "Train on your own";
-	pButton = new Button(x, y, w, h, TRAIN_BTN, name, textures[0]->id);	// The same texture id.
-	pGuiObj = dynamic_cast<GuiObject*>(pButton);
-	//pButton->setSound(system, sounds[1]);
-	//guiObjects[TRAIN_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
-	guiObjects.insert(std::make_pair(TRAIN_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+		// Button 3.
+		y = -0.625;
+		name = "Train on your own";
+		pGuiObj = new Button(x, y, w, h, TRAIN_BTN, name, textures[0]->id);	// The same texture id.
+		guiObjects.insert(std::make_pair(TRAIN_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+	} // End try.
+	catch(std::bad_alloc& ba)
+	{
+		std::cerr << "Failed to create one of the buttons in StartScreen: memory error." << std::endl;		
+		exit(1);
+	}
 }
-
-//void StartScreen::doDrawing(Logic &logic)
-//{	
-//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
-//
-//	glPushMatrix();					// Save current matrix.
-//
-//	glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
-//	glLoadIdentity ();				// Clean up the projection matrix.
-//
-//	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
-//	glLoadIdentity ();				// Clean up the modelview matrix.
-//
-//	glEnable( GL_TEXTURE_2D );
-//	
-//	// Change this using drawPressed/unpressed.
-//	for(std::size_t i = 0; i < guiObjects.size(); i++){
-//		if( guiObjects[i]->isPressed() )
-//			guiObjects[i]->drawPressed(fonts[0], logic);
-//		else
-//			guiObjects[i]->drawUnpressed(fonts[0], logic);
-//	}
-//
-//	glFlush();
-//
-//	glDisable( GL_TEXTURE_2D );
-//
-//    glPopMatrix();					// Restore the previous state.
-//}
-
-
-//void StartScreen::doInput(Logic &logic, SDL_Event sdlEvent)
-//{
-//    switch(sdlEvent.type)
-//    {
-//	case SDL_MOUSEBUTTONDOWN:
-//		bLeftMouseButton = true;	// Prevent button captions from flickering.
-//		break;
-//
-//	case SDL_MOUSEBUTTONUP:
-//		if(bLeftMouseButton){
-//			bLeftMouseButton = false;
-//			handleMouseButtonUp(sdlEvent, logic);			
-//		}
-//		break;
-//
-//	case SDL_KEYDOWN:
-//		handleKeyDown(sdlEvent, logic);
-//		break;
-//
-//	case SDL_QUIT:
-//		logic.bAppRunning = false;
-//		break;
-//	}
-//}
-
-// !Later: add button manipulation here.
-//void StartScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
-//{	
-//	// Check keyboard.
-// 	switch(sdle.key.keysym.sym)
-//	{
-//	case SDLK_h:		
-//		break;
-//	case SDLK_k:	
-//		break;
-//	}
-//}
 
 /*________________________________*/
 // OptionsScreen implementation.
@@ -489,6 +537,7 @@ OptionsScreen::OptionsScreen(float w, float h, SDL_Surface* s,
 {
 	addButtons(logic);
 	bLeftMouseButton = false;
+	iPrevFocusButton = BACKGRSND_BTN;
 }
 
 OptionsScreen::~OptionsScreen()
@@ -497,7 +546,6 @@ OptionsScreen::~OptionsScreen()
 
 void OptionsScreen::addButtons(Logic &logic)
 {
-	//guiObjects.resize(iNumOfButtons);
 	float x = -0.5;
 	float y = 0.5;
 	float w = 1.;
@@ -507,138 +555,49 @@ void OptionsScreen::addButtons(Logic &logic)
 
 	// Later put the code for adding a button into a method to avoid code duplication!
 	
-	// Button 0.
-	if(logic.bBackgroundSound)
-		caption = "On";
-	else 
-		caption = "Off";
-	GuiObject* pGuiObj = new OptionsButton(x, y, w, h, 
-		BACKGRSND_BTN, name, textures[0]->id, caption);
-	//GuiObject* pGuiObj = dynamic_cast<GuiObject*>(pButton);	
-	//pButton->setSound(system, sounds[1]);	
-	//guiObjects[BACKGRSND_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
-	guiObjects.insert(std::make_pair(BACKGRSND_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+	try {
+		// Button 0.
+		if(logic.bBackgroundSound)
+			caption = "On";
+		else 
+			caption = "Off";
+		GuiObject* pGuiObj = new OptionsButton(x, y, w, h, 
+			BACKGRSND_BTN, name, textures[0]->id, caption);
+		pGuiObj->setFocus(true);
+		guiObjects.insert(std::make_pair(BACKGRSND_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
-	// Button 1.
-	y = 0.125;
-	name = "Actions Sound";
-	if(logic.bActionsSound)
-		caption = "On";
-	else 
-		caption = "Off";
-	pGuiObj = new OptionsButton(x, y, w, h, 
-		ACTIONSND_BTN, name, textures[0]->id, caption);	// The same texture id.
-	//pGuiObj = dynamic_cast<GuiObject*>(pButton);
-	//pButton->setSound(system, sounds[1]);	
-	//guiObjects[ACTIONSND_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
-	guiObjects.insert(std::make_pair(ACTIONSND_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+		// Button 1.
+		y = 0.125;
+		name = "Actions Sound";
+		if(logic.bActionsSound)
+			caption = "On";
+		else 
+			caption = "Off";
+		pGuiObj = new OptionsButton(x, y, w, h, 
+			ACTIONSND_BTN, name, textures[0]->id, caption);	// The same texture id.
+		guiObjects.insert(std::make_pair(ACTIONSND_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
-	// Button 2.
-	y = -0.25;
-	name = "Round";
-	caption = std::to_string((_ULonglong)logic.iRound);
-	pGuiObj = new OptionsButton(x, y, w, h, 
-		ROUND_BTN, name, textures[0]->id, caption);	// The same texture id.
-	//pGuiObj = dynamic_cast<GuiObject*>(pButton);
-	//pButton->setSound(system, sounds[1]);
-	//pButton->setCaption( std::to_string((_ULonglong)logic.iRound) );
-	//guiObjects[ROUND_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
-	guiObjects.insert(std::make_pair(ROUND_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+		// Button 2.
+		y = -0.25;
+		name = "Round";
+		caption = std::to_string((_ULonglong)logic.iRound);
+		pGuiObj = new OptionsButton(x, y, w, h, 
+			ROUND_BTN, name, textures[0]->id, caption);	// The same texture id.
+		guiObjects.insert(std::make_pair(ROUND_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
-	// Button 3.
-	y = -0.625;
-	name = "Back";
-	//caption = " ";
-	pGuiObj = new Button(x, y, w, h, 
-		BACK_BTN, name, textures[0]->id/*, caption*/);	// The same texture id.
-	//pGuiObj = dynamic_cast<GuiObject*>(pButton);
-	//pButton->setSound(system, sounds[1]);
-	//pButton->setCaption("  ");
-	//guiObjects[BACK_BTN] = std::tr1::shared_ptr<GuiObject>(pGuiObj);
-	guiObjects.insert(std::make_pair(BACK_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+		// Button 3.
+		y = -0.625;
+		name = "Back";
+		pGuiObj = new Button(x, y, w, h, 
+			BACK_BTN, name, textures[0]->id/*, caption*/);	// The same texture id.
+		guiObjects.insert(std::make_pair(BACK_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
+	}// End try.
+	catch(std::bad_alloc& ba)
+	{
+		std::cerr << "Failed to create one of the buttons in OptionsScreen: memory error." << std::endl;		
+		exit(1);
+	}
 }
-
-//void OptionsScreen::doDrawing(Logic &logic)
-//{	
-//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
-//
-//	glPushMatrix();					// Save current matrix.
-//
-//	glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
-//	glLoadIdentity ();				// Clean up the projection matrix.
-//
-//	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
-//	glLoadIdentity ();				// Clean up the modelview matrix.
-//
-//	glEnable( GL_TEXTURE_2D );
-//	
-//	for(std::size_t i = 0; i < guiObjects.size(); i++)
-//		guiObjects[i]->draw(fonts[0], logic);
-//
-//	glFlush();
-//
-//	glDisable( GL_TEXTURE_2D );
-//
-//    glPopMatrix();					// Restore the previous state.
-//}
-
-//void OptionsScreen::doInput(Logic &logic, SDL_Event sdlEvent)
-//{
-//    switch(sdlEvent.type)
-//    {
-//	case SDL_MOUSEBUTTONDOWN:
-//		bLeftMouseButton = true;	// Prevent button captions from flickering.
-//		break;
-//
-//	case SDL_MOUSEBUTTONUP:
-//		if(bLeftMouseButton){			
-//			handleMouseButtonUp(sdlEvent, logic);
-//			bLeftMouseButton = false;
-//		}
-//		break;
-//
-//	case SDL_KEYDOWN:
-//		handleKeyDown(sdlEvent, logic);
-//		break;
-//
-//	case SDL_QUIT:
-//		logic.bAppRunning = false;
-//		break;
-//	}
-//}
-
-// !Later: add button manipulation here.
-//void OptionsScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
-//{	
-//	// Check keyboard.
-// 	switch(sdle.key.keysym.sym)
-//	{
-//	case SDLK_h:
-//		break;
-//	case SDLK_k:
-//		break;
-//	}
-//}
-
-//void OptionsScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
-//{
-//	switch(sdle.button.button)
-//	{
-//	case SDL_BUTTON_LEFT:
-//		{
-//			// Normalize screen coordinates.
-//			// OpenGL coords (used for rendering) go from -1 to 1 with the origin in the middle.
-//			// While clicking coords have (0, 0) in the upper left corner.
-//			float xnorm = (sdle.button.x - 0.5*flWidth) / (0.5*flWidth);
-//			float ynorm = (0.5*flHeight - sdle.button.y) / (0.5*flHeight);
-//			
-//			for(std::size_t i = 0; i < guiObjects.size(); i++){
-//				guiObjects[i]->handleMouseButtonUp(logic, xnorm, ynorm);
-//			}
-//		}
-//		break;
-//	}// end switch
-//}
 
 /*________________________________*/
 // HowtoScreen implementation.
@@ -647,7 +606,6 @@ HowtoScreen::HowtoScreen(float w, float h, SDL_Surface* s,
 	FMOD::System *sys, std::vector<FMOD::Sound*> snd) :
 	ButtonScreen(w, h, s, t, fnt, sys, snd)
 {
-	//addButtons();
 	bLeftMouseButton = false;
 }
 
@@ -669,8 +627,6 @@ void HowtoScreen::doDrawing(Logic &logic)
 
 	glEnable( GL_TEXTURE_2D );
 	
-	//for(std::size_t i = 0; i < guiObjects.size(); i++)
-		//guiObjects[i]->draw(fonts[0], logic);
 	std::string txt = "Keys:";
 	drawText(txt, -0.75, 0.75, 0.25, 0.125, fonts[0], logic);
 
@@ -701,37 +657,12 @@ void HowtoScreen::doDrawing(Logic &logic)
     glPopMatrix();					// Restore the previous state.
 }
 
-//void HowtoScreen::doInput(Logic &logic, SDL_Event sdlEvent)
-//{
-//    switch(sdlEvent.type)
-//    {
-//	case SDL_MOUSEBUTTONDOWN:
-//		bLeftMouseButton = true;	// Prevent button captions from flickering.
-//		break;
-//
-//	case SDL_MOUSEBUTTONUP:
-//		if(bLeftMouseButton){
-//			bLeftMouseButton = false;
-//			handleMouseButtonUp(sdlEvent, logic);	
-//		}
-//		break;
-//
-//	case SDL_KEYDOWN:
-//		handleKeyDown(sdlEvent, logic);
-//		break;
-//
-//	//case SDL_QUIT:
-//		//logic.bAppRunning = false;
-//		//break;
-//	}
-//}
-
-// !Later: add button manipulation here.
 void HowtoScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 {	
 	// Check keyboard.
  	switch(sdle.key.keysym.sym)
 	{
+	case SDLK_RETURN:		// Fall through.
 	case SDLK_SPACE:
 		logic.bShowStartScreen = true;
 		logic.bShowHowtoScreen = false;
@@ -757,12 +688,10 @@ void HowtoScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
 /*________________________________*/
 // PlayScreen implementation.
 PlayScreen::PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt, 
-	 FMOD::System *sys,std::vector<FMOD::Sound*> snd, int nofshapes,
+	 FMOD::System *sys,std::vector<FMOD::Sound*> snd,
 	 std::vector<std::tr1::shared_ptr<RoundParameters> > & rp) :
-	 SdlScreen(w, h, s, t, fnt, sys, snd), iNumOfShapes(nofshapes), roundParams(rp)
+	 SdlScreen(w, h, s, t, fnt, sys, snd), roundParams(rp)
 {
-	//initMembers();
-	//addShapes();
 }
 
 PlayScreen::~PlayScreen()
@@ -780,7 +709,7 @@ void PlayScreen::initMembers(const Logic &logic)
 	flBallDeltaVel = roundParams[iCurRound]->flBallDeltaVel;
 	flCompPaddleVel = roundParams[iCurRound]->flComputerPaddleVel;
 
-	xViewOld = 0.; //xView = 0.;
+	xViewOld = 0.;
 	angleViewY = 115.;		// Initial angle (around y) of the view.
 	angleViewZ = 0.;
 	flScaleAll = 1.;
@@ -788,6 +717,9 @@ void PlayScreen::initMembers(const Logic &logic)
 	xPaddleOld = yPaddleOld = 0.;
 	flZaxisDistance = 2.2f;
 	flLengthUnit = 0.4f;
+
+	flScaleMax = 4.;
+	flScaleMin = 0.1;
 }
 
 void PlayScreen::unregisterObservers(Logic &logic)
@@ -809,142 +741,125 @@ void PlayScreen::registerObservers(Logic &logic)
 void PlayScreen::addShapes(Logic &logic)
 {
 	// Cleanup the shapes from the previous round.
-	//unregisterObservers(logic);
-	shapes.clear();// .resize(0);
+	shapes.clear();
 	// Add shapes to the game.
-	//shapes.resize(iNumOfShapes);	// ball + 6 walls + 2 paddles
+	try {
+		// Add ball.
+		vector_3d ambient = vector_3d(0.0, 0.5, 0.0);
+		vector_3d diffuse = vector_3d(0.0, 1.0, 0.0);
+		vector_3d specular = vector_3d(0.0, 0.0, 0.0);
+		float alpha = 1.0;				// Opaque ball.
+		float shine = 0.;
+		vector_3d center(0.0f, 0.0f, 0.0f);				// Ball starts at the center of the scene.
+		vector_3d velocity(0.4*flBallVel, 0.2*flBallVel, 0.2*flBallVel);// !ADD Random initial velocity.
+		Shape* pShape = new Ball(BALL, center, 0.05*flBoxHeight, velocity, flBallDeltaVel,
+			ambient, diffuse, specular, shine, alpha);
+		shapes.insert(std::make_pair(BALL, std::tr1::shared_ptr<Shape>(pShape)));	
 
-	// Add ball.
-	vector_3d ambient = vector_3d(0.0, 0.5, 0.0);
-	vector_3d diffuse = vector_3d(0.0, 1.0, 0.0);
-	vector_3d specular = vector_3d(0.0, 0.0, 0.0);
-	float alpha = 1.0;				// Opaque ball.
-	float shine = 0.;
-	vector_3d center(0.0f, 0.0f, 0.0f);				// Ball starts at the center of the scene.
-	vector_3d velocity(0.4*flBallVel, 0.2*flBallVel, 0.2*flBallVel);// !ADD Random initial velocity.
-	Shape* pShape = new Ball(BALL, center, 0.05*flBoxHeight, velocity, flBallDeltaVel,
-		ambient, diffuse, specular, shine, alpha);
-	//Shape* pShape = dynamic_cast<Shape*>(pBall);
-	//shapes[0] = std::tr1::shared_ptr<Shape>(pShape);
-	shapes.insert(std::make_pair(BALL, std::tr1::shared_ptr<Shape>(pShape)));	
-	
-	// !Reconsider this code: add some method to avoid code duplication.
+		// !Reconsider this code: add some method to avoid code duplication.
 
-	// Add walls.
-	// Left wall.
-	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
-	vector_3d n = vector_3d(-1., 0., 0.);
-	pShape = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
-	//pShape = dynamic_cast<Shape*>(pWall);
-	pShape->setSound(system, sounds[2]);
-	//shapes[1] = std::tr1::shared_ptr<Shape>(pShape);
-	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
-
-	// Right wall.
-	center = vector_3d(0.5*flBoxWidth, 0., 0.);
-	n = vector_3d(1., 0., 0.);
-	if(!logic.bTrain){
+		// Add walls.
+		
+		// Left wall.
+		center = vector_3d(-0.5*flBoxWidth, 0., 0.);
+		vector_3d n = vector_3d(-1., 0., 0.);
 		pShape = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
 		pShape->setSound(system, sounds[2]);
-	}
-	else{
-		pShape = new Wall( WALL, center, flBoxThickness, flBoxHeight, n);
+		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
+
+		// Right wall.
+		center = vector_3d(0.5*flBoxWidth, 0., 0.);
+		n = vector_3d(1., 0., 0.);
+		if(!logic.bTrain){
+			pShape = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
+			pShape->setSound(system, sounds[2]);
+		}
+		else{
+			pShape = new Wall( WALL, center, flBoxThickness, flBoxHeight, n);
+			pShape->setSound(system, sounds[1]);
+		}
+		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
+
+		// Top wall.
+		ambient = vector_3d(0.0, 0.0, 0.5);
+		diffuse = vector_3d(0.0, 0.0, 1.0);
+		specular = vector_3d(0.0, 0.0, 0.2);
+		alpha = 0.1;	// A bit transparent wall.
+		shine = 20.;
+		center = vector_3d(0., 0.5*flBoxHeight, 0.);
+		n = vector_3d(0., 1., 0.);
+		pShape = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
+			ambient, diffuse, specular, shine, alpha);
 		pShape->setSound(system, sounds[1]);
-	}
-	//pShape = dynamic_cast<Shape*>(pShape);
-	
-	//shapes[2] = std::tr1::shared_ptr<Shape>(pShape);
-	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
+		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
-	// Top wall.
-	ambient = vector_3d(0.0, 0.0, 0.5);
-	diffuse = vector_3d(0.0, 0.0, 1.0);
-	specular = vector_3d(0.0, 0.0, 0.2);
-	alpha = 0.1;	// A bit transparent wall.
-	shine = 20.;
-	center = vector_3d(0., 0.5*flBoxHeight, 0.);
-	n = vector_3d(0., 1., 0.);
-	pShape = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
-		ambient, diffuse, specular, shine, alpha);
-	//pShape = dynamic_cast<Shape*>(pWall);
-	pShape->setSound(system, sounds[1]);
-	//shapes[3] = std::tr1::shared_ptr<Shape>(pShape);
-	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
+		// Bottom wall.
+		ambient = vector_3d(0.0, 0.0, 0.5);
+		diffuse = vector_3d(0.0, 0.0, 1.0);
+		specular = vector_3d(0.0, 0.0, 0.2);
+		alpha = 0.1;	// Abit transparent wall.
+		shine = 20.;
+		center = vector_3d(0., -0.5*flBoxHeight, 0.);
+		n = vector_3d(0., -1., 0.);
+		pShape = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
+			ambient, diffuse, specular, shine, alpha);
+		pShape->setSound(system, sounds[1]);
+		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
-	// Bottom wall.
-	ambient = vector_3d(0.0, 0.0, 0.5);
-	diffuse = vector_3d(0.0, 0.0, 1.0);
-	specular = vector_3d(0.0, 0.0, 0.2);
-	alpha = 0.1;	// Abit transparent wall.
-	shine = 20.;
-	center = vector_3d(0., -0.5*flBoxHeight, 0.);
-	n = vector_3d(0., -1., 0.);
-	pShape = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
-		ambient, diffuse, specular, shine, alpha);
-	//pShape = dynamic_cast<Shape*>(pWall);
-	pShape->setSound(system, sounds[1]);
-	//shapes[4] = std::tr1::shared_ptr<Shape>(pShape);
-	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
+		// Front wall.
+		center = vector_3d(0., 0., 0.5*flBoxThickness);
+		n = vector_3d(0., 0., 1.);
+		pShape = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
+		pShape->setSound(system, sounds[1]);
+		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
-	// Front wall.
-	center = vector_3d(0., 0., 0.5*flBoxThickness);
-	n = vector_3d(0., 0., 1.);
-	pShape = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
-	//pShape = dynamic_cast<Shape*>(pWall);
-	pShape->setSound(system, sounds[1]);
-	//shapes[5] = std::tr1::shared_ptr<Shape>(pShape);
-	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
-
-	// Back wall.
-	center = vector_3d(0., 0., -0.5*flBoxThickness);
-	n = vector_3d(0., 0., -1.);
-	pShape = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
-	//pShape = dynamic_cast<Shape*>(pWall);
-	pShape->setSound(system, sounds[1]);
-	//shapes[6] = std::tr1::shared_ptr<Shape>(pShape);
-	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
+		// Back wall.
+		center = vector_3d(0., 0., -0.5*flBoxThickness);
+		n = vector_3d(0., 0., -1.);
+		pShape = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
+		pShape->setSound(system, sounds[1]);
+		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// User (left) paddle.
-	center = vector_3d(-0.5*flBoxWidth, 0., 0.);
-	n = vector_3d(-1., 0., 0.);			// Norm is -x.
-	float angle = 90.0;
-	// Setup colors.
-	ambient = vector_3d(0.5, 0.5, 0.0);
-	diffuse = vector_3d(1.0, 1.0, 0.0);
-	specular = vector_3d(0.5, 0.5, 0.0);
-	alpha = 0.9;	// A bit transparent paddle.
-	shine = 10.;
-	pShape = new Paddle( LEFT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
-		angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
-		ambient, diffuse, specular, shine, alpha);
-	//pShape = dynamic_cast<Shape*>(pPaddle);
-	pShape->setSound(system, sounds[3]);
-	leftPaddleIdx = 7;
-	//shapes[leftPaddleIdx] = std::tr1::shared_ptr<Shape>(pShape);
-	shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
-
-	// Computer (right) paddle.
-	if(!logic.bTrain){
-		center = vector_3d(0.5*flBoxWidth, 0., 0.);
-		n = vector_3d(1., 0., 0.);			// Norm is x.
-		angle = -90.0;
+		center = vector_3d(-0.5*flBoxWidth, 0., 0.);
+		n = vector_3d(-1., 0., 0.);			// Norm is -x.
+		float angle = 90.0;
 		// Setup colors.
-		ambient = vector_3d(0.5, 0.0, 0.5);
-		diffuse = vector_3d(1.0, 0.0, 1.0);
-		specular = vector_3d(0.5, 0.0, 0.5);
-		pShape = 
-			new ComputerPaddle( RIGHT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
+		ambient = vector_3d(0.5, 0.5, 0.0);
+		diffuse = vector_3d(1.0, 1.0, 0.0);
+		specular = vector_3d(0.5, 0.5, 0.0);
+		alpha = 0.9;	// A bit transparent paddle.
+		shine = 10.;
+		pShape = new Paddle( LEFT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
 			angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
 			ambient, diffuse, specular, shine, alpha);
-		//pShape = dynamic_cast<Shape*>(pPaddle);
 		pShape->setSound(system, sounds[3]);
-		rightPaddleIdx = 8;
-		//shapes[rightPaddleIdx] = std::tr1::shared_ptr<Shape>(pShape);
+		leftPaddleIdx = 7;
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
-	}
 
-	// Register the shapes as observers to handle sound.
-	//registerObservers(logic);
+		// Computer (right) paddle.
+		if(!logic.bTrain){
+			center = vector_3d(0.5*flBoxWidth, 0., 0.);
+			n = vector_3d(1., 0., 0.);			// Norm is x.
+			angle = -90.0;
+			// Setup colors.
+			ambient = vector_3d(0.5, 0.0, 0.5);
+			diffuse = vector_3d(1.0, 0.0, 1.0);
+			specular = vector_3d(0.5, 0.0, 0.5);
+			pShape = 
+				new ComputerPaddle( RIGHT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
+				angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
+				ambient, diffuse, specular, shine, alpha);
+			pShape->setSound(system, sounds[3]);
+			rightPaddleIdx = 8;
+			shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
+		}// End if training.
+	} // End try.
+	catch(std::bad_alloc& ba)
+	{
+		std::cerr << "Failed to create one of the shapes in PlayScreen: memory error." << std::endl;		
+		exit(1);
+	}
 }
 
 void PlayScreen::doInput(Logic &logic, SDL_Event sdlEvent)
@@ -1034,12 +949,16 @@ void PlayScreen::handleMouseMotion(const SDL_Event& sdle, Logic &logic)
 	{
 	case SDL_BUTTON_LEFT:
 		if(!bPaddlePicked){
-			angleViewY += sdle.motion.x - xViewOld;
+			angleViewY += sdle.motion.x - xViewOld;	// If paddle is not chosen, rotate view.
 			xViewOld = sdle.motion.x;
 		}
 		else{
-			vector_3d dr(0., -0.0025*(sdle.motion.y - yPaddleOld), 
-				0.0025*(sdle.motion.x - xPaddleOld) );
+			//vector_3d dr(0., -0.0025*(sdle.motion.y - yPaddleOld), 
+				//0.0025*(sdle.motion.x - xPaddleOld) );
+			float ratioX = 3./flWidth;		// Make these members.
+			float ratioY = 2.8/flHeight;
+			vector_3d dr(0., -ratioX*(sdle.motion.y - yPaddleOld), 
+				ratioY*(sdle.motion.x - xPaddleOld) );
 			shapes[leftPaddleIdx]->move(0., dr, false);
 			xPaddleOld = sdle.motion.x;
 			yPaddleOld = sdle.motion.y;
@@ -1064,18 +983,19 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 		if(!logic.bShowStartScreen)
 		{
 			logic.bShowStartScreen = true;
-			//logic.bGamePaused = true;
 			logic.bNewRound = true;		// Start from scratch.
 		}
 		logic.notifyObservers();	// Tell observers to change their sound behavior.
 		break;
 
 	case SDLK_p:	 //Scale.
-		flScaleAll += 0.01;			// !Reconsider magic numbers!
+		if(flScaleAll < flScaleMax)
+			flScaleAll += 0.01;			// !Reconsider magic numbers!
 		break;
 
 	case SDLK_m:
-		flScaleAll -= 0.01;
+		if(flScaleAll > flScaleMin)
+			flScaleAll -= 0.01;
 		break;
 
 	case SDLK_v:
@@ -1096,13 +1016,13 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 		// Arrow keys manipulation of the paddle.
 	case SDLK_a:			// Fall through.
 	case SDLK_LEFT:
-		dr = vector_3d(0., 0.0, 0.01);		// Reconsider magic number!
+		dr = vector_3d(0., 0.0, -0.01);		// Reconsider magic number!
 		shapes[leftPaddleIdx]->move(0., dr, false);
 		break;
 
 	case SDLK_d:			// Fall through.
 	case SDLK_RIGHT:
-		dr = vector_3d(0., 0.0, -0.01);
+		dr = vector_3d(0., 0.0, 0.01);
 		shapes[leftPaddleIdx]->move(0., dr, false);
 		break;
 
@@ -1260,7 +1180,9 @@ void PlayScreen::doLogic(const Logic &logic)
 void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 {
 	if(logic.bNewRound){
-		logic.bNewRound = false;
+		setScreenSize(logic.flScreenWidth, logic.flScreenHeight);
+		initResize();
+		logic.bNewRound = false;		
 		setupNewRound(logic);
 	}
 
@@ -1272,19 +1194,8 @@ void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 	doDrawing(logic);	
 }
 
-//std::map<std::size_t, std::tr1::shared_ptr<Shape> > & PlayScreen::getShapes()
-//{
-//	typedef std::map<std::size_t, std::tr1::shared_ptr<Shape> >::iterator map_iter;
-//	//std::map<std::size_t, std::tr1::shared_ptr<Shape> > shapes = playScreen->getShapes();
-//	for(map_iter iterator = shapes.begin(); iterator != shapes.end(); iterator++)
-//		//logic.registerObserver( dynamic_cast<Observer*>(iterator->second.get()) );
-//		iterator->second.get();
-//
-//	return shapes;
-//}
-
 void PlayScreen::setupNewRound(Logic &logic)
-{
+{	
 	initMembers(logic);
 	addShapes(logic);
 }

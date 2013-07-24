@@ -20,8 +20,6 @@ public:
 	void move(float deltaTime, vector_3d dr, bool bReset);
 	bool collide(Shape *);
 
-	//virtual void notify(Subject* s) {bPlaySound = ((Logic*) s)->bActionsSound;};
-
 protected:
 	float width;
 	float height;
@@ -68,8 +66,6 @@ public:
 	~AbsorbingWall(void);
 	bool collide(Shape *s);
 	void drawSpot();
-
-	//void notify(Subject* s) {bPlaySound = ((Logic*) s)->bActionsSound;};
 };
 
 #endif // WALL_H

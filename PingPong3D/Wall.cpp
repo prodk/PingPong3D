@@ -64,8 +64,6 @@ float Wall::getSize() const
 
 void Wall::draw()
 {
-	//glColor3f (0.0, 0.0, 1.0);
-
 	// Draw collision spot.
 	if(bDrawSpot){
 		drawSpot();
@@ -74,16 +72,15 @@ void Wall::draw()
 	material.setValues();
 
 	// Set negatives normals (pointing inside the box) such that the light is reflected.
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
 	glBegin(GL_POLYGON);
-	//glEdgeFlag(GL_TRUE);
+
 	glNormal3f(-vNormal[0], -vNormal[1], -vNormal[2]);
-    glVertex3f(v[0][0],v[0][1],v[0][2]);
-    //glEdgeFlag(GL_FALSE);
+    glVertex3f(v[0][0],v[0][1],v[0][2]);    
+
 	glNormal3f(-vNormal[0], -vNormal[1], -vNormal[2]);
     glVertex3f(v[1][0],v[1][1],v[1][2]);
-    //glEdgeFlag(GL_TRUE);	
+    	
 	glNormal3f(-vNormal[0], -vNormal[1], -vNormal[2]);
     glVertex3f(v[2][0],v[2][1],v[2][2]);
 
@@ -113,8 +110,6 @@ bool Wall::collide(Shape * s)
 		s->setVelocity(vNormal);
 
 		collided = true;
-		//if(bPlaySound)			// Maybe use channels for managing sounds!
-			//::playSound(system, sound, 0);
 	}
 
 	// Define whether to draw the intersection point.
@@ -138,7 +133,6 @@ void Wall::drawSpot()
 	m.setValues();
 
 	glTranslatef(vSpot[0], vSpot[1], vSpot[2]);
-	//drawCircle(0.009*height);
 	glutSolidSphere (0.005*height, 32, 32);
 	glPopMatrix();
 }
@@ -227,8 +221,6 @@ bool AbsorbingWall::collide(Shape *s)
 		s->move(dt, c, bReset);
 
 		collided = true;
-		//if(bPlaySound)			// Maybe use channels for managing sounds!
-			//::playSound(system, sound, 0);
 	}
 
 	// Reconsider this code duplication from Wall!
@@ -257,7 +249,6 @@ void AbsorbingWall::drawSpot()
 	m.setValues();
 
 	glTranslatef(vSpot[0], vSpot[1], vSpot[2]);
-	//drawCircle(0.009*height);
 	glutSolidSphere (0.008*height, 32, 32);
 	glPopMatrix();
 }

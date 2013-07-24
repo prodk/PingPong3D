@@ -14,15 +14,13 @@
 FMOD_RESULT playSound(FMOD::System *system, FMOD::Sound *sound, FMOD::Channel *channel);
 
 // Inherit from the Observer abstract class to use Shape in the Observer pattern.
-class Shape //: public Observer
+class Shape
 {
 public:
 	Shape(std::size_t idExt, vector_3d c);
 	Shape(std::size_t idExt, vector_3d c, 
 		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha);
 	virtual ~Shape(void);
-
-	//virtual void notify(Subject* s);				// Callback (hook) method in the Observer.
 
 	// Methods that are not overridden.
 	std::size_t getId() const;

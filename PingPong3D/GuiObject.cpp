@@ -9,41 +9,25 @@ GuiObject::GuiObject(float xExt, float yExt, float wExt, float hExt,
 	x(xExt), y(yExt), w(wExt), h(hExt), id(idExt), name(n)
 {
 	bIsPressed = false;
-	//bPlaySound = true;
+	bHasFocus = false;
+	wPressed = 0.98*w;
+	hPressed = 0.98*h;
+	xPressed = x + 0.5*(w - wPressed);
+	yPressed = y - 0.5*(h - hPressed);
 }
 
 GuiObject::~GuiObject(void)
 {
 }
 
-
-std::size_t GuiObject::getId() const
+int GuiObject::getId() const
 {
 	return id;
 }
 
-//FMOD_RESULT GuiObject::setSound(FMOD::System *sys, FMOD::Sound *snd)
-//{
-//	if(sys == NULL) return FMOD_ERR_FILE_BAD;
-//	if(snd == NULL) return FMOD_ERR_FILE_BAD;
-//	system = sys;
-//	sound = snd;
-//
-//	// Start paused sound.
-//	//FMOD_RESULT result = system->playSound(sound, 0, true, &channel);
-//
-//	return FMOD_OK;
-//}
-
-//void GuiObject::notify(Subject* s) 
-//{
-//	bPlaySound = ((Logic*) s)->bActionsSound;
-//}
-
 int GuiObject::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w, GLfloat h,
 	TTF_Font *font)
 {
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 	int mode;
 
 	SDL_Color textColor;
@@ -67,17 +51,15 @@ int GuiObject::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
     } 
     else 
     {
-        printf("Could not determine pixel format of the surface");
+		std::cerr << "Could not determine pixel format of the surface" << std::endl;
         SDL_FreeSurface(text);
-        return NULL;
+        exit(1);
     }
 
 	// Draw the surface onto the OGL screen using gextures.
     glPushMatrix();
 	glDisable(GL_LIGHTING);
 
-    //glEnable(GL_BLEND);
-    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f(0.0f, 1.0f, 1.0f, 1.0f);
 
     glGenTextures(1, &textTexture);
@@ -132,6 +114,16 @@ void GuiObject::setPressed(bool pressed)
 	bIsPressed = pressed;
 }
 
+void GuiObject::setFocus(bool focus)
+{
+	bHasFocus = focus;
+}
+
+bool GuiObject::hasFocus()
+{
+	return bHasFocus;
+}
+
 bool GuiObject::ptInRect(float ptx, float pty)
 {
 	float xMin = 0.;
@@ -151,7 +143,6 @@ Button::Button(float xExt, float yExt, float wExt, float hExt,
 	std::size_t idExt, std::string n, int tid) :
 GuiObject(xExt, yExt, wExt, hExt, idExt, n), textureId(tid)
 {
-	//caption = name;	
 }
 
 Button::~Button()
@@ -165,14 +156,17 @@ void Button::drawPressed(TTF_Font *font)
 
 	glBindTexture( GL_TEXTURE_2D, textureId );
 	
-	glColor4f(1.0, 0., 0., 1.0);
-	glTranslatef(x, y, 0.);
+	if(bHasFocus)
+		glColor4f(0.0, 1.0, 0.0, 1.0);
+	else
+		glColor4f(1.0, 0.0, 0.0, 1.0);
+	glTranslatef(xPressed, yPressed, 0.);
 
 	glBegin( GL_QUADS );
 	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
-	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(w, 0.0, 0.0);
-	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(w, h, 0.0);
-	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, h, 0.0);	
+	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(wPressed, 0.0, 0.0);
+	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(wPressed, hPressed, 0.0);
+	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, hPressed, 0.0);	
 	glEnd();	
 
 	glEnable(GL_LIGHTING);
@@ -180,7 +174,7 @@ void Button::drawPressed(TTF_Font *font)
 	
 	// Print button's text.
 	SDL_Delay(4);				// Additional delay because we draw only one text.
-	drawText(name, x, y, w, h, font);
+	drawText(name, xPressed, yPressed, wPressed, hPressed, font);
 }
 
 void Button::drawUnpressed(TTF_Font *font)
@@ -190,7 +184,10 @@ void Button::drawUnpressed(TTF_Font *font)
 
 	glBindTexture( GL_TEXTURE_2D, textureId );
 	
-	glColor4f(1.0, 0., 0., 1.0);
+	if(bHasFocus)
+		glColor4f(0.0, 1.0, 0.0, 1.0);
+	else
+		glColor4f(1.0, 0.0, 0.0, 1.0);
 	glTranslatef(x, y, 0.);
 
 	glBegin( GL_QUADS );
@@ -208,58 +205,6 @@ void Button::drawUnpressed(TTF_Font *font)
 	drawText(name, x, y, w, h, font);
 }
 
-
-//void Button::handleMouseButtonUp(Logic &logic, float x, float y)
-//{
-//	if( ptInRect(x, y) )
-//	{		
-//		switch(id)
-//		{ 
-//		case START_BTN:
-//			logic.bShowStartScreen = false;
-//			logic.bShowOptionsScreen = false;
-//			logic.bShowPlayScreen = true;
-//			logic.bGamePaused = false;
-//			logic.bTrain = false;
-//			logic.notifyObservers(); // Tell registered observers to change their settings.
-//			break;
-//
-//		case OPTIONS_BTN:
-//			logic.bShowStartScreen = false;
-//			logic.bShowOptionsScreen = true;
-//			logic.bShowPlayScreen = false;
-//			//logic.notifyObservers();
-//			break;
-//
-//		case HOWTO_BTN:
-//			logic.bShowStartScreen = false;
-//			logic.bShowOptionsScreen = false;
-//			logic.bShowHowtoScreen = true;			
-//			//logic.notifyObservers(); // Tell registered observers to change their settings.
-//			break;
-//
-//		case TRAIN_BTN:
-//			logic.bShowStartScreen = false;
-//			logic.bShowOptionsScreen = false;
-//			logic.bShowPlayScreen = true;
-//			logic.bGamePaused = false;
-//			logic.bTrain = true;
-//			logic.notifyObservers();
-//			break;
-//		}// end switch(id)
-//
-//		if(bPlaySound)
-//			::playSound(system, sound, channel);
-//	}// End if ptInRect.
-//}
-
-//void Button::handleMouseButtonDown(Logic &logic, float x, float y)
-//{
-//	if( ptInRect(x, y) )
-//	{		
-//	}// End if ptInRect.
-//}
-
 /*________________________________*/
 // OptionsButton class implementation.
 OptionsButton::OptionsButton(float xExt, float yExt, float wExt, float hExt, 
@@ -268,7 +213,7 @@ Button(xExt, yExt, wExt, hExt, idExt, n, tid), caption(cap)
 {
 	xSmall = x + 1.7*w;
 	wSmall = 0.25*w;
-	//long double str;	
+	xSmallPressed = x - xPressed + xSmall;
 }
 
 OptionsButton::~OptionsButton()
@@ -283,18 +228,21 @@ void OptionsButton::drawPressed(TTF_Font *font)
 
 	glBindTexture( GL_TEXTURE_2D, textureId );
 	
-	glColor4f(1.0, 0., 0., 1.0);
-	glTranslatef(x, y, 0.);
+	if(bHasFocus)
+		glColor4f(0.0, 1.0, 0.0, 1.0);
+	else
+		glColor4f(1.0, 0.0, 0.0, 1.0);
+	glTranslatef(xPressed, yPressed, 0.);
 
 	// Draw larger button.
 	glBegin( GL_QUADS );
 	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
-	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(w, 0.0, 0.0);
-	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(w, h, 0.0);
-	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, h, 0.0);	
+	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(wPressed, 0.0, 0.0);
+	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(wPressed, hPressed, 0.0);
+	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, hPressed, 0.0);	
 	glEnd();	
 
-	glTranslatef(xSmall, 0., 0.);
+	glTranslatef(xSmallPressed, y - yPressed, 0.);
 	// Draw smaller button.
 	glBegin( GL_QUADS );
 	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
@@ -306,7 +254,7 @@ void OptionsButton::drawPressed(TTF_Font *font)
 	glEnable(GL_LIGHTING);
 	glPopMatrix();
 
-	drawText(name, x, y, w, h, font);				// Button's name.
+	drawText(name, xPressed, yPressed, wPressed, hPressed, font);				// Button's name.
 	drawText(caption, x+xSmall, y, wSmall, h, font);	// Parameter's value.
 }
 
@@ -317,7 +265,10 @@ void OptionsButton::drawUnpressed(TTF_Font *font)
 
 	glBindTexture( GL_TEXTURE_2D, textureId );
 	
-	glColor4f(1.0, 0., 0., 1.0);
+	if(bHasFocus)
+		glColor4f(0.0, 1.0, 0.0, 1.0);
+	else
+		glColor4f(1.0, 0.0, 0.0, 1.0);
 	glTranslatef(x, y, 0.);
 
 	// Draw larger button.
@@ -344,68 +295,7 @@ void OptionsButton::drawUnpressed(TTF_Font *font)
 	drawText(caption, x+xSmall, y, wSmall, h, font);	// Parameter's value.
 }
 
-//void OptionsButton::handleMouseButtonUp(Logic &logic, float x, float y)
-//{
-//	if( ptInRect(x, y) )
-//	{		
-//		switch(id)
-//		{		
-//		case BACKGRSND_BTN:
-//			if(logic.bBackgroundSound){
-//				logic.bBackgroundSound = false;
-//				caption = "Off";
-//			}
-//			else{
-//				logic.bBackgroundSound = true;
-//				caption = "On";
-//			}
-//			logic.notifyObservers(); // Tell registered observers to change their settings.
-//			break;
-//
-//		case ACTIONSND_BTN:
-//			//logic.bActionsSound = !logic.bActionsSound;
-//			if(logic.bActionsSound){
-//				logic.bActionsSound = false;
-//				caption = "Off";
-//			}
-//			else{
-//				logic.bActionsSound = true;
-//				caption = "On";
-//			}
-//			logic.notifyObservers(); // Tell registered observers to change their settings.
-//			break;
-//
-//		case ROUND_BTN:
-//			logic.iRound = logic.iRound % logic.iRoundMax + 1;
-//			caption = std::to_string((_ULonglong)logic.iRound);
-//			logic.notifyObservers(); 
-//			break;
-//
-//		case BACK_BTN:
-//			logic.bShowOptionsScreen = false;
-//			logic.bShowStartScreen = true;
-//			break;
-//		}// end switch(id)
-//
-//		if(bPlaySound)
-//			::playSound(system, sound, channel);
-//	}// End if ptInRect.
-//}
-
 void OptionsButton::setCaption(const std::string & c)
 {
 	caption = c;
 }
-
-//bool OptionsButton::ptInRect(float ptx, float pty)
-//{
-//	float xMin = 0.;
-//	float xMax = xMin + w;
-//	float yMin = 0.;
-//	float yMax = yMin + h;
-//
-//	if( (ptx >= x) && (ptx <= x + w) && (pty >= y ) && (pty <= y+h) )
-//		return true;
-//
-//	return false;
-//}

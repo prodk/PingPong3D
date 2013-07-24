@@ -31,14 +31,9 @@ float Paddle::getSize() const
 void Paddle::draw()
 {
 	glPushMatrix();	
-
-	// !Move quadrics creation to the constructor!
-	//GLUquadricObj *quadratic;
-	//quadratic = gluNewQuadric();
-	gluQuadricDrawStyle (quadratic, GLU_FILL); 
-	//gluQuadricNormals (quadratic, GLU_SMOOTH);
+	
+	gluQuadricDrawStyle (quadratic, GLU_FILL); 	
 	glTranslatef(vCenter[0]+vNormal[0]*0.5*flHeight, vCenter[1], vCenter[2]);	// Translate to the wall.
-	//glTranslatef(-0.5*flHeight, vCenter[1], vCenter[2]);
 	glRotatef(angle, 0.0f, 1.0f, 0.0f);
 
 	// Draw collision spot.
@@ -58,7 +53,6 @@ void Paddle::draw()
 
 	// Outer face of the paddle sylinder.
 	glPushMatrix();
-	//glTranslatef(0., 0., -0.5*flHeight);
 	drawCircle(flRadius);
 	glPopMatrix();
 
@@ -74,10 +68,6 @@ void Paddle::draw()
 	glTranslatef(0., 0., -alpha*flHeight);
 	glutSolidSphere (2*beta*flRadius, slices, stacks);
 	glPopMatrix();
-
-	// Move quadrics deletion to the destructor!
-	//gluDeleteQuadric(quadratic);	// Important: memory leak!
-
 
 	glPopMatrix();
 }
@@ -102,8 +92,6 @@ void Paddle::move(float deltaTime, vector_3d dr, bool bReset)
 	}
 	else
 	{
-		//vVelocity += dr;
-		//vCenter += vVelocity;
 		vCenter += dr;
 	}
 }
@@ -116,8 +104,7 @@ bool Paddle::collide(Shape *s)
 	float r = s->getSize();
 
 	vector_3d surfacePoint = vCenter;
-	//surfacePoint[0] -= 0.5*flHeight*vNormal[0];
-	surfacePoint[0] = surfacePoint[0] - vNormal[0]*0.5*flHeight - vNormal[0]*flHeight;
+	surfacePoint[0] = surfacePoint[0] - vNormal[0]*flHeight;// - vNormal[0]*flHeight;
 
 	// Find the smallest distance between the wall and the ball.
 	float a = cml::dot(surfacePoint, vNormal);
@@ -128,8 +115,6 @@ bool Paddle::collide(Shape *s)
 			s->setVelocity(vNormal);
 
 			collided = true;
-			//if(bPlaySound)
-				//::playSound(system, sound, 0);
 		}
 	}
 
@@ -195,14 +180,11 @@ void ComputerPaddle::move(float deltaTime, vector_3d dr, bool bReset)
 	}
 	else
 	{
-		// React only if the spot is at the computer's half.
-		//if(vSpot[0] > 0.0){
-			// Move the paddle to the projections of the collision spot on the yz plane.
-			vector_3d deltaSpot = vCollisionSpot  - vCenter;
+		// Move the paddle to the projections of the collision spot on the yz plane.
+		vector_3d deltaSpot = vCollisionSpot  - vCenter;
 
-			vCenter[1] += flVelocity*deltaSpot[1];
-			vCenter[2] += flVelocity*deltaSpot[2];
-		//}
+		vCenter[1] += flVelocity*deltaSpot[1];
+		vCenter[2] += flVelocity*deltaSpot[2];
 	}
 }
 

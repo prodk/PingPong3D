@@ -6,6 +6,7 @@
 #include <string>
 #include "SdlScreen.h"
 
+// The main class which contains all the game ingredients.
 class GameApp : public Observer
 {
 public:
@@ -22,14 +23,12 @@ private:
 	void setupTimers();
 	void updateTimers();
 	void setupRoundParams();
-	//void setupNewGame();	// Init game-specific variables/objects.
 	void shutDown();		// Clean up resources.
 	void registerObservers();	// Register what objects should be tracked by the Subject.
-
-	std::vector<FMOD::Sound*> sounds;
-	FMOD::System *system;
+	void createScreens();
 	int setupSound();		// Init fmod library.
 	void playBackgroundSound();
+	void checkErr(FMOD_RESULT r, std::string &msg);
 
 	// SDL-specific.
 	int setupSDL();
@@ -76,10 +75,11 @@ private:
 	// Timers.
 	float deltaTime;
 	Uint32 lastMillisec;
-
 	SDL_Event sdlEvent;
 
 	// Data.
+	std::vector<FMOD::Sound*> sounds;
+	FMOD::System *system;
 	std::string strGameName;
 	SDL_Surface* surface;
 	std::vector<TTF_Font* > fonts;

@@ -23,22 +23,22 @@ public:
 	// Public methods to override. Inherit interfaces with the default implementation.
 	virtual void doInput(Logic &l, SDL_Event sdlEvent);	// Not pure virtual, Keyboard/mouse.
 	virtual void doDrawing(Logic &logic) = 0;
-
 	virtual void notify(Subject* s);
+
+	void setScreenSize(float w, float h);
 
 protected:
 	int drawText(const std::string & txt, GLfloat x, GLfloat y, GLfloat w, GLfloat h,
-	TTF_Font *font, Logic &logic);	// !Put this functions to the SdlScreen.
+		TTF_Font *font, Logic &logic);
 
 	virtual void handleKeyDown(const SDL_Event& sdle, Logic &l);
+	virtual void handleKeyUp(const SDL_Event& sdle, Logic &l);
 	virtual void handleResize(const SDL_Event& sdle, Logic &l);
 	virtual void handleMouseMotion(const SDL_Event& sdle, Logic &l);
 	virtual void handleMouseButtonDown(const SDL_Event& sdle, Logic &l);
 	virtual void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
 
 protected:
-	//enum{BACKGRSND_BTN, ACTIONSND_BTN, ROUND_BTN, BACK_BTN};
-	//enum{START_BTN, OPTIONS_BTN, HOWTO_BTN, TRAIN_BTN};
 	enum{START_BTN, OPTIONS_BTN, HOWTO_BTN, TRAIN_BTN,			// Start screen buttons.
 		 BACKGRSND_BTN, ACTIONSND_BTN, ROUND_BTN, BACK_BTN};	// Options screen buttons.
 
@@ -64,28 +64,30 @@ public:
 	ButtonScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	virtual ~ButtonScreen();
-	//virtual void doInput(Logic &l, SDL_Event sdlEvent);	// Not pure virtual, Keyboard/mouse.
 	virtual void doDrawing(Logic &logic);
-
-	//std::map<std::size_t, std::tr1::shared_ptr<GuiObject> > & getGuiObjects();
 	virtual void notify(Subject* s);
 
 protected:
-	// Maybe put addButtons(Logic & l) also to this class.
-	// !Remove unused input methods later!
-	//virtual void handleKeyDown(const SDL_Event& sdle, Logic &l);
-	//virtual void handleResize(const SDL_Event& sdle, Logic &l);
-	//virtual void handleMouseMotion(const SDL_Event& sdle, Logic &l);
+	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
 	virtual void handleMouseButtonDown(const SDL_Event& sdle, Logic &l);
 	virtual void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
+	virtual void handleMouseMotion(const SDL_Event& sdle, Logic &logic);
+	virtual void handleKeyDown(const SDL_Event& sdle, Logic &logic);
+	virtual void handleKeyUp(const SDL_Event& sdle, Logic &logic);
 
-	int pressButton(float x, float y);
+	// Button management.
+	int pressButton(float x, float y);		// Reconsider these names!
+	void setUnpressed();
 	int pickButton(float px, float py);
 	void processButton(std::size_t id, Logic & logic);
+	int getHighlightedButton();
 
 protected:
 	std::map<std::size_t, std::tr1::shared_ptr<GuiObject> > guiObjects;
 	bool bPlayButtonSound;
+	bool bMouseOverButton;					// To prevent from several higlight messages.
+	bool bKeyDown;
+	int iPrevFocusButton;
 };
 
 /*________________________________*/
@@ -96,25 +98,9 @@ public:
 	StartScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	~StartScreen(void);
-
-	// Overridden virtual functions.
-	//void doInput(Logic &l, SDL_Event sdlEvent);		// Keyboard/mouse.
-	//void doDrawing(Logic &logic);
-
-	// StartScreen-specific methods.
-	//std::vector<std::tr1::shared_ptr<GuiObject> > & getGuiObjects();
 	
 private:
-	//void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
-	//void handleKeyDown(const SDL_Event& sdle, Logic &l);
 	void addButtons();
-
-//private:
-	//enum{START_BTN, OPTIONS_BTN, HOWTO_BTN, TRAIN_BTN};
-	//std::vector<std::tr1::shared_ptr<GuiObject> > guiObjects;
-	//bool bLeftMouseButton;			// Prevent buttons captions from flickering!
-
-	//const std::size_t iNumOfButtons;
 };
 
 /*________________________________*/
@@ -125,25 +111,9 @@ public:
 	OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd, Logic &logic);
 	~OptionsScreen(void);
-
-	// Overridden virtual functions.
-	//void doInput(Logic &l, SDL_Event sdlEvent);		// Keyboard/mouse.
-	//void doDrawing(Logic &logic);
-
-	// OptionsScreen-specific methods.
-	//std::vector<std::tr1::shared_ptr<GuiObject> > & getGuiObjects();
 	
 private:
-	//void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
-	//void handleKeyDown(const SDL_Event& sdle, Logic &l);
 	void addButtons(Logic & logic);
-
-private:
-	//enum{BACKGRSND_BTN, ACTIONSND_BTN, ROUND_BTN, BACK_BTN};
-	//std::vector<std::tr1::shared_ptr<GuiObject> > guiObjects;
-	//bool bLeftMouseButton;			// Prevent buttons captions from flickering!
-
-	//const std::size_t iNumOfButtons;
 };
 
 /*________________________________*/
@@ -156,24 +126,11 @@ public:
 	~HowtoScreen(void);
 
 	// Overridden virtual functions.
-	//void doInput(Logic &l, SDL_Event sdlEvent);		// Keyboard/mouse.
 	void doDrawing(Logic &logic);
-
-	// OptionsScreen-specific methods.
-	//std::vector<std::tr1::shared_ptr<GuiObject> > & getGuiObjects();
 	
 private:
 	void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
 	void handleKeyDown(const SDL_Event& sdle, Logic &l);
-	//void addButtons();
-	
-
-//private:
-	//enum{BACKGRSND_BTN, ACTIONSND_BTN, ROUND_BTN, SAVE_BTN};
-	//std::vector<std::tr1::shared_ptr<GuiObject> > guiObjects;
-	//bool bLeftMouseButton;			// Prevent buttons captions from flickering!
-
-	//const std::size_t iNumOfButtons;
 };
 
 /*________________________________*/
@@ -182,7 +139,7 @@ class PlayScreen : public SdlScreen
 {
 public:
 	PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt, 
-		FMOD::System *sys, std::vector<FMOD::Sound*> snd, int nofshapes, 
+		FMOD::System *sys, std::vector<FMOD::Sound*> snd, 
 		RoundParamsVector & rp);
 	~PlayScreen(void);
 
@@ -194,8 +151,6 @@ public:
 	// PlayScreen-specific methods.
 	void doLogic(const Logic &l);
 	void play(Logic &l, SDL_Event sdlEvent);			// Play the game.
-	//void addShapes(const Logic &l);
-	//std::map<std::size_t, std::tr1::shared_ptr<Shape> > & getShapes();
 	void setupNewRound(Logic &logic);
 
 	// I/O.
@@ -206,6 +161,7 @@ public:
 	void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
 
 	// OpenGl-specific.
+	//void setScreenSize(float w, float h);
 	void drawAxes() const;
 	void initView();			// Avoid code duplication in doDrawing() and pickObjects().
 	void initResize();			// Avoid code dupl. in setupMatrices() and handleResize().
@@ -228,14 +184,12 @@ private:
 		return (degtheta);
 	}
 
-	// Public members.
-public:
-	// A vector of pointers to Shapes. Ball is stored in the 1st item.	
-	std::map<std::size_t, std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.
-	
 	// Private members.
 private:
 	enum {BALL, WALL, LEFT_PADDLE, RIGHT_PADDLE};	// enum hack.
+
+	// A vector of pointers to Shapes. Ball is stored in the 1st item.	
+	std::map<std::size_t, std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.
 
 	// Game drawing related.
 	float flAngleFrustum;
@@ -244,7 +198,6 @@ private:
 
 	// View rotation with mouse.
 	float xViewOld;			// Vars for rotate view.
-	//float xView;	//! Check whether this var is used in the code!
 	float angleViewY;		// Angle to rotate the view around Y.
 	float angleViewZ;		// Rotate view around X.
 	float flScaleAll;
@@ -265,13 +218,10 @@ private:
 	float flBallVel;
 	float flBallDeltaVel;
 	float flCompPaddleVel;
-	//vector_3d vLeftPaddleCntr;	// Init left paddle position.
-	//vector_3d vRightPaddleCntr;
-	// int leftWallIdx;
-	// int rightWallIdx;
 	int leftPaddleIdx;
 	int rightPaddleIdx;
-	int iNumOfShapes;		// !Delete after introducing map instead of vector. It's not const because it depends on the user's choice.
+	float flScaleMax;
+	float flScaleMin;
 };
 
 #endif // SDL_SCREEN

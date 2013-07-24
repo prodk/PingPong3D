@@ -7,8 +7,8 @@
 FMOD_RESULT playSound(FMOD::System *system, FMOD::Sound *sound, FMOD::Channel *channel)
 {
 	FMOD_RESULT result;	
-	//if( (sound != NULL) && (system != NULL) )
-	result = system->playSound(sound, 0, false, &channel);
+	if( (sound != NULL) && (system != NULL) )	// Reconsider this!
+		result = system->playSound(sound, 0, false, &channel);
 
 	return result;
 }
@@ -56,10 +56,6 @@ void Shape::setVelocity(vector_3d n)
 
 vector_3d Shape::getVelocity() const
 {
-	// It's not correct to return a reference to the automatic local variable.
-	// But I suppose that the default implementation of this function
-	// is never used. I don't want to make this method pure virtual, because
-	// not all the shapes have velocity.
 	return vector_3d(0.0, 0.0, 0.0);
 }
 

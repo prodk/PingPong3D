@@ -7,62 +7,42 @@ GameApp::GameApp(void):
 	flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong"), 
 	flZaxisDistance(1.f), flLengthUnit(0.25f), bBackgroundSound(true),
 	//Logic(start, options, howto, play, run, pause, over, bsound, asound);
-	logic(true, false, false, false, true, false, false,  bBackgroundSound, true) // Show options, running/paused/over/sounds.
+	logic(true, false, false, false, true, false, false,  bBackgroundSound, true, 
+	flScreenWidth, flScreenHeight)
 {
-	initLibraries();	// !Check return values and exceptions later! Don't leak exceptions!
+	initLibraries();	// Exceptions and bad values are caught/checked inside the functions.
 	loadData();
 
 	setupRoundParams();	// Set the parameters of all the rounds.
 
-	// Later - Put these into a method createScreens();
-	// Init options screen.
-	startScreen = std::tr1::shared_ptr<StartScreen>(
-		new StartScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
-		system, sounds) );
+	createScreens();
 
-	optionsScreen = std::tr1::shared_ptr<OptionsScreen>(
-		new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
-		system, sounds, logic) );
-
-	howtoScreen = std::tr1::shared_ptr<HowtoScreen>(
-		new HowtoScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
-		system, sounds) );
-
-	// Init play screen.
-	int iNumOfShapes = 9;		// Put this into the GameState class.
-	playScreen = std::tr1::shared_ptr<PlayScreen>(
-		new PlayScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
-		system, sounds, iNumOfShapes, roundParams) );
-
-	// Register observers from the Observer pattern to manage the sound.
-	registerObservers();
+	registerObservers();// Register observers for the Observer pattern to manage the sound.
 }
 
 GameApp::~GameApp(void)
 {
-	shutDown();		// Shapes are handled via smart pointers, so no delete here.	
+	shutDown();			// Shapes are handled via smart pointers, so no delete here.	
 }
 
 int GameApp::initLibraries()
 {
 	// Initialize SDL.
-	if( setupSDL() < 0 ){ return -1; }	// Change this !
+	if( setupSDL() < 0 ){ 
+		std::cerr << "Failed to initialize SDL" << std::endl; 
+		exit(1);
+	}
     
     // OpenGL.
     setupRenderingContext();
-    setupMatrices();
+    setupMatrices();    
     
-    // Setup FMOD sound.
-    setupSound();				// Check return value.
+    setupSound();	// FMOD sound.
     
-    // Set the game timer up.
     setupTimers();
 
     // Seed random numbers.
     std::srand ((unsigned int)time(NULL));
-    
-    // Initialize new game.
-    //setupNewGame();
 
 	return 0;
 }
@@ -74,7 +54,10 @@ int GameApp::setupSDL()
 
 	// Get some video information.
     const SDL_VideoInfo* info = SDL_GetVideoInfo( );
-	if( !info ) {return -1;}
+	if( !info ) {
+		std::cerr << "Failed to get videInfo structue." << std::endl;
+		exit(1);
+	}
 	int bpp = info->vfmt->BitsPerPixel;
 
 	// Set window's icon.
@@ -85,8 +68,8 @@ int GameApp::setupSDL()
     surface = SDL_SetVideoMode((int)flScreenWidth, (int)flScreenHeight, bpp, flags);
 
 	if(surface == NULL){
-		fprintf( stderr, "Video mode set failed: %s\n", SDL_GetError( ) );
-		return -1;
+		std::cerr << "SDL set video mode failed: %s\n" << SDL_GetError() << std::endl;
+		exit(1);
 	}
 	SDL_WM_SetCaption(strGameName.c_str(), strGameName.c_str());
 
@@ -103,10 +86,19 @@ int GameApp::loadData()
 	sounds.resize(5);
 	FMOD_RESULT result;
 	result = system->createStream("optionscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[0]);
+	checkErr(result, std::string("optionscreen.mp3"));
+
 	result = system->createStream("normalwall.wav", FMOD_DEFAULT, 0, &sounds[1]);
+	checkErr(result, std::string("normalwall.wav"));
+
 	result = system->createStream("absorbwall.wav", FMOD_DEFAULT, 0, &sounds[2]);
+	checkErr(result, std::string("absorbwall.wav"));
+
 	result = system->createStream("paddle.wav", FMOD_DEFAULT, 0, &sounds[3]);
+	checkErr(result, std::string("paddle.wav"));
+
 	result = system->createStream("playscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[4]);
+	checkErr(result, std::string("playscreen.mp3"));
 
 	// Start paused sounds.
 	// Options.
@@ -118,9 +110,15 @@ int GameApp::loadData()
 
 	// Load fonts.
 	fonts.resize(1);
-	if( TTF_Init() == -1 ) { return -1; }
+	if( TTF_Init() == -1 ) { 
+		std::cerr << "Failed to initialize TTF library" << std::endl;
+		exit(1); 
+	}
 	fonts[0] = TTF_OpenFont( "Line-01.ttf", 28 );
-	if( fonts[0] == NULL ){ return -1;}
+	if( fonts[0] == NULL ){ 
+		std::cerr << "Failed to Load font:" << "Line-01.ttf" << std::endl;
+		exit(1); 
+	}
 
 	return 0;
 }
@@ -136,8 +134,8 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     // Could not load image.
     if (!surface) 
 	{
-        printf("Could not load image: %s", fileName.c_str());
-        return NULL;
+        std::cerr << "Could not load image: " << fileName.c_str() << std::endl;
+        exit(1);
     }
     
     // Work out what format to tell glTexImage2D to use...
@@ -151,9 +149,9 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     } 
     else 
     {
-        printf("Could not determine pixel format of image: %s", fileName.c_str());
+        std::cerr << "Could not determine pixel format of image " << fileName.c_str() << std::endl;
         SDL_FreeSurface(surface);
-        return NULL;
+        exit(1);
     }
 
     // Create one texture name.
@@ -173,8 +171,8 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     // Could not allocate memory.
     if (!texture.get())
     {
-        printf("Could not create TEXTURE struct for image: %s", fileName.c_str());
-		return NULL;
+        std::cerr << "Could not create TEXTURE struct for image " << fileName.c_str() << std::endl;
+		exit(1);
     }
     
     // Set up TEXTURE structure.
@@ -266,25 +264,33 @@ void GameApp::updateTimers()
     }
 }
 
-//void GameApp::setupNewGame()
-//{
-	/*
-	// Clear board
-    int i, j;
-    for(i = GAMEBOARD_H-1; i >= 0; i--) 
-        for(j = GAMEBOARD_W-1; j >= 0; j--)
-            gameboard[i][j] = 0;
-    
-    // Randomize next brick
-    brick_type_next = (rand() % MAX_BRICK_TYPES);
-    brick_type_current = 0;         
-    new_brick = true;  
-    
-    score = 0;
-    level = 1;
-    game_over = false;
-	*/
-//}
+void GameApp::createScreens()
+{
+	try {
+		startScreen = std::tr1::shared_ptr<StartScreen>(
+			new StartScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			system, sounds) );
+
+		optionsScreen = std::tr1::shared_ptr<OptionsScreen>(
+			new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			system, sounds, logic) );
+
+		howtoScreen = std::tr1::shared_ptr<HowtoScreen>(
+			new HowtoScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			system, sounds) );
+
+		// Init play screen.
+		playScreen = std::tr1::shared_ptr<PlayScreen>(
+			new PlayScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			system, sounds, roundParams) );
+	}// End try.
+	catch(std::bad_alloc& ba)
+	{
+		std::cerr << "Failed to create one of the screens: memory error";
+		shutDown();
+		exit(1);
+	}
+}
 
 void GameApp::manageGame()
 {
@@ -343,9 +349,8 @@ void GameApp::shutDown()
 	// Cleanup sounds.
 	for(i = 0; i < sounds.size(); i++){
 		result = sounds[i]->release();
-		if (result != FMOD_OK)
-		{
-			fprintf(stderr, "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		if (result != FMOD_OK) {
+			std::cerr << "FMOD cleanup error! " << result << FMOD_ErrorString(result) << std::endl;
 			exit(-1);
 		}
 	}// End for sounds.
@@ -363,7 +368,6 @@ void GameApp::shutDown()
 	// Most object pointers (e.g. screens) are cleaned up through the smart pointers.
 	// That's why no delete operators here.
 }
-
 
 //
 //void GameApp::draw2DTextureEx(float _x, float _y, float _z, float _alpha,  TEXTURE* _tex) 
@@ -412,21 +416,13 @@ int GameApp::setupSound()
 	FMOD_RESULT result;
 	
 	result = FMOD::System_Create(&system);		// Create the main system object.
-	if (result != FMOD_OK)
-	{
-		fprintf(stderr, "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
-		exit(-1);
-	}
+	checkErr(result, std::string("FMOD error! ") + std::string(FMOD_ErrorString(result)));
 	
 	result = system->setSoftwareChannels(100);	// Allow 100 software mixed voices to be audible at once.
-	// Check errors!
+	checkErr(result, std::string("FMOD error! ") + std::string(FMOD_ErrorString(result)));
 
 	result = system->init(100, FMOD_INIT_NORMAL, 0);	// Initialize FMOD.
-	if (result != FMOD_OK)
-	{
-		fprintf(stderr, "FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
-		exit(-1);
-	}
+	checkErr(result, std::string("FMOD error! ") + std::string(FMOD_ErrorString(result)));
 
 	return result;
 }
@@ -434,9 +430,6 @@ int GameApp::setupSound()
 void GameApp::notify(Subject* s)	// Observer pattern callback hook method.
 {
 	bBackgroundSound = ((Logic*) s)->bBackgroundSound;
-
-	//FMOD_RESULT result;
-
 	playBackgroundSound();						// Play according to the new options.
 }
 
@@ -449,25 +442,6 @@ void GameApp::registerObservers()
 	logic.registerObserver( dynamic_cast<Observer*>(optionsScreen.get()) );
 	logic.registerObserver( dynamic_cast<Observer*>(howtoScreen.get()) );
 	logic.registerObserver( dynamic_cast<Observer*>(playScreen.get()) );
-
-	// Shapes are registered/unregistered in the PlayScreen, when they are created/destroyed.
-
-	// Register GUI controls.
-	// Start screen controls.
-	//std::map<std::size_t, std::tr1::shared_ptr<GuiObject> > guis = startScreen->getGuiObjects();
-	//for(std::size_t i = 0; i < guis.size(); i++)
-		//logic.registerObserver( dynamic_cast<Observer*>(guis[i].get()) );
-
-	// Options screen.
-	//guis = optionsScreen->getGuiObjects();
-	//for(std::size_t i = 0; i < guis.size(); i++)
-		//logic.registerObserver( dynamic_cast<Observer*>(guis[i].get()) );
-
-	// Register shapes.
-	/*typedef std::map<std::size_t, std::tr1::shared_ptr<Shape> >::iterator map_iter;
-	std::map<std::size_t, std::tr1::shared_ptr<Shape> > shapes = playScreen->getShapes();
-	for(map_iter iterator = shapes.begin(); iterator != shapes.end(); iterator++)
-		logic.registerObserver( dynamic_cast<Observer*>(iterator->second.get()) );*/
 }
 
 void GameApp::playBackgroundSound()
@@ -501,7 +475,6 @@ void GameApp::setupRoundParams()
 	float flBoxWidth = 1.3f;		// Add these to the constructor and use when init walls.
 	float flBoxHeight = 1.0f;
 	float flBoxThickness = 0.5f;
-	//float flPaddleRadius = 0.05*flBoxWidth;
 	float flBallVel = 8e-03;
 	float flCompPaddleVel = 0.01;
 
@@ -516,5 +489,12 @@ void GameApp::setupRoundParams()
 			flCompPaddleVel*(i + 1.), 
 			0.05*flBoxWidth);
 		roundParams[i] = std::tr1::shared_ptr<RoundParameters>(pParams);
+	}
+}
+
+void GameApp::checkErr(FMOD_RESULT r, std::string &msg)
+{
+	if( r != FMOD_OK){
+		std::cerr << msg << std::endl;
 	}
 }

@@ -16,12 +16,11 @@ public:
 	// Overriden virtual functions.
 	float getSize() const;			// Radius of the ball.
 	void draw();					// Render a ball using OGL.
-	void move(float deltaTime, 
-		vector_3d dr, bool bReset);	// Change center position. bReset - set vCenter to origin.
-	//bool collide(Shape *);			// Do nothing for Ball.
+	void move(float deltaTime, vector_3d dr, bool bReset);	// Change center position. 
+															// bReset - set vCenter to origin.
 	void setVelocity(vector_3d n);	// Reverse the velocity after a collision.
 	vector_3d getVelocity() const;
-	void setCollisionSpot(vector_3d & spot);// Save the next collision point, used for AI.
+	void setCollisionSpot(const vector_3d & spot);// Save the next collision point, used for AI.
 	vector_3d getCollisionSpot() const;
 
 private:	// id and vCenter are inherited from the Shape.

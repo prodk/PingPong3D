@@ -4,11 +4,12 @@
 
 
 Logic::Logic(bool startscreen , bool options, bool howto, bool play, 
-	bool run, bool pause, bool over, bool bsound, bool asound) :
+	bool run, bool pause, bool over, bool bsound, bool asound, float scrw, float scrh) :
 	bShowStartScreen(startscreen), bShowOptionsScreen(options), 
 	bShowHowtoScreen(howto), bShowPlayScreen(play),
 	bAppRunning(run), bGamePaused(pause), bGameOver(over),
-	bBackgroundSound(bsound), bActionsSound(asound)
+	bBackgroundSound(bsound), bActionsSound(asound),
+	flScreenWidth(scrw), flScreenHeight(scrh)
 {
 	bTrain = false;
 	iRound = 1;

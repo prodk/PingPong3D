@@ -24,20 +24,18 @@ void Ball::draw()
 
 	material.setValues();
 
-	//glColor3f (0.0, 1.0, 0.0);
 	GLfloat light_diffuse[] = { 1.0, 1.0, 1.0, 1.0 };
 	GLfloat light_specular[] = { 1.0, 1.0, 1.0, 1.0 };
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
 	glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular);
 	GLfloat light_position[] = { 0.0, 0.0, 0.0, 1.0 };
 	GLfloat light_direction[] = { vVelocity[0], vVelocity[1], vVelocity[2], 0.0 };
-	
 
 	glTranslatef(vCenter[0], vCenter[1], vCenter[2]);	// Move tha ball.
 	glutSolidSphere (radius, slices, stacks);	
 
-	// Set a spotlight movint with the ball.
-	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 50.0);
+	// Set a spotlight movinf with the ball.
+	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 50.0);			// Spotlight is 50 degrees wide.
 	glLightfv(GL_LIGHT1, GL_POSITION, light_position);
 	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_direction);
 
@@ -57,7 +55,7 @@ void Ball::move(float deltaTime, vector_3d dr, bool bReset)
 		vCenter = vCenter + vVelocity*2;	
 }
 
-void Ball::setVelocity(vector_3d n)
+void Ball::setVelocity(vector_3d n)		// Reflect the velocity. !Add incrementing it later
 {
 	if( std::fabs(n[0]) > 0.0f )
 		vVelocity[0] *= -1.0f;
@@ -72,7 +70,7 @@ vector_3d Ball::getVelocity() const
 	return vVelocity;
 }
 
-void Ball::setCollisionSpot(vector_3d & spot)
+void Ball::setCollisionSpot(const vector_3d & spot)
 {
 	vSpot = spot;
 }

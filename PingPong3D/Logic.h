@@ -12,7 +12,7 @@ class Logic : public Subject
 public:
 	Logic(bool startscreen, bool options, bool howto, bool play, 
 		bool run, bool pause, 
-		bool over, bool bsound, bool asound);
+		bool over, bool bsound, bool asound, float scrw, float scrh);
 	~Logic(void);
 	// Public members.
 public:
@@ -34,6 +34,8 @@ public:
 	int iCompScore;
 
 	int iMaxScore;			// !Make this const.
+	float flScreenWidth;
+	float flScreenHeight;
 };
 
 class RoundParameters
