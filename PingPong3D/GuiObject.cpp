@@ -137,6 +137,15 @@ bool GuiObject::ptInRect(float ptx, float pty)
 	return false;
 }
 
+void GuiObject::draw(TTF_Font *font)
+{
+	if(bIsPressed)
+		drawPressed(font);
+	else
+		drawUnpressed(font);
+}
+
+
 /*________________________________*/
 //Button class implementation.
 Button::Button(float xExt, float yExt, float wExt, float hExt, 

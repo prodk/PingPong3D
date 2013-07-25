@@ -36,7 +36,7 @@ int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
     textColor.b = 0;
 	
 	text = TTF_RenderText_Blended(font, txt.c_str(), textColor);
-	SDL_Delay(25);			// Small delay to prevent from full CPU load.
+	SDL_Delay(15);			// Small delay to prevent from full CPU load.
 
 	if (text->format->BytesPerPixel == 3) // RGB 24bit.
     { 
@@ -57,7 +57,7 @@ int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
     glPushMatrix();
 	glDisable(GL_LIGHTING);
 
-    glColor4f(0.0f, 1.0f, 1.0f, 1.0f);
+    glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
 
     glGenTextures(1, &textTexture);
     glBindTexture(GL_TEXTURE_2D, textTexture);
@@ -319,10 +319,11 @@ void ButtonScreen::doDrawing(Logic &logic)
 	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
 	
 	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++){
-		if( iterator->second->isPressed() )
-			iterator->second->drawPressed(fonts[0]);
-		else
-			iterator->second->drawUnpressed(fonts[0]);
+		//if( iterator->second->isPressed() )
+			//iterator->second->drawPressed(fonts[0]);
+		//else
+			//iterator->second->drawUnpressed(fonts[0]);
+		iterator->second->draw(fonts[0]);
 	}
 
 	glFlush();
@@ -523,7 +524,7 @@ void StartScreen::addButtons()
 	} // End try.
 	catch(std::bad_alloc& ba)
 	{
-		std::cerr << "Failed to create one of the buttons in StartScreen: memory error." << std::endl;		
+		std::cerr << "Failed to create one of the buttons in StartScreen: memory error, " + std::string(ba.what()) << std::endl;		
 		exit(1);
 	}
 }
@@ -594,7 +595,7 @@ void OptionsScreen::addButtons(Logic &logic)
 	}// End try.
 	catch(std::bad_alloc& ba)
 	{
-		std::cerr << "Failed to create one of the buttons in OptionsScreen: memory error." << std::endl;		
+		std::cerr << "Failed to create one of the buttons in OptionsScreen: memory error, " + std::string(ba.what()) << std::endl;		
 		exit(1);
 	}
 }
@@ -692,6 +693,8 @@ PlayScreen::PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TT
 	 std::vector<std::tr1::shared_ptr<RoundParameters> > & rp) :
 	 SdlScreen(w, h, s, t, fnt, sys, snd), roundParams(rp)
 {
+	userWallIdx = -1;
+	compWallIdx = -1;
 }
 
 PlayScreen::~PlayScreen()
@@ -722,21 +725,21 @@ void PlayScreen::initMembers(const Logic &logic)
 	flScaleMin = 0.1;
 }
 
-void PlayScreen::unregisterObservers(Logic &logic)
-{
-	typedef std::map<std::size_t, std::tr1::shared_ptr<Shape> >::iterator map_iter;
-	
-	for(map_iter iterator = shapes.begin(); iterator != shapes.end(); iterator++)
-		logic.unregisterObserver();
-}
+//void PlayScreen::unregisterObservers(Logic &logic)
+//{
+//	typedef std::map<std::size_t, std::tr1::shared_ptr<Shape> >::iterator map_iter;
+//	
+//	for(map_iter iterator = shapes.begin(); iterator != shapes.end(); iterator++)
+//		logic.unregisterObserver();
+//}
 
-void PlayScreen::registerObservers(Logic &logic)
-{
-	typedef std::map<std::size_t, std::tr1::shared_ptr<Shape> >::iterator map_iter;
-	
-	for(map_iter iterator = shapes.begin(); iterator != shapes.end(); iterator++)
-		logic.registerObserver( dynamic_cast<Observer*>(iterator->second.get()) );
-}
+//void PlayScreen::registerObservers(Logic &logic)
+//{
+//	typedef std::map<std::size_t, std::tr1::shared_ptr<Shape> >::iterator map_iter;
+//	
+//	for(map_iter iterator = shapes.begin(); iterator != shapes.end(); iterator++)
+//		logic.registerObserver( dynamic_cast<Observer*>(iterator->second.get()) );
+//}
 
 void PlayScreen::addShapes(Logic &logic)
 {
@@ -765,6 +768,7 @@ void PlayScreen::addShapes(Logic &logic)
 		vector_3d n = vector_3d(-1., 0., 0.);
 		pShape = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
 		pShape->setSound(system, sounds[2]);
+		userWallIdx = shapes.size();			// Save the index of the user's wall.
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Right wall.
@@ -773,11 +777,13 @@ void PlayScreen::addShapes(Logic &logic)
 		if(!logic.bTrain){
 			pShape = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
 			pShape->setSound(system, sounds[2]);
+			compWallIdx = shapes.size();			// Use this only when absorbing wall.
 		}
 		else{
 			pShape = new Wall( WALL, center, flBoxThickness, flBoxHeight, n);
 			pShape->setSound(system, sounds[1]);
-		}
+			compWallIdx = -1;
+		}		
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Top wall.
@@ -857,7 +863,7 @@ void PlayScreen::addShapes(Logic &logic)
 	} // End try.
 	catch(std::bad_alloc& ba)
 	{
-		std::cerr << "Failed to create one of the shapes in PlayScreen: memory error." << std::endl;		
+		std::cerr << "Failed to create one of the shapes in PlayScreen: memory error, " + std::string(ba.what()) << std::endl;		
 		exit(1);
 	}
 }
@@ -904,6 +910,28 @@ void PlayScreen::doDrawing(Logic &logic)
 	for(std::size_t i = 0; i < shapes.size(); i++){
 		shapes[i]->draw();
 	}
+
+	// Draw the score.
+	// !Check whether this is the training regime later!
+	//std::to_string( (_ULonglong) logic.iCompScore )
+	glPushMatrix();					// Save current matrix.
+
+	//glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
+	//glLoadIdentity ();				// Clean up the projection matrix.
+
+	//glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
+	//glLoadIdentity ();				// Clean up the modelview matrix.
+
+	glEnable( GL_TEXTURE_2D );
+	//drawText(std::string("Comp:"), 
+		//0.1, 0.75, 0.1, 0.1, fonts[0], logic);
+	drawText(std::string("Comp:") + std::to_string( (_ULonglong) logic.iCompScore ), 
+		0.1, 0.75, 0.1, 0.1, fonts[0], logic);
+	drawText(std::string("User:") + std::to_string( (_ULonglong) logic.iUserScore ), 
+		-0.1, 0.75, 0.1, 0.1, fonts[0], logic);
+	glDisable( GL_TEXTURE_2D);
+
+	glPopMatrix();
 
 	glFlush();
 }
@@ -1046,6 +1074,8 @@ void PlayScreen::handleResize(const SDL_Event& sdle, Logic &logic)
 	glViewport (0, 0, (GLsizei) sdle.resize.w, (GLsizei) sdle.resize.h);
 	flWidth = sdle.resize.w;
 	flHeight = sdle.resize.h;
+	logic.flScreenWidth = flWidth;
+	logic.flScreenHeight = flHeight;
 
 	initResize();		// Avoid code duplication with setup matrices.
 }
@@ -1134,7 +1164,7 @@ void PlayScreen::drawAxes() const
 	glEnable(GL_LIGHTING);
 }
 
-void PlayScreen::doLogic(const Logic &logic)
+void PlayScreen::doLogic(Logic &logic)
 {
 	double deltaTime = 0.;		// Stub, ss not really used.
     
@@ -1150,8 +1180,17 @@ void PlayScreen::doLogic(const Logic &logic)
 		bool bCollided = false;
 		for(std::size_t i = 0; i < shapes.size(); i++){
 			bCollided = shapes[i]->collide(shapes[0].get()); 
-			if(bCollided && bPlaySound)
-				shapes[i]->playSound();
+			if(bCollided){
+				if(bPlaySound)
+					shapes[i]->playSound();
+				if(i == userWallIdx){		// User lost.
+					logic.iCompScore += 1;
+				}
+				if(i == compWallIdx){		// User lost.
+					logic.iUserScore += 1;
+				}
+				break;
+			}
 		}
     } // if(!game_over)
     
@@ -1196,6 +1235,10 @@ void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 
 void PlayScreen::setupNewRound(Logic &logic)
 {	
+	// Reset scores.
+	logic.iCompScore = 0;
+	logic.iUserScore = 0;
+
 	initMembers(logic);
 	addShapes(logic);
 }

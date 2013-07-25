@@ -14,9 +14,12 @@ public:
 	GuiObject(float xExt, float yExt, float wExt, float hExt, std::size_t idExt, std::string n);
 	virtual ~GuiObject(void);
 
-	// Pure virtual methods.
+	// Pure virtual functions.
 	virtual void drawPressed(TTF_Font *font) = 0;
 	virtual void drawUnpressed(TTF_Font *font) = 0;
+
+	// Virtual functions.
+	virtual void draw(TTF_Font *font);
 
 	// Fixed implementation methods.
 	bool isPressed(float ptx, float pty);
@@ -24,7 +27,7 @@ public:
 	void setPressed(bool pressed);
 	void setFocus(bool focus);
 	bool hasFocus();
-	int GuiObject::getId() const;
+	int getId() const;
 
 protected:
 	int drawText(const std::string & txt, GLfloat x, GLfloat y, GLfloat w, GLfloat h,
@@ -54,8 +57,8 @@ class Button : public GuiObject
 public:
 	Button(float x, float y, float w, float h, std::size_t idExt, std::string n, int tid);
 	virtual ~Button();
-	
-	// Overridden virtual methods.
+
+	// Overridden virtual functions.
 	virtual void drawPressed(TTF_Font *font);
 	virtual void drawUnpressed(TTF_Font *font);
 
@@ -72,7 +75,7 @@ public:
 		std::string n, int tid, std::string cap);
 	~OptionsButton();
 	
-	// Overridden virtual methods.
+	// Overridden virtual functions.
 	void drawPressed(TTF_Font *font);
 	void drawUnpressed(TTF_Font *font);
 	void setCaption(const std::string &c);

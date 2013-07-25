@@ -144,13 +144,15 @@ public:
 	~PlayScreen(void);
 
 	// Overridden virtual functions.
+	void play(Logic &l, SDL_Event sdlEvent);			// Play the game.
 	void doInput(Logic &l, SDL_Event sdlEvent);			// Keyboard/mouse.
 	void doDrawing(Logic &logic);
 	void notify(Subject* s);
 
+	// Private methods.
+private:
 	// PlayScreen-specific methods.
-	void doLogic(const Logic &l);
-	void play(Logic &l, SDL_Event sdlEvent);			// Play the game.
+	void doLogic(Logic &l);
 	void setupNewRound(Logic &logic);
 
 	// I/O.
@@ -167,11 +169,8 @@ public:
 	void initResize();			// Avoid code dupl. in setupMatrices() and handleResize().
 	void rotateView(float dx);
 	int pickObject(int x, int y);		// Returns type of the object under cursor.
-
-	// Private methods.
-private:
-	void unregisterObservers(Logic &logic);
-	void registerObservers(Logic &logic);
+	//void unregisterObservers(Logic &logic);
+	//void registerObservers(Logic &logic);
 	void initMembers(const Logic &l);
 	void addShapes(Logic &l);
 
@@ -220,6 +219,8 @@ private:
 	float flCompPaddleVel;
 	int leftPaddleIdx;
 	int rightPaddleIdx;
+	int userWallIdx;
+	int compWallIdx;
 	float flScaleMax;
 	float flScaleMin;
 };

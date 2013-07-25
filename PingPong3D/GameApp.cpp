@@ -10,7 +10,8 @@ GameApp::GameApp(void):
 	logic(true, false, false, false, true, false, false,  bBackgroundSound, true, 
 	flScreenWidth, flScreenHeight)
 {
-	initLibraries();	// Exceptions and bad values are caught/checked inside the functions.
+	// Exceptions and bad values are caught/checked inside the functions.
+	initLibraries();
 	loadData();
 
 	setupRoundParams();	// Set the parameters of all the rounds.
@@ -286,7 +287,7 @@ void GameApp::createScreens()
 	}// End try.
 	catch(std::bad_alloc& ba)
 	{
-		std::cerr << "Failed to create one of the screens: memory error";
+		std::cerr << "Failed to create one of the screens: memory error, " + std::string(ba.what());
 		shutDown();
 		exit(1);
 	}
@@ -301,6 +302,7 @@ void GameApp::manageGame()
 		SDL_PollEvent(&sdlEvent);					// Important: use only one PollEvent!!!
 
 		if(logic.bShowStartScreen){
+			startScreen->setScreenSize(logic.flScreenWidth, logic.flScreenHeight);
 			startScreen->doDrawing(logic);	
 			startScreen->doInput(logic, sdlEvent);	// Put These in a separate method.			
 		}
