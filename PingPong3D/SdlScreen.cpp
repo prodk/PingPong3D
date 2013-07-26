@@ -36,18 +36,14 @@ int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
     textColor.b = 0;
 	
 	text = TTF_RenderText_Blended(font, txt.c_str(), textColor);
-	SDL_Delay(15);			// Small delay to prevent from full CPU load.
 
-	if (text->format->BytesPerPixel == 3) // RGB 24bit.
-    { 
-        mode = GL_RGB;
+	if (text->format->BytesPerPixel == 3) {		// RGB 24bit.
+		mode = GL_RGB;
     } 
-    else if (text->format->BytesPerPixel == 4) // RGBA 32bit.
-    { 
+    else if (text->format->BytesPerPixel == 4) {// RGBA 32bit. 
         mode = GL_RGBA;
     } 
-    else 
-    {
+    else {
         std::cerr << "Could not determine pixel format of the surface" << std::endl;
         SDL_FreeSurface(text);
         exit(1);
@@ -179,11 +175,9 @@ ButtonScreen::~ButtonScreen()
 {
 }
 
+// Press the button under cursor.
 int ButtonScreen::pressButton(float x, float y)
-{
-	// Move this typedef into the class declaration.
-	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
-	
+{	
 	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++){
 		if( iterator->second->isPressed(x, y) ){
 			iterator->second->setPressed(true);
@@ -194,18 +188,16 @@ int ButtonScreen::pressButton(float x, float y)
 	return -1;
 }
 
+// Unpress all the buttons.
 void ButtonScreen::setUnpressed()
-{
-	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
-	
+{	
 	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++)
 		iterator->second->setPressed(false);	
 }
 
+// Get the id of the highlighted button.
 int ButtonScreen::getHighlightedButton()
-{
-	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
-	
+{	
 	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++){
 		if( iterator->second->hasFocus() )
 			return iterator->second->getId();		
@@ -214,10 +206,9 @@ int ButtonScreen::getHighlightedButton()
 	return -1;
 }
 
+// Get the id of the button under cursor.
 int ButtonScreen::pickButton(float px, float py)
-{
-	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
-	
+{	
 	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++){
 		if( iterator->second->isPressed(px, py) ){			
 			return iterator->second->getId();
@@ -227,6 +218,7 @@ int ButtonScreen::pickButton(float px, float py)
 	return -1;
 }
 
+// Change logic structure depending on the id parameter of the button.
 void ButtonScreen::processButton(std::size_t id, Logic & logic)
 {
 	switch(id)
@@ -244,6 +236,7 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 		logic.bShowStartScreen = false;
 		logic.bShowOptionsScreen = true;
 		logic.bShowPlayScreen = false;
+		logic.bNewOptionsScreen = true;
 		break;
 
 	case HOWTO_BTN:
@@ -258,7 +251,7 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 		logic.bShowPlayScreen = true;
 		logic.bGamePaused = false;
 		logic.bTrain = true;
-		logic.notifyObservers();
+		//logic.notifyObservers();
 		break;
 
 	case BACKGRSND_BTN:
@@ -295,7 +288,7 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 		logic.bShowOptionsScreen = false;
 		logic.bShowStartScreen = true;
 		break;
-	}// end switch(id)
+	}// End switch(id).
 
 	if(bPlayButtonSound)
 		::playSound(system, sounds[1], channel);
@@ -315,16 +308,8 @@ void ButtonScreen::doDrawing(Logic &logic)
 
 	glEnable( GL_TEXTURE_2D );
 	
-	// Change this using drawPressed/unpressed.
-	typedef std::map<std::size_t, std::tr1::shared_ptr<GuiObject> >::iterator map_iter;
-	
-	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++){
-		//if( iterator->second->isPressed() )
-			//iterator->second->drawPressed(fonts[0]);
-		//else
-			//iterator->second->drawUnpressed(fonts[0]);
+	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++)
 		iterator->second->draw(fonts[0]);
-	}
 
 	glFlush();
 
@@ -341,11 +326,10 @@ void ButtonScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
 		{
 			// Normalize screen coordinates.
 			// OpenGL coords (used for rendering) go from -1 to 1 with the origin in the middle.
-			// While clicking coords have (0, 0) in the upper left corner.
+			// Clicking coords have (0, 0) in the upper left corner.
 			float xnorm = (sdle.button.x - 0.5*flWidth) / (0.5*flWidth);
 			float ynorm = (0.5*flHeight - sdle.button.y) / (0.5*flHeight);
 			
-			//std::size_t btnId = pickButton(xnorm, ynorm);
 			pressButton(xnorm, ynorm);
 		}
 		break;
@@ -360,18 +344,18 @@ void ButtonScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
 		{
 			// Normalize screen coordinates.
 			// OpenGL coords (used for rendering) go from -1 to 1 with the origin in the middle.
-			// While clicking coords have (0, 0) in the upper left corner.
+			// Clicking coords have (0, 0) in the upper left corner.
 			float xnorm = (sdle.button.x - 0.5*flWidth) / (0.5*flWidth);
 			float ynorm = (0.5*flHeight - sdle.button.y) / (0.5*flHeight);
 			
 			int btnId = pickButton(xnorm, ynorm);
 			if(btnId >= 0){
 				guiObjects[btnId]->setPressed(false);	// Unpress button.
-				processButton(btnId, logic);
+				processButton(btnId, logic);			// Perform actions depending on btn id.
 			}
 		}
 		break;
-	}// end switch
+	}// End switch.
 	setUnpressed();
 }
 
@@ -383,10 +367,14 @@ void ButtonScreen::handleMouseMotion(const SDL_Event& sdle, Logic &logic)
 		bMouseOverButton = true;		
 		float xnorm = (sdle.button.x - 0.5*flWidth) / (0.5*flWidth);
 		float ynorm = (0.5*flHeight - sdle.button.y) / (0.5*flHeight);
+
 		int btnId = pickButton(xnorm,ynorm);
+		// Handle mouse highlighting (take into account keyboard management of the buttons).
 		if( (btnId >= 0) && (btnId != iPrevFocusButton) && (iPrevFocusButton >= 0) ){
+			// Unset previously highlighted buttons.
 			guiObjects[getHighlightedButton()]->setFocus(false);
 			guiObjects[iPrevFocusButton]->setFocus(false);
+			// Set new current highlighted button.
 			guiObjects[btnId]->setFocus(true);
 			iPrevFocusButton = btnId;
 		}
@@ -428,7 +416,7 @@ void ButtonScreen::handleKeyUp(const SDL_Event& sdle, Logic &logic)
 		}
 		break;
 
-	case SDLK_UP:
+	case SDLK_UP:			// Move button highlighting up.
 		if(bKeyDown)
 		{
 			int btnId = getHighlightedButton();
@@ -446,7 +434,7 @@ void ButtonScreen::handleKeyUp(const SDL_Event& sdle, Logic &logic)
 		}
 		break;
 
-	case SDLK_DOWN:
+	case SDLK_DOWN:				// Move button highlighting down.
 		if(bKeyDown)
 		{
 			int btnId = getHighlightedButton();
@@ -474,6 +462,7 @@ void ButtonScreen::notify(Subject* s)
 
 /*________________________________*/
 // StartScreen implementation.
+// In StartScreen buttons are added only once, during the creation of the object.
 StartScreen::StartScreen(float w, float h, SDL_Surface* s, 
 	TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 	FMOD::System *sys, std::vector<FMOD::Sound*> snd):
@@ -496,8 +485,6 @@ void StartScreen::addButtons()
 	float h = 0.25;
 	std::string name = "Start";
 
-	// Later put the code for adding a button into a method to avoid code duplication!
-	
 	try {
 		// Button 0.
 		GuiObject* pGuiObj = new Button(x, y, w, h, START_BTN, name, textures[0]->id);	
@@ -522,8 +509,7 @@ void StartScreen::addButtons()
 		pGuiObj = new Button(x, y, w, h, TRAIN_BTN, name, textures[0]->id);	// The same texture id.
 		guiObjects.insert(std::make_pair(TRAIN_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 	} // End try.
-	catch(std::bad_alloc& ba)
-	{
+	catch(std::bad_alloc& ba) {
 		std::cerr << "Failed to create one of the buttons in StartScreen: memory error, " + std::string(ba.what()) << std::endl;		
 		exit(1);
 	}
@@ -531,18 +517,24 @@ void StartScreen::addButtons()
 
 /*________________________________*/
 // OptionsScreen implementation.
+// In OptionsScreen buttons are added every time this screen is shown, not just during creation.
 OptionsScreen::OptionsScreen(float w, float h, SDL_Surface* s, 
 	TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 	FMOD::System *sys, std::vector<FMOD::Sound*> snd, Logic &logic) :
 	ButtonScreen(w, h, s, t, fnt, sys, snd)
 {
-	addButtons(logic);
-	bLeftMouseButton = false;
-	iPrevFocusButton = BACKGRSND_BTN;
+	setupNewScreen(logic);
 }
 
 OptionsScreen::~OptionsScreen()
 {
+}
+
+void OptionsScreen::setupNewScreen(Logic &logic)
+{
+	addButtons(logic);
+	bLeftMouseButton = false;
+	iPrevFocusButton = BACKGRSND_BTN;
 }
 
 void OptionsScreen::addButtons(Logic &logic)
@@ -554,7 +546,7 @@ void OptionsScreen::addButtons(Logic &logic)
 	std::string name = "Background Sound";
 	std::string caption = " ";
 
-	// Later put the code for adding a button into a method to avoid code duplication!
+	guiObjects.clear();				// Empty the map of buttons.
 	
 	try {
 		// Button 0.
@@ -593,8 +585,7 @@ void OptionsScreen::addButtons(Logic &logic)
 			BACK_BTN, name, textures[0]->id/*, caption*/);	// The same texture id.
 		guiObjects.insert(std::make_pair(BACK_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 	}// End try.
-	catch(std::bad_alloc& ba)
-	{
+	catch(std::bad_alloc& ba) {
 		std::cerr << "Failed to create one of the buttons in OptionsScreen: memory error, " + std::string(ba.what()) << std::endl;		
 		exit(1);
 	}
@@ -663,7 +654,7 @@ void HowtoScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 	// Check keyboard.
  	switch(sdle.key.keysym.sym)
 	{
-	case SDLK_RETURN:		// Fall through.
+	case SDLK_RETURN:				// Fall through.
 	case SDLK_SPACE:
 		logic.bShowStartScreen = true;
 		logic.bShowHowtoScreen = false;
@@ -704,10 +695,10 @@ PlayScreen::~PlayScreen()
 void PlayScreen::initMembers(const Logic &logic)
 {
 	iCurRound = logic.iRound - 1;
-	flBoxWidth = roundParams[iCurRound]->flBoxWidth ;//1.3f;		// Add these to the constructor and use when init walls.
-	flBoxHeight = roundParams[iCurRound]->flBoxHeight;//1.0f;
-	flBoxThickness = 0.5*roundParams[iCurRound]->flBoxHeight;//0.5f;
-	flPaddleRadius = roundParams[iCurRound]->flPaddleRadius;//0.05*flBoxWidth;
+	flBoxWidth = roundParams[iCurRound]->flBoxWidth;
+	flBoxHeight = roundParams[iCurRound]->flBoxHeight;
+	flBoxThickness = 0.5*roundParams[iCurRound]->flBoxHeight;
+	flPaddleRadius = roundParams[iCurRound]->flPaddleRadius;
 	flBallVel = roundParams[iCurRound]->flBallVelocity;
 	flBallDeltaVel = roundParams[iCurRound]->flBallDeltaVel;
 	flCompPaddleVel = roundParams[iCurRound]->flComputerPaddleVel;
@@ -725,22 +716,6 @@ void PlayScreen::initMembers(const Logic &logic)
 	flScaleMin = 0.1;
 }
 
-//void PlayScreen::unregisterObservers(Logic &logic)
-//{
-//	typedef std::map<std::size_t, std::tr1::shared_ptr<Shape> >::iterator map_iter;
-//	
-//	for(map_iter iterator = shapes.begin(); iterator != shapes.end(); iterator++)
-//		logic.unregisterObserver();
-//}
-
-//void PlayScreen::registerObservers(Logic &logic)
-//{
-//	typedef std::map<std::size_t, std::tr1::shared_ptr<Shape> >::iterator map_iter;
-//	
-//	for(map_iter iterator = shapes.begin(); iterator != shapes.end(); iterator++)
-//		logic.registerObserver( dynamic_cast<Observer*>(iterator->second.get()) );
-//}
-
 void PlayScreen::addShapes(Logic &logic)
 {
 	// Cleanup the shapes from the previous round.
@@ -751,7 +726,7 @@ void PlayScreen::addShapes(Logic &logic)
 		vector_3d ambient = vector_3d(0.0, 0.5, 0.0);
 		vector_3d diffuse = vector_3d(0.0, 1.0, 0.0);
 		vector_3d specular = vector_3d(0.0, 0.0, 0.0);
-		float alpha = 1.0;				// Opaque ball.
+		float alpha = 1.0;					// Opaque ball.
 		float shine = 0.;
 		vector_3d center(0.0f, 0.0f, 0.0f);				// Ball starts at the center of the scene.
 		vector_3d velocity(0.4*flBallVel, 0.2*flBallVel, 0.2*flBallVel);// !ADD Random initial velocity.
@@ -759,10 +734,7 @@ void PlayScreen::addShapes(Logic &logic)
 			ambient, diffuse, specular, shine, alpha);
 		shapes.insert(std::make_pair(BALL, std::tr1::shared_ptr<Shape>(pShape)));	
 
-		// !Reconsider this code: add some method to avoid code duplication.
-
-		// Add walls.
-		
+		// Add walls.		
 		// Left wall.
 		center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 		vector_3d n = vector_3d(-1., 0., 0.);
@@ -830,6 +802,8 @@ void PlayScreen::addShapes(Logic &logic)
 		center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 		n = vector_3d(-1., 0., 0.);			// Norm is -x.
 		float angle = 90.0;
+
+		// Paddles.
 		// Setup colors.
 		ambient = vector_3d(0.5, 0.5, 0.0);
 		diffuse = vector_3d(1.0, 1.0, 0.0);
@@ -838,7 +812,7 @@ void PlayScreen::addShapes(Logic &logic)
 		shine = 10.;
 		pShape = new Paddle( LEFT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
 			angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
-			ambient, diffuse, specular, shine, alpha);
+			ambient, diffuse, specular, shine, alpha, flBallDeltaVel);
 		pShape->setSound(system, sounds[3]);
 		leftPaddleIdx = 7;
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
@@ -855,14 +829,13 @@ void PlayScreen::addShapes(Logic &logic)
 			pShape = 
 				new ComputerPaddle( RIGHT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
 				angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
-				ambient, diffuse, specular, shine, alpha);
+				ambient, diffuse, specular, shine, alpha, flBallDeltaVel);
 			pShape->setSound(system, sounds[3]);
 			rightPaddleIdx = 8;
 			shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 		}// End if training.
 	} // End try.
-	catch(std::bad_alloc& ba)
-	{
+	catch(std::bad_alloc& ba) {
 		std::cerr << "Failed to create one of the shapes in PlayScreen: memory error, " + std::string(ba.what()) << std::endl;		
 		exit(1);
 	}
@@ -914,7 +887,7 @@ void PlayScreen::doDrawing(Logic &logic)
 	// Draw the score.
 	// !Check whether this is the training regime later!
 	//std::to_string( (_ULonglong) logic.iCompScore )
-	glPushMatrix();					// Save current matrix.
+	//glPushMatrix();					// Save current matrix.
 
 	//glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
 	//glLoadIdentity ();				// Clean up the projection matrix.
@@ -922,18 +895,27 @@ void PlayScreen::doDrawing(Logic &logic)
 	//glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
 	//glLoadIdentity ();				// Clean up the modelview matrix.
 
-	glEnable( GL_TEXTURE_2D );
+	//glEnable( GL_TEXTURE_2D );
+	//glRotatef(-90, 0., 1., 0.);
 	//drawText(std::string("Comp:"), 
 		//0.1, 0.75, 0.1, 0.1, fonts[0], logic);
-	drawText(std::string("Comp:") + std::to_string( (_ULonglong) logic.iCompScore ), 
-		0.1, 0.75, 0.1, 0.1, fonts[0], logic);
-	drawText(std::string("User:") + std::to_string( (_ULonglong) logic.iUserScore ), 
-		-0.1, 0.75, 0.1, 0.1, fonts[0], logic);
-	glDisable( GL_TEXTURE_2D);
+	//drawText(std::string("Comp:") + std::to_string( (_ULonglong) logic.iCompScore ), 
+		//0.1, 0.75, 0.1, 0.1, fonts[0], logic);
+	//drawText(std::string("User:") + std::to_string( (_ULonglong) logic.iUserScore ), 
+		//-0.1, 0.75, 0.1, 0.1, fonts[0], logic);
+	
+	//drawText(std::string("Round:") + std::to_string( (_ULonglong) iCurRound + 1 ), 
+		//-0.7, 0.75, 0.1, 0.1, fonts[0], logic);
+	//glDisable( GL_TEXTURE_2D);
 
-	glPopMatrix();
-
+	//std::stringstream str;
+	//str << logic.iCompScore;
+	//std::string msg = str.str();
+	//glutStrokeCharacter(GLUT_STROKE_ROMAN, msg[0]);
+	//glPopMatrix();
 	glFlush();
+	
+	//initView();	
 }
 
 void PlayScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
@@ -987,7 +969,7 @@ void PlayScreen::handleMouseMotion(const SDL_Event& sdle, Logic &logic)
 			float ratioY = 2.8/flHeight;
 			vector_3d dr(0., -ratioX*(sdle.motion.y - yPaddleOld), 
 				ratioY*(sdle.motion.x - xPaddleOld) );
-			shapes[leftPaddleIdx]->move(0., dr, false);
+			shapes[leftPaddleIdx]->move(dr, false);
 			xPaddleOld = sdle.motion.x;
 			yPaddleOld = sdle.motion.y;
 		}
@@ -1008,12 +990,11 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 		break;
 
 	case SDLK_b:
-		if(!logic.bShowStartScreen)
-		{
+		if(!logic.bShowStartScreen) {
 			logic.bShowStartScreen = true;
 			logic.bNewRound = true;		// Start from scratch.
 		}
-		logic.notifyObservers();	// Tell observers to change their sound behavior.
+		logic.notifyObservers();		// Tell observers to change their sound behavior.
 		break;
 
 	case SDLK_p:	 //Scale.
@@ -1045,25 +1026,25 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 	case SDLK_a:			// Fall through.
 	case SDLK_LEFT:
 		dr = vector_3d(0., 0.0, -0.01);		// Reconsider magic number!
-		shapes[leftPaddleIdx]->move(0., dr, false);
+		shapes[leftPaddleIdx]->move(dr, false);
 		break;
 
 	case SDLK_d:			// Fall through.
 	case SDLK_RIGHT:
 		dr = vector_3d(0., 0.0, 0.01);
-		shapes[leftPaddleIdx]->move(0., dr, false);
+		shapes[leftPaddleIdx]->move(dr, false);
 		break;
 
 	case SDLK_w:			// Fall through.
 	case SDLK_UP:
 		dr = vector_3d(0., 0.01, 0.);
-		shapes[leftPaddleIdx]->move(0., dr, false);
+		shapes[leftPaddleIdx]->move(dr, false);
 		break;
 
 	case SDLK_s:			// Fall through.
 	case SDLK_DOWN:
 		dr = vector_3d(0., -0.01, 0.);
-		shapes[leftPaddleIdx]->move(0., dr, false);
+		shapes[leftPaddleIdx]->move(dr, false);
 		break;
 	}
 }
@@ -1083,14 +1064,12 @@ void PlayScreen::handleResize(const SDL_Event& sdle, Logic &logic)
 // Object selection using back buffer.
 int PlayScreen::pickObject(int x, int y)
 {
-	// Render the scene into the back buffer with colors corresponding to
-	// names of the objects.
+	// Render onto the back buffer using colors corresponding to names of the objects.
 	initView();		// Avoid code duplication with doDrawing().
 
 	glDisable(GL_LIGHTING);
 	// Draw all the shapes into the double buffer.
-	for(std::size_t i = 0; i < shapes.size(); i++)
-	{
+	for(std::size_t i = 0; i < shapes.size(); i++) {
 		int name = shapes[i]->getId();
 		// Use not material colors, but the shape-specific color for identification.
 		glColor3f (0.3*name, 0., 0.);		// !Reconsider this later! May be too simple.
@@ -1133,7 +1112,7 @@ void PlayScreen::initView()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 	glLoadIdentity ();             // Clear the current matrix.
-	// Move camera to the point (0,0,5) in eye coords, look at point (0,0,0), 
+	// Move camera to the point (0,0,zdistance) in eye coords, look at point (0,0,0), 
 	// camera orientation - the normal is along (0,1,0)
 	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 	
@@ -1141,7 +1120,7 @@ void PlayScreen::initView()
 	glRotatef(angleViewZ, 0.0f, 0.0f, 1.0f);
 	glScalef(flScaleAll, flScaleAll,flScaleAll);
 
-	drawAxes();	
+	//drawAxes();	
 }
 
 void PlayScreen::drawAxes() const
@@ -1166,54 +1145,41 @@ void PlayScreen::drawAxes() const
 
 void PlayScreen::doLogic(Logic &logic)
 {
-	double deltaTime = 0.;		// Stub, ss not really used.
-    
-    // If the player hasn't lost, do stuff.
-    if(!logic.bGameOver)
-    {		
-		// Move the shapes.
-		bool bReset = false;	// Whether to move the ball to the origin.
-		for(std::size_t i = 0; i < shapes.size(); i++)
-			shapes[i]->move(deltaTime, vector_3d(0., 0., 0.), bReset);
+	// Move the shapes.
+	bool bReset = false;	// Whether to move the ball to the origin.
+	for(std::size_t i = 0; i < shapes.size(); i++)
+		shapes[i]->move(vector_3d(0., 0., 0.), bReset);
 
-		// Detect collisions for all shapes with the ball.
-		bool bCollided = false;
-		for(std::size_t i = 0; i < shapes.size(); i++){
-			bCollided = shapes[i]->collide(shapes[0].get()); 
-			if(bCollided){
-				if(bPlaySound)
-					shapes[i]->playSound();
-				if(i == userWallIdx){		// User lost.
-					logic.iCompScore += 1;
-				}
-				if(i == compWallIdx){		// User lost.
-					logic.iUserScore += 1;
-				}
-				break;
+	// Detect collisions for all shapes with the ball.
+	bool bCollided = false;
+	for(std::size_t i = 0; i < shapes.size(); i++){
+		bCollided = shapes[i]->collide(shapes[0].get()); 
+		if(bCollided){
+			if(bPlaySound)
+				shapes[i]->playSound();
+			// Make a pause here!
+			if(i == userWallIdx){		// User lost.
+				logic.iCompScore += 1;
 			}
+			if(i == compWallIdx){		// User lost.
+				logic.iUserScore += 1;
+			}
+			break;
 		}
-    } // if(!game_over)
+	}
+
+	// Check whether it's time to change the round.
+	if( (logic.iUserScore >= logic.iMaxScore) && (!logic.bTrain)){
+		logic.iRound = logic.iRound % logic.iRoundMax + 1;
+		logic.bNewRound = true;
+	}
     
-    // Update other general logic
-    // theta += time_delta * 0.01;
-    // secondary timer for move_down input so you cant drop a brick too fast!
-    //if(secondary_timer > 0)
-        //secondary_timer -= time_delta * 0.1;
-        
-    // update scoring glow
-    //if(score_glow > GLOW_MIN)
-        //score_glow -= time_delta * 0.001;
-    //if(score_glow < GLOW_MIN)
-        //score_glow = GLOW_MIN;
-        
-    // update other stuff
-    //updateStarRank();
-    //updateSkillLevel();
-    
-    // if the player lost, do game over effects
-    //if(game_over){
-        //updateGameOver();
-    //}   
+    // If the player lost, do game over effects
+	// !Add printing game over later.
+	if( (logic.iCompScore >= logic.iMaxScore) && (!logic.bTrain)){
+		logic.iRound = logic.iRound % logic.iRoundMax + 1;
+		logic.bNewRound = true;
+	}
 }
 
 void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
@@ -1241,6 +1207,7 @@ void PlayScreen::setupNewRound(Logic &logic)
 
 	initMembers(logic);
 	addShapes(logic);
+	SDL_Delay(200);		// Make a delay.
 }
 
 // Observer pattern method.

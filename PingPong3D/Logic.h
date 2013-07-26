@@ -14,28 +14,31 @@ public:
 		bool run, bool pause, 
 		bool over, bool bsound, bool asound, float scrw, float scrh);
 	~Logic(void);
+
 	// Public members.
 public:
-	bool bShowStartScreen;		// True if show options screen, false if play game screeen.
+	bool bShowStartScreen;		// True if show options screen; false if play game screeen.
 	bool bShowOptionsScreen;
 	bool bShowHowtoScreen;
 	bool bShowPlayScreen;
-	bool bAppRunning;		// True if the game is going on.
+	bool bAppRunning;			// True if the game is going on.
 	bool bGamePaused;
-	bool bGameOver;			// True if the player has lost.
+	bool bGameOver;		// True if the player has lost. Maybe delete this var!
 	bool bBackgroundSound;
 	bool bActionsSound;
 	bool bTrain;
 	bool bNewRound;
+	bool bNewOptionsScreen;
 
-	std::size_t iRound;
-	std::size_t iRoundMax;	// Make this constant!
+	std::size_t iRound;	
 	int iUserScore;
 	int iCompScore;
 
-	int iMaxScore;			// !Make this const.
 	float flScreenWidth;
 	float flScreenHeight;
+
+	const std::size_t iRoundMax;
+	const int iMaxScore;	
 };
 
 class RoundParameters
@@ -52,7 +55,7 @@ public:
 	float flBoxWidth;
 	float flBoxHeight;
 	float flBallVelocity;
-	float flBallDeltaVel;
+	float flBallDeltaVel;			// Scale the velocity by this value after collisions with a paddle.
 	float flComputerPaddleVel;
 	float flPaddleRadius;
 

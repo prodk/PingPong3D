@@ -17,48 +17,30 @@ public:
 	// Overriden virtual funcions.
 	float getSize() const;				// Return width of the wall.
 	void draw();
-	void move(float deltaTime, vector_3d dr, bool bReset);
 	bool collide(Shape *);
 
 protected:
-	float width;
-	float height;
-	vector_3d vNormal;					// Normal to the plane of the Wall.
+	void setupVertices();
+
+protected:
+	float flWidth;
+	float flHeight;
+	vector_3d vNormal;					// Normal to the plane of the Wall, point outside the box.
 	std::vector<vector_3d> v;			// Vertices.
 	const int numOfVerteces;
 
-	int polygonMode;
-
-	bool bDrawSpot;
-	vector_3d vSpot;
+	int polygonMode;					// An OGL mode for drawing polygons.
+	bool bDrawSpot;						// Whether to display green/red collision spot.
+	vector_3d vSpot;					// Collision spot location on the wall.
 	bool ptInWall(const vector_3d &pt) const;
 	virtual void drawSpot();
 	bool spotOnWall(Shape *s);
 
-	void setupVertices();
-
-	// Change this function later:
-// Save vertices to an array and maybe use a display list.
-// Add more points to the array.
-// Maybe make it nonmember because it is also used in Wall.
-void drawCircle(float radius)
-{
-	const float DEG2RAD = 3.14159/180;
-
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glBegin(GL_POLYGON); 
-	for (float i=0.; i < 360.; i+=0.5)
-	{
-		float degInRad = i*DEG2RAD;
-		glNormal3f(0.0, 0.0, 1.0);
-		glVertex3f(cos(degInRad)*radius, sin(degInRad)*radius, 0.0);
-	}
-
-	glEnd();
-}
+	const int slices;					// For drawing spherical spots using glut.
+	const int stacks;
 };
 
-// Absorbing wall is a Wall that doesn't reflect.
+// Absorbing wall is a Wall that doesn't reflect ball and shows a red spot (not a green one).
 class AbsorbingWall : public Wall
 {
 public:

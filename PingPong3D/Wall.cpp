@@ -4,21 +4,21 @@
 #include "Ball.h"
 
 Wall::Wall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n):
-	Shape(idExt, center), width(w), height(h), vNormal(n), numOfVerteces(4)
+	Shape(idExt, center), flWidth(w), flHeight(h), vNormal(n), numOfVerteces(4),
+		slices(16), stacks(16)
 {
 	polygonMode = GL_LINE;
-
-	// Red spot-related.
+	// Spot-related.
 	bDrawSpot = false;
-	vSpot = vCenter;		// Reconsider this!
-
+	vSpot = vCenter;			// Set the spot to the center of the wall.
 	setupVertices();
 }
 
 Wall::Wall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n,
 	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) : 
 	Shape(idExt, center, ambient, diffuse, specular, shine, alpha), 
-	width(w), height(h), vNormal(n), numOfVerteces(4)
+	flWidth(w), flHeight(h), vNormal(n), numOfVerteces(4),
+	slices(16), stacks(16)
 {
 	polygonMode = GL_FILL;
 	setupVertices();
@@ -36,36 +36,35 @@ void Wall::setupVertices()
 	// We assume that walls are perpendicular to axes.
 	// Normal to x, width in z, height in y.
 	if( std::fabs(vNormal[0]) > 0.0f ) {
-		v[0] = vector_3d(vCenter[i], vCenter[j] + 0.5*height, vCenter[k] - 0.5*width);
-		v[1] = vector_3d(vCenter[i], vCenter[j] + 0.5*height, vCenter[k] + 0.5*width);
-		v[2] = vector_3d(vCenter[i], vCenter[j] - 0.5*height, vCenter[k] + 0.5*width);
-		v[3] = vector_3d(vCenter[i], vCenter[j] - 0.5*height, vCenter[k] - 0.5*width);
+		v[0] = vector_3d(vCenter[i], vCenter[j] + 0.5*flHeight, vCenter[k] - 0.5*flWidth);
+		v[1] = vector_3d(vCenter[i], vCenter[j] + 0.5*flHeight, vCenter[k] + 0.5*flWidth);
+		v[2] = vector_3d(vCenter[i], vCenter[j] - 0.5*flHeight, vCenter[k] + 0.5*flWidth);
+		v[3] = vector_3d(vCenter[i], vCenter[j] - 0.5*flHeight, vCenter[k] - 0.5*flWidth);
 	}
 	// Normal to y, width in x, height in z.
 	else if( std::fabs(vNormal[1]) > 0.0 ) {
-		v[0] = vector_3d(vCenter[i]- 0.5*width, vCenter[j] , vCenter[k] + 0.5*height);
-		v[1] = vector_3d(vCenter[i]+ 0.5*width, vCenter[j] , vCenter[k] + 0.5*height);
-		v[2] = vector_3d(vCenter[i]+ 0.5*width, vCenter[j] , vCenter[k] - 0.5*height);
-		v[3] = vector_3d(vCenter[i]- 0.5*width, vCenter[j] , vCenter[k] - 0.5*height);
+		v[0] = vector_3d(vCenter[i]- 0.5*flWidth, vCenter[j] , vCenter[k] + 0.5*flHeight);
+		v[1] = vector_3d(vCenter[i]+ 0.5*flWidth, vCenter[j] , vCenter[k] + 0.5*flHeight);
+		v[2] = vector_3d(vCenter[i]+ 0.5*flWidth, vCenter[j] , vCenter[k] - 0.5*flHeight);
+		v[3] = vector_3d(vCenter[i]- 0.5*flWidth, vCenter[j] , vCenter[k] - 0.5*flHeight);
 	}
 	// Normal to z, width in x, height in y.
 	else if( std::fabs(vNormal[2]) > 0.0 ) {
-		v[0] = vector_3d(vCenter[i]- 0.5*width, vCenter[j] + 0.5*height, vCenter[k] );
-		v[1] = vector_3d(vCenter[i]+ 0.5*width, vCenter[j] + 0.5*height, vCenter[k] );
-		v[2] = vector_3d(vCenter[i]+ 0.5*width, vCenter[j] - 0.5*height, vCenter[k] );
-		v[3] = vector_3d(vCenter[i]- 0.5*width, vCenter[j] - 0.5*height, vCenter[k] );
+		v[0] = vector_3d(vCenter[i]- 0.5*flWidth, vCenter[j] + 0.5*flHeight, vCenter[k] );
+		v[1] = vector_3d(vCenter[i]+ 0.5*flWidth, vCenter[j] + 0.5*flHeight, vCenter[k] );
+		v[2] = vector_3d(vCenter[i]+ 0.5*flWidth, vCenter[j] - 0.5*flHeight, vCenter[k] );
+		v[3] = vector_3d(vCenter[i]- 0.5*flWidth, vCenter[j] - 0.5*flHeight, vCenter[k] );
 	}
 }
 
 float Wall::getSize() const
 {
-	return width;
+	return flWidth;
 }
 
 void Wall::draw()
 {
-	// Draw collision spot.
-	if(bDrawSpot){
+	if(bDrawSpot){	// Draw collision spot.
 		drawSpot();
 	}
 
@@ -89,10 +88,6 @@ void Wall::draw()
 	glEnd();
 }
 
-void Wall::move(float deltaTime, vector_3d dr, bool bReset)
-{
-}
-
 bool Wall::collide(Shape * s)
 {
 	bool collided = false;
@@ -107,15 +102,14 @@ bool Wall::collide(Shape * s)
 
 	// If ball's surface is beyond the wall, then handle collision.
 	if(b > a){	// Collision occurred.
-		s->setVelocity(vNormal);
-
+		s->setVelocity(vNormal, 0.);
 		collided = true;
 	}
 
 	// Define whether to draw the intersection point.
 	bDrawSpot = spotOnWall(s);
 	if(bDrawSpot)
-		((Ball*)s)->setCollisionSpot(vSpot);
+		((Ball*)s)->setCollisionSpot(vSpot);	// Tell the ball where it is going to collide.
 
 	return collided;
 }
@@ -123,7 +117,7 @@ bool Wall::collide(Shape * s)
 void Wall::drawSpot()
 {
 	glPushMatrix();
-	// Red opaque spot.
+	// Green opaque spot.
 	vector_3d ambient = vector_3d(0.0, 1.0, 0.0);
 	vector_3d diffuse = vector_3d(0.0, 1.0, 0.0);
 	vector_3d specular = vector_3d(0.0, 1.0, 0.0);
@@ -133,7 +127,7 @@ void Wall::drawSpot()
 	m.setValues();
 
 	glTranslatef(vSpot[0], vSpot[1], vSpot[2]);
-	glutSolidSphere (0.005*height, 32, 32);
+	glutSolidSphere (0.005*flHeight, slices, stacks);
 	glPopMatrix();
 }
 
@@ -141,30 +135,30 @@ bool Wall::ptInWall(const vector_3d &pt) const
 {
 	// If normal is to x, then check y and z.
 	if( std::fabs(vNormal[0]) > 0.0f ){
-		if( (pt[1] >= vCenter[1] - 0.5*height) &&
-			(pt[1] <= vCenter[1] + 0.5*height) &&
-			(pt[2] >= vCenter[2] - 0.5*width) &&
-			(pt[2] <= vCenter[2] + 0.5*width)
+		if( (pt[1] >= vCenter[1] - 0.5*flHeight) &&
+			(pt[1] <= vCenter[1] + 0.5*flHeight) &&
+			(pt[2] >= vCenter[2] - 0.5*flWidth) &&
+			(pt[2] <= vCenter[2] + 0.5*flWidth)
 		  )
 		  return true;
 	}
 
 	// If normal is to y, then check x and z.
 	if( std::fabs(vNormal[1]) > 0.0f ){
-		if( (pt[2] >= vCenter[2] - 0.5*height) &&
-			(pt[2] <= vCenter[2] + 0.5*height) &&
-			(pt[0] >= vCenter[0] - 0.5*width) &&
-			(pt[0] <= vCenter[0] + 0.5*width)
+		if( (pt[2] >= vCenter[2] - 0.5*flHeight) &&
+			(pt[2] <= vCenter[2] + 0.5*flHeight) &&
+			(pt[0] >= vCenter[0] - 0.5*flWidth) &&
+			(pt[0] <= vCenter[0] + 0.5*flWidth)
 		  )
 		  return true;
 	}
 
 	// If normal is to z, then check x and y.
 	if( std::fabs(vNormal[2]) > 0.0f ){
-		if( (pt[1] >= vCenter[1] - 0.5*height) &&
-			(pt[1] <= vCenter[1] + 0.5*height) &&
-			(pt[0] >= vCenter[0] - 0.5*width) &&
-			(pt[0] <= vCenter[0] + 0.5*width)
+		if( (pt[1] >= vCenter[1] - 0.5*flHeight) &&
+			(pt[1] <= vCenter[1] + 0.5*flHeight) &&
+			(pt[0] >= vCenter[0] - 0.5*flWidth) &&
+			(pt[0] <= vCenter[0] + 0.5*flWidth)
 		  )
 		  return true;
 	}
@@ -172,6 +166,8 @@ bool Wall::ptInWall(const vector_3d &pt) const
 	return false;
 }
 
+// Define, whether the velocity vector of the ball intersects the current wall.
+// If yes, then say that the collision spot should be drawn in the intersection point on the wall.
 bool Wall::spotOnWall(Shape *s)
 {
 	bool result = false;
@@ -189,12 +185,12 @@ bool Wall::spotOnWall(Shape *s)
 			if(ptInWall(vSpot))
 				result = true;
 		}
-	}// end if denom!=0
+	}// End if denom!=0.
 
 	return result;
 }
 
-
+/*________________________________*/
 // AbsorbingWall implementation.
 AbsorbingWall::AbsorbingWall(std::size_t idExt, vector_3d center, float w, float h, vector_3d n):
 Wall(idExt, center, w, h, n)
@@ -208,22 +204,19 @@ bool AbsorbingWall::collide(Shape *s)
 	vector_3d c = s->getCenter();
 	float r = s->getSize();
 
-	// Find the position of the wall and of the ball's surface 
-	// along the wall's normal direction.
+	// Find the position of the wall and ball's surface along the wall's normal direction.
 	float a = cml::dot(vCenter, vNormal);
 	float b = cml::dot(vNormal*r+c,vNormal);
 
-	if(b > a){	// Collision occurred, reset Ball's position
+	if(b > a){	// Collision occurred, reset Ball's position and velocity.
 		c = vector_3d(0.0f, 0.0f, 0.0f);
-		float dt = 0.;
 		bool bReset = true;
-		s->setVelocity(vNormal);			
-		s->move(dt, c, bReset);
+		s->setVelocity(vNormal, 0.0f);			
+		s->move(c, bReset);
 
 		collided = true;
 	}
 
-	// Reconsider this code duplication from Wall!
 	// Define whether to draw the intersection point.
 	bDrawSpot = spotOnWall(s);
 	if(bDrawSpot)
@@ -249,6 +242,6 @@ void AbsorbingWall::drawSpot()
 	m.setValues();
 
 	glTranslatef(vSpot[0], vSpot[1], vSpot[2]);
-	glutSolidSphere (0.008*height, 32, 32);
+	glutSolidSphere (0.008*flHeight, slices, stacks);
 	glPopMatrix();
 }

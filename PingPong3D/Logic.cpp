@@ -1,7 +1,7 @@
 // Logic.cpp - implementation of the Logic class.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
-#include "Logic.h"
 
+#include "Logic.h"
 
 Logic::Logic(bool startscreen , bool options, bool howto, bool play, 
 	bool run, bool pause, bool over, bool bsound, bool asound, float scrw, float scrh) :
@@ -9,15 +9,15 @@ Logic::Logic(bool startscreen , bool options, bool howto, bool play,
 	bShowHowtoScreen(howto), bShowPlayScreen(play),
 	bAppRunning(run), bGamePaused(pause), bGameOver(over),
 	bBackgroundSound(bsound), bActionsSound(asound),
-	flScreenWidth(scrw), flScreenHeight(scrh)
+	flScreenWidth(scrw), flScreenHeight(scrh), 
+	iRoundMax(9), iMaxScore(5)		// Constants.
 {
 	bTrain = false;
 	iRound = 1;
-	iRoundMax = 9;
 	iUserScore = 0;
 	iCompScore = 0;
-	iMaxScore = 5;
 	bNewRound = true;
+	bNewOptionsScreen = false;
 }
 
 

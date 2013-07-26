@@ -32,7 +32,6 @@ public:
 		float shine, float alpha);
 	~Material(void);
 
-	// Methods.
 	void setValues();
 
 private:

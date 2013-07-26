@@ -3,59 +3,51 @@
 
 #include "PingPong3D.h"
 
-GameApp::GameApp(void):
-	flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong"), 
+GameApp::GameApp(void) :
+flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong 3D"), 
 	flZaxisDistance(1.f), flLengthUnit(0.25f), bBackgroundSound(true),
 	//Logic(start, options, howto, play, run, pause, over, bsound, asound);
 	logic(true, false, false, false, true, false, false,  bBackgroundSound, true, 
-	flScreenWidth, flScreenHeight)
+	flScreenWidth, flScreenHeight),
+	iNumOfSounds(5), iNumOfFonts(1), iNumOfTextures(1)
 {
 	// Exceptions and bad values are caught/checked inside the functions.
 	initLibraries();
 	loadData();
-
 	setupRoundParams();	// Set the parameters of all the rounds.
-
 	createScreens();
-
 	registerObservers();// Register observers for the Observer pattern to manage the sound.
 }
 
 GameApp::~GameApp(void)
 {
-	shutDown();			// Shapes are handled via smart pointers, so no delete here.	
+	shutDown();			// Shapes are handled via smart pointers, so no delete[] here.	
 }
 
 int GameApp::initLibraries()
-{
-	// Initialize SDL.
-	if( setupSDL() < 0 ){ 
+{	
+	if( setupSDL() < 0 ){		// Initialize SDL.
 		std::cerr << "Failed to initialize SDL" << std::endl; 
 		exit(1);
-	}
+	}    
     
-    // OpenGL.
-    setupRenderingContext();
-    setupMatrices();    
+    setupRenderingContext();	// OpenGL.
+    setupMatrices();			// OpenGL.    
+    setupSound();				// FMOD sound.
     
-    setupSound();	// FMOD sound.
-    
-    setupTimers();
-
-    // Seed random numbers.
-    std::srand ((unsigned int)time(NULL));
+    std::srand ((unsigned int)time(NULL));	// Seed random numbers.
 
 	return 0;
 }
 
 int GameApp::setupSDL()
 {
-	if( SDL_Init(SDL_INIT_VIDEO) < 0 )
+	if(SDL_Init(SDL_INIT_VIDEO) < 0)
 		return -1;
 
 	// Get some video information.
-    const SDL_VideoInfo* info = SDL_GetVideoInfo( );
-	if( !info ) {
+    const SDL_VideoInfo* info = SDL_GetVideoInfo();
+	if(!info) {
 		std::cerr << "Failed to get videInfo structue." << std::endl;
 		exit(1);
 	}
@@ -77,15 +69,11 @@ int GameApp::setupSDL()
 	return 0;
 }
 
-int GameApp::loadData()
+void GameApp::loadSounds()
 {
-	// Load textures here.
-	textures.resize(1);
-	textures[0] = loadTexture("Button.png");	// Check the return value later!
-
-	// Sounds.
-	sounds.resize(5);
 	FMOD_RESULT result;
+	sounds.resize(iNumOfSounds);
+	
 	result = system->createStream("optionscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[0]);
 	checkErr(result, std::string("optionscreen.mp3"));
 
@@ -108,9 +96,12 @@ int GameApp::loadData()
 	// Play sound.
 	if( (sounds[4] != NULL) && (system != NULL) )
 		result = system->playSound(sounds[4], 0, true, &channelPlay);
+}
 
+void GameApp::loadFonts()
+{
 	// Load fonts.
-	fonts.resize(1);
+	fonts.resize(iNumOfFonts);
 	if( TTF_Init() == -1 ) { 
 		std::cerr << "Failed to initialize TTF library" << std::endl;
 		exit(1); 
@@ -120,8 +111,17 @@ int GameApp::loadData()
 		std::cerr << "Failed to Load font:" << "Line-01.ttf" << std::endl;
 		exit(1); 
 	}
+}
 
-	return 0;
+void GameApp::loadData()
+{
+	// Load textures.
+	textures.resize(iNumOfTextures);
+	textures[0] = loadTexture("Button.png");	// Check the return value later!
+
+	// Load sounds and fonts.
+	loadSounds();
+	loadFonts();
 }
 
 std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
@@ -133,23 +133,19 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
 	surface = IMG_Load(fileName.c_str());
     
     // Could not load image.
-    if (!surface) 
-	{
+    if (!surface) {
         std::cerr << "Could not load image: " << fileName.c_str() << std::endl;
         exit(1);
     }
     
-    // Work out what format to tell glTexImage2D to use...
-    if (surface->format->BytesPerPixel == 3) // RGB 24bit.
-    { 
+    // Work out what format gluBuild2DMipmaps should use.
+    if (surface->format->BytesPerPixel == 3){		// RGB 24bit.
         mode = GL_RGB;
     } 
-    else if (surface->format->BytesPerPixel == 4) // RGBA 32bit.
-    { 
+    else if (surface->format->BytesPerPixel == 4) { // RGBA 32bit. 
         mode = GL_RGBA;
     } 
-    else 
-    {
+    else {
         std::cerr << "Could not determine pixel format of image " << fileName.c_str() << std::endl;
         SDL_FreeSurface(surface);
         exit(1);
@@ -158,20 +154,16 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     // Create one texture name.
     glGenTextures(1, &textureid);
 
-    // Tell opengl to use the generated texture name.
+    // Tell OGL to use the generated texture name.
     glBindTexture(GL_TEXTURE_2D, textureid);
 
     // Read from the sdl surface and put it into an opengl texture.
 	gluBuild2DMipmaps( GL_TEXTURE_2D, 3, surface->w, surface->h,
                        mode, GL_UNSIGNED_BYTE, surface->pixels );
-    //glTexImage2D(GL_TEXTURE_2D, 0, mode, surface->w, surface->h, 0, mode, GL_UNSIGNED_BYTE, surface->pixels);
 
     // Allocate memory for Texture structure and fill it up.
 	std::tr1::shared_ptr<TEXTURE> texture(new TEXTURE());
-    
-    // Could not allocate memory.
-    if (!texture.get())
-    {
+    if (!texture.get()) {
         std::cerr << "Could not create TEXTURE struct for image " << fileName.c_str() << std::endl;
 		exit(1);
     }
@@ -181,7 +173,7 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     texture->height = surface->h;
     texture->id = textureid;    
     
-    SDL_FreeSurface(surface);  // Clean up.
+    SDL_FreeSurface(surface);
     
     return texture;
 }
@@ -227,9 +219,7 @@ void GameApp::setupRenderingContext()
 	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
 	glLightfv(GL_LIGHT0, GL_POSITION, position);
 
-	// Create the newly set up lightsource.
-	glEnable(GL_LIGHT0);
-
+	glEnable(GL_LIGHT0);		// Enable stationary light.
 	glEnable(GL_LIGHT1);		// Light moving with the ball.
 
 	// Global light settings.
@@ -241,28 +231,10 @@ void GameApp::setupRenderingContext()
 
 void GameApp::setupMatrices()
 { 
-	initResize();	
-
+	//initResize();
     // Reset texture view matrix stack.
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
-}
-
-void GameApp::setupTimers()
-{
-	deltaTime = 0.0f;
-    lastMillisec = SDL_GetTicks();
-}
-
-void GameApp::updateTimers()
-{
-    // Find delta time for this frame.
-    deltaTime = 0;
-    if(SDL_GetTicks() > lastMillisec)
-    {
-        deltaTime = SDL_GetTicks() - lastMillisec;
-        lastMillisec = SDL_GetTicks();
-    }
 }
 
 void GameApp::createScreens()
@@ -280,13 +252,11 @@ void GameApp::createScreens()
 			new HowtoScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
 			system, sounds) );
 
-		// Init play screen.
 		playScreen = std::tr1::shared_ptr<PlayScreen>(
 			new PlayScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
 			system, sounds, roundParams) );
 	}// End try.
-	catch(std::bad_alloc& ba)
-	{
+	catch(std::bad_alloc& ba) {
 		std::cerr << "Failed to create one of the screens: memory error, " + std::string(ba.what());
 		shutDown();
 		exit(1);
@@ -307,6 +277,10 @@ void GameApp::manageGame()
 			startScreen->doInput(logic, sdlEvent);	// Put These in a separate method.			
 		}
 		else if(logic.bShowOptionsScreen){
+			if(logic.bNewOptionsScreen){			// Initialize buttons if required.
+				logic.bNewOptionsScreen = false;
+				optionsScreen->setupNewScreen(logic);
+			}
 			optionsScreen->doDrawing(logic);
 			optionsScreen->doInput(logic, sdlEvent);
 		}
@@ -315,11 +289,11 @@ void GameApp::manageGame()
 			howtoScreen->doInput(logic, sdlEvent);
 		}
 		else if(logic.bShowPlayScreen){
-			playScreen->play(logic, sdlEvent);			
+			playScreen->play(logic, sdlEvent);		// Play the game.	
 		}
 		
 		swapBuffers();
-	}
+	} // End while(logic.bAppRunning).
 }
 
 void GameApp::initResize()
@@ -432,14 +406,13 @@ int GameApp::setupSound()
 void GameApp::notify(Subject* s)	// Observer pattern callback hook method.
 {
 	bBackgroundSound = ((Logic*) s)->bBackgroundSound;
-	playBackgroundSound();						// Play according to the new options.
+	playBackgroundSound();			// Play according to the new options.
 }
 
 void GameApp::registerObservers()
 {
 	logic.registerObserver( dynamic_cast<Observer*>(this) );	// Add the GameApp instance.
-
-	// Add screens instead of GUI controls!
+	// Register screens as observers.
 	logic.registerObserver( dynamic_cast<Observer*>(startScreen.get()) );
 	logic.registerObserver( dynamic_cast<Observer*>(optionsScreen.get()) );
 	logic.registerObserver( dynamic_cast<Observer*>(howtoScreen.get()) );
@@ -450,12 +423,12 @@ void GameApp::playBackgroundSound()
 {
 	if(bBackgroundSound)
 	{		
-		// Try to stop playing here before starting a new type of the sound.
+		// Play Options background sound.
 		if(logic.bShowStartScreen || logic.bShowOptionsScreen || logic.bShowHowtoScreen){
 			channelPlay->setPaused(true);			
 			channelOptions->setPaused(false);
 		}
-		else if(logic.bShowPlayScreen){			
+		else if(logic.bShowPlayScreen){		// Play the game sound using the corresp. theme.	
 			channelOptions->setPaused(true);
 			if(!logic.bGamePaused)
 				channelPlay->setPaused(false);
@@ -474,20 +447,20 @@ void GameApp::setupRoundParams()
 {
 	roundParams.resize(logic.iRoundMax);
 
-	float flBoxWidth = 1.3f;		// Add these to the constructor and use when init walls.
+	float flBoxWidth = 1.3f;
 	float flBoxHeight = 1.0f;
 	float flBoxThickness = 0.5f;
 	float flBallVel = 8e-03;
 	float flCompPaddleVel = 0.01;
 
 	std::size_t nRounds = roundParams.size();
-
+	// Specify different values of the parameters for each round.
 	for(std::size_t i = 0; i < nRounds; i++){
 		RoundParameters *pParams =
 			new RoundParameters(flBoxWidth*(1. - 1./(double)(nRounds - i + 1.)), 
 			flBoxHeight, 
 			flBallVel*(1. + 1./(double)(nRounds - i + 1.)), 
-			0.1*flBallVel*(1. + 1./(double)(1. + i)),
+			0.02*(1. + i),
 			flCompPaddleVel*(i + 1.), 
 			0.05*flBoxWidth);
 		roundParams[i] = std::tr1::shared_ptr<RoundParameters>(pParams);

@@ -11,6 +11,7 @@ Material::Material(void) :
 	setValues();
 }
 
+// Overloaded constructor: specify custom theme.
 Material::Material(vector_3d ambient, vector_3d diffuse, vector_3d specular, 
 	float shine, float alpha) :
 colorAmbient(ambient), colorDiffuse(diffuse), colorSpecular(specular),

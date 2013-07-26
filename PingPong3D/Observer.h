@@ -18,6 +18,7 @@ public:
 class Subject
 {
 public:
+	Subject() {};
 	virtual ~Subject() {};
     void registerObserver(Observer* o)
     {

@@ -1,26 +1,50 @@
 // Paddle.cpp - implementation of the Paddle class.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
+
 #include "Paddle.h"
 #include "Ball.h"
 
 Paddle::Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
 	float r, float h, float a, float top, float front,
-	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) : 
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha, float dv) : 
 	Shape(idExt, shiftCenter, ambient, diffuse, specular, shine, alpha), 
 	vNormal(n), flRadius(r), flHeight(h), angle(a), maxCoordTop(top), maxCoordFront(front),
-	slices(32), stacks(32)
+	slices(32), stacks(32), numOfCircleVertices(360), flBallDeltaVel(dv)
 {
 	vVelocity = vector_3d(0., 0., 0.);
-	// Red spot-related.
-	bDrawSpot = false;
 	vSpot = vCenter;
-
 	quadratic = gluNewQuadric();
+	generateCircle();				// Generate circle coordinates only once.
 }
 
 Paddle::~Paddle(void)
 {
 	gluDeleteQuadric(quadratic);	// Important: memory leak!
+}
+
+void Paddle::generateCircle()
+{
+	const float DEG2RAD = 3.14159/180;
+	float degInRad;
+	circleVerteces.resize(numOfCircleVertices);
+
+	for (int i = 0; i < numOfCircleVertices; i++) {
+		degInRad = i*DEG2RAD;
+		circleVerteces[i] = vector_3d(cos(degInRad)*flRadius, sin(degInRad)*flRadius, 0.0);
+	}
+}
+
+void Paddle::drawCircle()
+{	
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glBegin(GL_POLYGON); 
+
+	for (std::size_t i = 0; i < circleVerteces.size(); i++) {
+		glNormal3f(0.0, 0.0, 1.0);
+		glVertex3f(circleVerteces[i][0], circleVerteces[i][1], circleVerteces[i][2]);
+	}
+
+	glEnd();
 }
 
 float Paddle::getSize() const
@@ -36,24 +60,19 @@ void Paddle::draw()
 	glTranslatef(vCenter[0]+vNormal[0]*0.5*flHeight, vCenter[1], vCenter[2]);	// Translate to the wall.
 	glRotatef(angle, 0.0f, 1.0f, 0.0f);
 
-	// Draw collision spot.
-	if(bDrawSpot){
-		drawSpot();
-	}
-
 	material.setValues();	
 	gluCylinder(quadratic, flRadius, flRadius, flHeight, slices, stacks);
 	
-	// Inner face of the paddle sylinder.
+	// Inner face of the paddle cylinder.
 	glPushMatrix();
 	// Move by the cylinder thikness, from point -0.5*h to the point 0.5*h in z(x) direction.
 	glTranslatef(0., 0., flHeight);
-	drawCircle(flRadius);
+	drawCircle();
 	glPopMatrix();
 
-	// Outer face of the paddle sylinder.
+	// Outer face of the paddle cylinder.
 	glPushMatrix();
-	drawCircle(flRadius);
+	drawCircle();
 	glPopMatrix();
 
 	float alpha = 8., beta = 0.2;		// !Make these member variables!
@@ -63,7 +82,7 @@ void Paddle::draw()
 	gluCylinder(quadratic, beta*flRadius, beta*flRadius, alpha*flHeight, slices, stacks);
 	glPopMatrix();
 
-	// Handle
+	// Handle.
 	glPushMatrix();
 	glTranslatef(0., 0., -alpha*flHeight);
 	glutSolidSphere (2*beta*flRadius, slices, stacks);
@@ -72,9 +91,9 @@ void Paddle::draw()
 	glPopMatrix();
 }
 
-void Paddle::move(float deltaTime, vector_3d dr, bool bReset)
+void Paddle::move(vector_3d dr, bool bReset)
 {	
-	if( vCenter[1] + flRadius >= maxCoordTop ){		// Top constraint.
+	if( vCenter[1] + flRadius >= maxCoordTop ){			// Top constraint.
 		vVelocity = vector_3d(0., 0., 0.);
 		vCenter[1] = maxCoordTop - 1.01*flRadius;
 	}
@@ -82,7 +101,7 @@ void Paddle::move(float deltaTime, vector_3d dr, bool bReset)
 		vVelocity = vector_3d(0., 0., 0.);
 		vCenter[1] = -maxCoordTop + 1.01*flRadius;
 	}
-	else if( vCenter[2] + flRadius >= maxCoordFront ){		// Front constraint.
+	else if( vCenter[2] + flRadius >= maxCoordFront ){	// Front constraint.
 		vVelocity = vector_3d(0., 0., 0.);
 		vCenter[2] = maxCoordFront - 1.01*flRadius;
 	}
@@ -90,8 +109,7 @@ void Paddle::move(float deltaTime, vector_3d dr, bool bReset)
 		vVelocity = vector_3d(0., 0., 0.);
 		vCenter[2] = -maxCoordFront + 1.01*flRadius;
 	}
-	else
-	{
+	else {
 		vCenter += dr;
 	}
 }
@@ -99,12 +117,12 @@ void Paddle::move(float deltaTime, vector_3d dr, bool bReset)
 bool Paddle::collide(Shape *s)
 {
 	bool collided = false;
-	// If it is not absorbing, then handle collisions
 	vector_3d c = s->getCenter();
 	float r = s->getSize();
 
 	vector_3d surfacePoint = vCenter;
-	surfacePoint[0] = surfacePoint[0] - vNormal[0]*flHeight;// - vNormal[0]*flHeight;
+	// Take into account, that paddle's surface doesn't coincide with the wall.
+	surfacePoint[0] = surfacePoint[0] - vNormal[0]*flHeight;
 
 	// Find the smallest distance between the wall and the ball.
 	float a = cml::dot(surfacePoint, vNormal);
@@ -112,8 +130,7 @@ bool Paddle::collide(Shape *s)
 
 	if(b >= a){	// Collision is probable to occur.
 		if( ptInPaddle(c) )	{			// If the collision point is inside the paddle area.
-			s->setVelocity(vNormal);
-
+			s->setVelocity(vNormal, flBallDeltaVel);// !Change the factor later.
 			collided = true;
 		}
 	}
@@ -129,29 +146,13 @@ bool Paddle::ptInPaddle(const vector_3d &pt) const
 	return false;
 }
 
-void Paddle::drawSpot()
-{
-	glPushMatrix();
-	vector_3d ambient = vector_3d(1.0, 0.0, 0.0);
-	vector_3d diffuse = vector_3d(1.0, 0.0, 0.0);
-	vector_3d specular = vector_3d(1.0, 0.0, 0.0);
-	float alpha = 1.0;	// Opaque ball.
-	float shine = 0.;
-	Material m(ambient, diffuse, specular, shine, alpha);
-	m.setValues();
-
-	glTranslatef(0., 0., 1.01*flHeight);
-	drawCircle(0.1*flRadius);
-	glPopMatrix();
-}
-
-/*----*/
+/*______________________________*/
 // ComputerPaddle implementation.
 ComputerPaddle::ComputerPaddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
 	float r, float h, float a, float top, float front,
-	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) : 
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha, float dv) : 
 	Paddle(idExt, shiftCenter, n, r, h, a, top, front,
-		ambient, diffuse, specular, shine, alpha)
+		ambient, diffuse, specular, shine, alpha, dv)
 {
 	flVelocity = 0.05;
 }
@@ -160,9 +161,9 @@ ComputerPaddle::~ComputerPaddle(void)
 {
 }
 
-void ComputerPaddle::move(float deltaTime, vector_3d dr, bool bReset)
+void ComputerPaddle::move(vector_3d dr, bool bReset)
 {
-	if( vCenter[1] + flRadius >= maxCoordTop ){		// Top constraint.
+	if( vCenter[1] + flRadius >= maxCoordTop ){			// Top constraint.
 		vVelocity = vector_3d(0., 0., 0.);
 		vCenter[1] = maxCoordTop - 1.01*flRadius;
 	}
@@ -170,7 +171,7 @@ void ComputerPaddle::move(float deltaTime, vector_3d dr, bool bReset)
 		vVelocity = vector_3d(0., 0., 0.);
 		vCenter[1] = -maxCoordTop + 1.01*flRadius;
 	}
-	else if( vCenter[2] + flRadius >= maxCoordFront ){		// Front constraint.
+	else if( vCenter[2] + flRadius >= maxCoordFront ){	// Front constraint.
 		vVelocity = vector_3d(0., 0., 0.);
 		vCenter[2] = maxCoordFront - 1.01*flRadius;
 	}
@@ -178,11 +179,9 @@ void ComputerPaddle::move(float deltaTime, vector_3d dr, bool bReset)
 		vVelocity = vector_3d(0., 0., 0.);
 		vCenter[2] = -maxCoordFront + 1.01*flRadius;
 	}
-	else
-	{
+	else {
 		// Move the paddle to the projections of the collision spot on the yz plane.
 		vector_3d deltaSpot = vCollisionSpot  - vCenter;
-
 		vCenter[1] += flVelocity*deltaSpot[1];
 		vCenter[2] += flVelocity*deltaSpot[2];
 	}

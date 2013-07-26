@@ -3,10 +3,11 @@
 #include "Ball.h"
 
 Ball::Ball(std::size_t idExt, vector_3d center, float r, vector_3d velocity, float dv,
-	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha):
-		Shape(idExt, center, ambient, diffuse, specular, shine, alpha), 
-		radius(r), vVelocity(velocity), flDeltaVel(dv), slices(32), stacks(32)
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) :
+Shape(idExt, center, ambient, diffuse, specular, shine, alpha), 
+	radius(r), vVelocity(velocity), flDeltaVel(dv), slices(32), stacks(32)
 {
+	vVelocityNew = vVelocity;
 }
 
 Ball::~Ball(void)
@@ -29,45 +30,48 @@ void Ball::draw()
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
 	glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular);
 	GLfloat light_position[] = { 0.0, 0.0, 0.0, 1.0 };
-	GLfloat light_direction[] = { vVelocity[0], vVelocity[1], vVelocity[2], 0.0 };
+	GLfloat light_direction[] = { vVelocityNew[0], vVelocityNew[1], vVelocityNew[2], 0.0 };
 
-	glTranslatef(vCenter[0], vCenter[1], vCenter[2]);	// Move tha ball.
+	glTranslatef(vCenter[0], vCenter[1], vCenter[2]);	// Move the ball.
 	glutSolidSphere (radius, slices, stacks);	
 
-	// Set a spotlight movinf with the ball.
-	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 50.0);			// Spotlight is 50 degrees wide.
+	// Set a spotlight moving with the ball.
+	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 50.0);			// Spotlight width.
 	glLightfv(GL_LIGHT1, GL_POSITION, light_position);
 	glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, light_direction);
 
 	glPopMatrix();		// Restore the matrix stack.
 }
 
-void Ball::move(float deltaTime, vector_3d dr, bool bReset)
+void Ball::move(vector_3d dr, bool bReset)
 {
-	// Don't use timer for robust movement!
-	// Reason: timer has a separate thread, which continues working even when
+	// Don't use timers for movement!
+	// Reason: a timer has a separate thread, which continues working even when
 	// the main GUI threads is paused (e.g. when the window is resized). 
-	// This can lead to very big values of deltaTime.
-	
-	if(bReset)
+	// This can lead to very big values of deltaTime.	
+	if(bReset){
 		vCenter = vector_3d(0., 0., 0.);
+		vVelocityNew = vVelocity;			// Assign random velocity here.
+	}
 	else
-		vCenter = vCenter + vVelocity*2;	
+		vCenter = vCenter + vVelocityNew;
 }
 
-void Ball::setVelocity(vector_3d n)		// Reflect the velocity. !Add incrementing it later
+void Ball::setVelocity(vector_3d n, float factor)	// Reflect and rescale the velocity.
 {
+	// Check which component should be reflected 
+	// (depending on the normal to the shape with which collision occurs).
 	if( std::fabs(n[0]) > 0.0f )
-		vVelocity[0] *= -1.0f;
+		vVelocityNew[0] *= -(1. + factor);
 	else if( std::fabs(n[1]) > 0.0f )
-		vVelocity[1] *= -1.0f;
+		vVelocityNew[1] *= -(1. + factor);
 	if( std::fabs(n[2]) > 0.0f )
-		vVelocity[2] *= -1.0f;
+		vVelocityNew[2] *= -(1. + factor);
 }
 
 vector_3d Ball::getVelocity() const
 {
-	return vVelocity;
+	return vVelocityNew;
 }
 
 void Ball::setCollisionSpot(const vector_3d & spot)

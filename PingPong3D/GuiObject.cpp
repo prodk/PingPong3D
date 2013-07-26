@@ -56,7 +56,7 @@ int GuiObject::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
         exit(1);
     }
 
-	// Draw the surface onto the OGL screen using gextures.
+	// Draw the surface onto the OGL screen using textures.
     glPushMatrix();
 	glDisable(GL_LIGHTING);
 
@@ -231,7 +231,6 @@ OptionsButton::~OptionsButton()
 
 void OptionsButton::drawPressed(TTF_Font *font)
 {	
-	// Maybe just call Button::drawPressed here instead.
 	glPushMatrix();
 	glDisable(GL_LIGHTING);
 
@@ -263,8 +262,8 @@ void OptionsButton::drawPressed(TTF_Font *font)
 	glEnable(GL_LIGHTING);
 	glPopMatrix();
 
-	drawText(name, xPressed, yPressed, wPressed, hPressed, font);				// Button's name.
-	drawText(caption, x+xSmall, y, wSmall, h, font);	// Parameter's value.
+	drawText(name, xPressed, yPressed, wPressed, hPressed, font);	// Button's name.
+	drawText(caption, x+xSmall, y, wSmall, h, font);				// Parameter's value.
 }
 
 void OptionsButton::drawUnpressed(TTF_Font *font)
@@ -300,7 +299,7 @@ void OptionsButton::drawUnpressed(TTF_Font *font)
 	glEnable(GL_LIGHTING);
 	glPopMatrix();
 
-	drawText(name, x, y, w, h, font);				// Button's name.
+	drawText(name, x, y, w, h, font);					// Button's name.
 	drawText(caption, x+xSmall, y, wSmall, h, font);	// Parameter's value.
 }
 

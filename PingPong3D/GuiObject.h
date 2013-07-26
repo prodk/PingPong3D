@@ -14,25 +14,26 @@ public:
 	GuiObject(float xExt, float yExt, float wExt, float hExt, std::size_t idExt, std::string n);
 	virtual ~GuiObject(void);
 
-	// Pure virtual functions.
-	virtual void drawPressed(TTF_Font *font) = 0;
-	virtual void drawUnpressed(TTF_Font *font) = 0;
-
 	// Virtual functions.
 	virtual void draw(TTF_Font *font);
 
 	// Fixed implementation methods.
-	bool isPressed(float ptx, float pty);
-	bool isPressed();
+	bool isPressed(float ptx, float pty);	// Confusion, not pressed, but under the cursor.
+	bool isPressed();						// True only if the object is really pressed.
 	void setPressed(bool pressed);
 	void setFocus(bool focus);
 	bool hasFocus();
 	int getId() const;
 
 protected:
+	// Pure virtual functions.
+	virtual void drawPressed(TTF_Font *font) = 0;
+	virtual void drawUnpressed(TTF_Font *font) = 0;
+
 	int drawText(const std::string & txt, GLfloat x, GLfloat y, GLfloat w, GLfloat h,
 		TTF_Font *font);
 	bool ptInRect(float ptx, float pty);
+	void createTextTexture();
 
 protected:
 	float x;
@@ -58,11 +59,10 @@ public:
 	Button(float x, float y, float w, float h, std::size_t idExt, std::string n, int tid);
 	virtual ~Button();
 
+protected:
 	// Overridden virtual functions.
 	virtual void drawPressed(TTF_Font *font);
 	virtual void drawUnpressed(TTF_Font *font);
-
-protected:
 	int textureId;
 };
 
@@ -74,17 +74,17 @@ public:
 	OptionsButton(float x, float y, float w, float h, std::size_t idExt, 
 		std::string n, int tid, std::string cap);
 	~OptionsButton();
-	
-	// Overridden virtual functions.
-	void drawPressed(TTF_Font *font);
-	void drawUnpressed(TTF_Font *font);
 	void setCaption(const std::string &c);
 
 private:
+	// Overridden virtual functions.
+	void drawPressed(TTF_Font *font);
+	void drawUnpressed(TTF_Font *font);
+	
 	float xSmall;			// Where to draw the small part of the button.
 	float wSmall;			// Width of the small button.
 	float xSmallPressed;
-	std::string caption;	// The second rectangle text.
+	std::string caption;	// The text of the second rectangle.
 };
 
 #endif // GUIOBJECT_H

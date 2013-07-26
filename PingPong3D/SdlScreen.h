@@ -1,7 +1,6 @@
 // SdlScreen.h - declaration of the SdlScreen class and all its children.
 // (c) Nikolay Prodanov, Juelich, summer 2013.
-
-#ifndef SDL_SCREEN		// Replace by #define for portability.
+#ifndef SDL_SCREEN
 #define SDL_SCREEN
 
 #include "GuiObject.h"
@@ -57,7 +56,7 @@ protected:
 };
 
 /*_________________________*/
-// ButtonScreen
+// ButtonScreen.
 class ButtonScreen : public SdlScreen
 {
 public:
@@ -76,22 +75,22 @@ protected:
 	virtual void handleKeyUp(const SDL_Event& sdle, Logic &logic);
 
 	// Button management.
-	int pressButton(float x, float y);		// Reconsider these names!
-	void setUnpressed();
-	int pickButton(float px, float py);
-	void processButton(std::size_t id, Logic & logic);
-	int getHighlightedButton();
+	int pressButton(float x, float y);	// Sets a button under cursor pressed and returns its id.
+	void setUnpressed();				// Sets all the buttons unpressed.
+	int pickButton(float px, float py);	// Returns the id of the button under the cursor.
+	void processButton(std::size_t id, Logic & logic);	// Perform actions with logic depending on the button id.
+	int getHighlightedButton();			// Gets the id of the highlighted button.
 
 protected:
 	std::map<std::size_t, std::tr1::shared_ptr<GuiObject> > guiObjects;
 	bool bPlayButtonSound;
-	bool bMouseOverButton;					// To prevent from several higlight messages.
+	bool bMouseOverButton;				// To prevent from several higlight messages.
 	bool bKeyDown;
-	int iPrevFocusButton;
+	int iPrevFocusButton;				// Previously highlighted button.
 };
 
 /*________________________________*/
-//    StartScreen.
+// StartScreen.
 class StartScreen : public ButtonScreen
 {
 public:
@@ -111,6 +110,8 @@ public:
 	OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd, Logic &logic);
 	~OptionsScreen(void);
+
+	void setupNewScreen(Logic &logic);
 	
 private:
 	void addButtons(Logic & logic);
@@ -143,11 +144,13 @@ public:
 		RoundParamsVector & rp);
 	~PlayScreen(void);
 
-	// Overridden virtual functions.
-	void play(Logic &l, SDL_Event sdlEvent);			// Play the game.
+	// Overridden virtual functions.	
 	void doInput(Logic &l, SDL_Event sdlEvent);			// Keyboard/mouse.
 	void doDrawing(Logic &logic);
 	void notify(Subject* s);
+
+	// PlayScreen-specific.
+	void play(Logic &l, SDL_Event sdlEvent);			// Play the game.
 
 	// Private methods.
 private:
@@ -163,18 +166,15 @@ private:
 	void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
 
 	// OpenGl-specific.
-	//void setScreenSize(float w, float h);
 	void drawAxes() const;
-	void initView();			// Avoid code duplication in doDrawing() and pickObjects().
-	void initResize();			// Avoid code dupl. in setupMatrices() and handleResize().
+	void initView();				// Avoid code duplication in doDrawing() and pickObjects().
+	void initResize();				// Avoid code dupl. in setupMatrices() and handleResize().
 	void rotateView(float dx);
-	int pickObject(int x, int y);		// Returns type of the object under cursor.
-	//void unregisterObservers(Logic &logic);
-	//void registerObservers(Logic &logic);
+	int pickObject(int x, int y);	// Returns the type of the object under cursor.
 	void initMembers(const Logic &l);
 	void addShapes(Logic &l);
 
-	// Calculate the angle used in the perspective, we use size as a unit of length.
+	// Inline: calculate the angle used in the perspective.
 	float calculateAngle(float size, double zAxisDistance)
 	{
 		double radtheta, degtheta;
@@ -185,7 +185,7 @@ private:
 
 	// Private members.
 private:
-	enum {BALL, WALL, LEFT_PADDLE, RIGHT_PADDLE};	// enum hack.
+	enum {BALL, WALL, LEFT_PADDLE, RIGHT_PADDLE};	// Enum hack for shape types.
 
 	// A vector of pointers to Shapes. Ball is stored in the 1st item.	
 	std::map<std::size_t, std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.
@@ -196,12 +196,12 @@ private:
 	float flLengthUnit;				// Unit of measurement of length.
 
 	// View rotation with mouse.
-	float xViewOld;			// Vars for rotate view.
-	float angleViewY;		// Angle to rotate the view around Y.
-	float angleViewZ;		// Rotate view around X.
-	float flScaleAll;
+	float xViewOld;					// Vars for rotate view.
+	float angleViewY;				// Angle to rotate the view around Y.
+	float angleViewZ;				// Rotate view around X.
+	float flScaleAll;				// Zooming factor.
 
-	float xPaddleOld;
+	float xPaddleOld;				// Previous positions of a paddle.
 	float yPaddleOld;
 
 	bool bPaddlePicked;
@@ -209,8 +209,8 @@ private:
 	std::size_t iCurRound;
 	bool bPlaySound;
 
-	// Box sizes.
-	float flBoxWidth;		// Add these to the constructor and use when init walls.
+	// Sizes/other parameters.
+	float flBoxWidth;
 	float flBoxHeight;
 	float flBoxThickness;
 	float flPaddleRadius;

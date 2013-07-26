@@ -6,8 +6,9 @@
 // Global non-member function.
 FMOD_RESULT playSound(FMOD::System *system, FMOD::Sound *sound, FMOD::Channel *channel)
 {
-	FMOD_RESULT result;	
-	if( (sound != NULL) && (system != NULL) )	// Reconsider this!
+	FMOD_RESULT result;
+	// Check that sound has been loaded.
+	if( (sound != NULL) && (system != NULL) )
 		result = system->playSound(sound, 0, false, &channel);
 
 	return result;
@@ -41,7 +42,7 @@ vector_3d & Shape::getCenter()
 }
 
 // Virtual functions - default implementation.
-void Shape::move(float deltaTime, vector_3d dr, bool bReset)
+void Shape::move(vector_3d dr, bool bReset)
 {
 }
 
@@ -50,7 +51,7 @@ bool Shape::collide(Shape * s)
 	return false;
 }
 
-void Shape::setVelocity(vector_3d n)
+void Shape::setVelocity(vector_3d n, float factor)
 {
 }
 
