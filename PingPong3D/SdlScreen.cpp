@@ -251,7 +251,7 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 		logic.bShowPlayScreen = true;
 		logic.bGamePaused = false;
 		logic.bTrain = true;
-		//logic.notifyObservers();
+		logic.notifyObservers();
 		break;
 
 	case BACKGRSND_BTN:
@@ -728,10 +728,11 @@ void PlayScreen::addShapes(Logic &logic)
 		vector_3d specular = vector_3d(0.0, 0.0, 0.0);
 		float alpha = 1.0;					// Opaque ball.
 		float shine = 0.;
+		float maxv = 0.05;
 		vector_3d center(0.0f, 0.0f, 0.0f);				// Ball starts at the center of the scene.
-		vector_3d velocity(0.4*flBallVel, 0.2*flBallVel, 0.2*flBallVel);// !ADD Random initial velocity.
+		vector_3d velocity(0.7*flBallVel, 0.5*flBallVel, 0.5*flBallVel);// !ADD Random initial velocity.
 		Shape* pShape = new Ball(BALL, center, 0.05*flBoxHeight, velocity, flBallDeltaVel,
-			ambient, diffuse, specular, shine, alpha);
+			ambient, diffuse, specular, shine, alpha, maxv);
 		shapes.insert(std::make_pair(BALL, std::tr1::shared_ptr<Shape>(pShape)));	
 
 		// Add walls.		
@@ -810,7 +811,7 @@ void PlayScreen::addShapes(Logic &logic)
 		specular = vector_3d(0.5, 0.5, 0.0);
 		alpha = 0.9;	// A bit transparent paddle.
 		shine = 10.;
-		pShape = new Paddle( LEFT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
+		pShape = new ComputerPaddle( LEFT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
 			angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
 			ambient, diffuse, specular, shine, alpha, flBallDeltaVel);
 		pShape->setSound(system, sounds[3]);
@@ -1152,7 +1153,7 @@ void PlayScreen::doLogic(Logic &logic)
 
 	// Detect collisions for all shapes with the ball.
 	bool bCollided = false;
-	for(std::size_t i = 0; i < shapes.size(); i++){
+	for(int i = shapes.size() - 1; i >= 0; i--){
 		bCollided = shapes[i]->collide(shapes[0].get()); 
 		if(bCollided){
 			if(bPlaySound)

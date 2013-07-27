@@ -124,13 +124,19 @@ bool Paddle::collide(Shape *s)
 	// Take into account, that paddle's surface doesn't coincide with the wall.
 	surfacePoint[0] = surfacePoint[0] - vNormal[0]*flHeight;
 
-	// Find the smallest distance between the wall and the ball.
+	// Find the smallest distance between the paddle and the ball.
 	float a = cml::dot(surfacePoint, vNormal);
-	float b = cml::dot(vNormal*r+c,vNormal);
+	float b = cml::dot(c,vNormal);
+	float dr = a - b;
 
-	if(b >= a){	// Collision is probable to occur.
+	// If ball's surface is beyond the paddle, then handle collision.
+	if(dr <= r){	// Collision occurred.
 		if( ptInPaddle(c) )	{			// If the collision point is inside the paddle area.
-			s->setVelocity(vNormal, flBallDeltaVel);// !Change the factor later.
+			s->setVelocity(vNormal, flBallDeltaVel);
+			// !Very important - subtle bug that leads to instability:
+			// !move the ball a bit back!!!
+			c -= (1.001*dr)*vNormal;
+			s->move(c, true);		// Reset is true to move to the vector c.
 			collided = true;
 		}
 	}
@@ -190,6 +196,7 @@ void ComputerPaddle::move(vector_3d dr, bool bReset)
 bool ComputerPaddle::collide(Shape * s)
 {
 	bool collided = Paddle::collide(s);
+	
 	vCollisionSpot = ((Ball*) s)->getCollisionSpot();
 
 	return collided;

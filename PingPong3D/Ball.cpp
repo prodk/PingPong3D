@@ -3,9 +3,11 @@
 #include "Ball.h"
 
 Ball::Ball(std::size_t idExt, vector_3d center, float r, vector_3d velocity, float dv,
-	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) :
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha,
+	float maxv) :
 Shape(idExt, center, ambient, diffuse, specular, shine, alpha), 
-	radius(r), vVelocity(velocity), flDeltaVel(dv), slices(32), stacks(32)
+	radius(r), vVelocity(velocity), flDeltaVel(dv), slices(32), stacks(32), 
+	flMaxVel(maxv)
 {
 	vVelocityNew = vVelocity;
 }
@@ -48,10 +50,14 @@ void Ball::move(vector_3d dr, bool bReset)
 	// Don't use timers for movement!
 	// Reason: a timer has a separate thread, which continues working even when
 	// the main GUI threads is paused (e.g. when the window is resized). 
-	// This can lead to very big values of deltaTime.	
+	// This can lead to very big values of deltaTime.
+
+	// Move the ball to the specified location if bReset is true.
 	if(bReset){
-		vCenter = vector_3d(0., 0., 0.);
-		vVelocityNew = vVelocity;			// Assign random velocity here.
+		vCenter = dr;
+		// If dr is 0, then reset velocity.
+		if( cml::dot(dr, dr) < 1.e-04 )
+			vVelocityNew = vVelocity;			// Assign random velocity here.
 	}
 	else
 		vCenter = vCenter + vVelocityNew;
@@ -61,12 +67,15 @@ void Ball::setVelocity(vector_3d n, float factor)	// Reflect and rescale the vel
 {
 	// Check which component should be reflected 
 	// (depending on the normal to the shape with which collision occurs).
+	float dv = factor;
+	if( std::sqrt( cml::dot(vVelocityNew, vVelocityNew) ) > flMaxVel )
+		dv = 0.;
 	if( std::fabs(n[0]) > 0.0f )
-		vVelocityNew[0] *= -(1. + factor);
+		vVelocityNew[0] *= -(1. + dv);
 	else if( std::fabs(n[1]) > 0.0f )
-		vVelocityNew[1] *= -(1. + factor);
+		vVelocityNew[1] *= -(1. + dv);
 	if( std::fabs(n[2]) > 0.0f )
-		vVelocityNew[2] *= -(1. + factor);
+		vVelocityNew[2] *= -(1. + dv);
 }
 
 vector_3d Ball::getVelocity() const

@@ -10,7 +10,8 @@ class Ball : public Shape
 {
 public:
 	Ball(std::size_t idExt, vector_3d center, float radius, vector_3d velocity, float dv,
-		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha);
+		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha,
+		float maxv);
 	~Ball(void);
 
 	// Overridden virtual functions.
@@ -29,6 +30,7 @@ private:							// id and vCenter are inherited from the Shape.
 	vector_3d vVelocityNew;			// Used for saving the scaled velocity.
 	vector_3d vSpot;
 	float flDeltaVel;
+	float flMaxVel;
 
 	// OpenGL-specific constants.
 	const int slices;				// Slices to render a sphere.

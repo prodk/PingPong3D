@@ -74,20 +74,20 @@ void GameApp::loadSounds()
 	FMOD_RESULT result;
 	sounds.resize(iNumOfSounds);
 	
-	result = system->createStream("optionscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[0]);
-	checkErr(result, std::string("optionscreen.mp3"));
+	result = system->createStream("../data/audio/optionscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[0]);
+	checkErr(result, std::string("../data/audio/optionscreen.mp3"));
 
-	result = system->createStream("normalwall.wav", FMOD_DEFAULT, 0, &sounds[1]);
-	checkErr(result, std::string("normalwall.wav"));
+	result = system->createStream("../data/audio/normalwall.wav", FMOD_DEFAULT, 0, &sounds[1]);
+	checkErr(result, std::string("../data/audio/normalwall.wav"));
 
-	result = system->createStream("absorbwall.wav", FMOD_DEFAULT, 0, &sounds[2]);
-	checkErr(result, std::string("absorbwall.wav"));
+	result = system->createStream("../data/audio/absorbwall.wav", FMOD_DEFAULT, 0, &sounds[2]);
+	checkErr(result, std::string("../data/audio/absorbwall.wav"));
 
-	result = system->createStream("paddle.wav", FMOD_DEFAULT, 0, &sounds[3]);
-	checkErr(result, std::string("paddle.wav"));
+	result = system->createStream("../data/audio/paddle.wav", FMOD_DEFAULT, 0, &sounds[3]);
+	checkErr(result, std::string("../data/audio/paddle.wav"));
 
-	result = system->createStream("playscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[4]);
-	checkErr(result, std::string("playscreen.mp3"));
+	result = system->createStream("../data/audio/playscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[4]);
+	checkErr(result, std::string("../data/audio/playscreen.mp3"));
 
 	// Start paused sounds.
 	// Options.
@@ -106,7 +106,7 @@ void GameApp::loadFonts()
 		std::cerr << "Failed to initialize TTF library" << std::endl;
 		exit(1); 
 	}
-	fonts[0] = TTF_OpenFont( "Line-01.ttf", 28 );
+	fonts[0] = TTF_OpenFont( "../data/fonts/Line-01.ttf", 28 );
 	if( fonts[0] == NULL ){ 
 		std::cerr << "Failed to Load font:" << "Line-01.ttf" << std::endl;
 		exit(1); 
@@ -117,7 +117,7 @@ void GameApp::loadData()
 {
 	// Load textures.
 	textures.resize(iNumOfTextures);
-	textures[0] = loadTexture("Button.png");	// Check the return value later!
+	textures[0] = loadTexture("../data/textures/Button.png");	// Check the return value later!
 
 	// Load sounds and fonts.
 	loadSounds();

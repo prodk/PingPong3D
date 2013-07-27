@@ -95,14 +95,18 @@ bool Wall::collide(Shape * s)
 	vector_3d c = s->getCenter();
 	float r = s->getSize();
 
-	// Find the position of the wall and of the ball's surface 
-	// along the wall's normal direction.
+	// The distance between the ball surface and the wall along the wall's normal.
 	float a = cml::dot(vCenter, vNormal);
-	float b = cml::dot(vNormal*r+c,vNormal);
+	float b = cml::dot(c,vNormal);
+	float dr = a - b;
 
 	// If ball's surface is beyond the wall, then handle collision.
-	if(b > a){	// Collision occurred.
+	if(dr <= r){	// Collision occurred.
 		s->setVelocity(vNormal, 0.);
+		// !Very important - subtle bug that leads to instability:
+		// !move the ball a bit back!!!
+		c -= (dr)*vNormal;
+		s->move(c, true);	// Reset is true to move to the c.
 		collided = true;
 	}
 
@@ -142,9 +146,8 @@ bool Wall::ptInWall(const vector_3d &pt) const
 		  )
 		  return true;
 	}
-
 	// If normal is to y, then check x and z.
-	if( std::fabs(vNormal[1]) > 0.0f ){
+	else if( std::fabs(vNormal[1]) > 0.0f ){
 		if( (pt[2] >= vCenter[2] - 0.5*flHeight) &&
 			(pt[2] <= vCenter[2] + 0.5*flHeight) &&
 			(pt[0] >= vCenter[0] - 0.5*flWidth) &&
@@ -152,9 +155,8 @@ bool Wall::ptInWall(const vector_3d &pt) const
 		  )
 		  return true;
 	}
-
 	// If normal is to z, then check x and y.
-	if( std::fabs(vNormal[2]) > 0.0f ){
+	else if( std::fabs(vNormal[2]) > 0.0f ){
 		if( (pt[1] >= vCenter[1] - 0.5*flHeight) &&
 			(pt[1] <= vCenter[1] + 0.5*flHeight) &&
 			(pt[0] >= vCenter[0] - 0.5*flWidth) &&
@@ -199,28 +201,12 @@ Wall(idExt, center, w, h, n)
 
 bool AbsorbingWall::collide(Shape *s)
 {
-	bool collided = false;
-	// Get the center and the radius of the ball.
-	vector_3d c = s->getCenter();
-	float r = s->getSize();
-
-	// Find the position of the wall and ball's surface along the wall's normal direction.
-	float a = cml::dot(vCenter, vNormal);
-	float b = cml::dot(vNormal*r+c,vNormal);
-
-	if(b > a){	// Collision occurred, reset Ball's position and velocity.
-		c = vector_3d(0.0f, 0.0f, 0.0f);
+	bool collided = Wall::collide(s);
+	if(collided){
 		bool bReset = true;
 		s->setVelocity(vNormal, 0.0f);			
-		s->move(c, bReset);
-
-		collided = true;
+		s->move(vector_3d(0.0f, 0.0f, 0.0f), bReset);
 	}
-
-	// Define whether to draw the intersection point.
-	bDrawSpot = spotOnWall(s);
-	if(bDrawSpot)
-		((Ball*)s)->setCollisionSpot(vSpot);
 
 	return collided;
 }
