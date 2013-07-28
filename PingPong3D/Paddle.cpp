@@ -135,7 +135,7 @@ bool Paddle::collide(Shape *s)
 			s->setVelocity(vNormal, flBallDeltaVel);
 			// !Very important - subtle bug that leads to instability:
 			// !move the ball a bit back!!!
-			c -= (1.001*dr)*vNormal;
+			c -= (1.05*dr)*vNormal;
 			s->move(c, true);		// Reset is true to move to the vector c.
 			collided = true;
 		}
@@ -156,11 +156,12 @@ bool Paddle::ptInPaddle(const vector_3d &pt) const
 // ComputerPaddle implementation.
 ComputerPaddle::ComputerPaddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
 	float r, float h, float a, float top, float front,
-	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha, float dv) : 
+	vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha, 
+	float dv, float v) : 
 	Paddle(idExt, shiftCenter, n, r, h, a, top, front,
 		ambient, diffuse, specular, shine, alpha, dv)
 {
-	flVelocity = 0.05;
+	flVelocity = v;
 }
 
 ComputerPaddle::~ComputerPaddle(void)

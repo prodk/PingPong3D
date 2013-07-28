@@ -39,7 +39,7 @@ private:
 	// OpenGl-specific.
 	void setupRenderingContext();	// OGL initial state: depth, lights, materials, etc.
 	void setupMatrices();			// Init transforms: modelview, projection and other matrices.
-	void initResize();				// Avoid code dupl. in setupMatrices() and handleResize().
+	//void initResize();				// Avoid code dupl. in setupMatrices() and handleResize().
 	void swapBuffers();				// Swap double buffers.	
 
 	// Inline: calculate the angle used in the perspective, we use size as a unit of length.
@@ -55,10 +55,11 @@ private:
 
 	// Private members.
 private:
+	enum {START_SCREEN = 1, OPTIONS_SCREEN, HOWTO_SCREEN, PLAY_SCREEN};
 	float flScreenWidth;			// Screen width.
 	float flScreenHeight;			// Screen height.
-	float flLengthUnit;				// Scaling factor in the perspective.
-	float flZaxisDistance;			// Distance from the camera to the scene.
+	//float flLengthUnit;				// Scaling factor in the perspective.
+	//float flZaxisDistance;			// Distance from the camera to the scene.
 
 	// Game logic related.
 	Logic logic;					// Contains all the flats controlling the flow of the app.
@@ -76,7 +77,8 @@ private:
 	std::vector<FMOD::Sound*> sounds;
 	FMOD::System *system;
 	FMOD::Channel *channelOptions;
-	FMOD::Channel *channelPlay;	
+	std::vector<FMOD::Channel *> channelRound;
+	
 
 	// Data.	
 	std::string strGameName;

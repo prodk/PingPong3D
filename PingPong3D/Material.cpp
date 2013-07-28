@@ -3,9 +3,8 @@
 #include "Material.h"
 
 // Default constructor.
-// Make a blue material.
 Material::Material(void) : 
-	colorAmbient(0.0, 0.0, 0.2), colorDiffuse(0.0, 0.0, 1.0), colorSpecular(0.0, 0.0, 1.0),
+	colorAmbient(0.0, 0.5, 1.0), colorDiffuse(0.0, 0.5, 0.0), colorSpecular(0.0, 0.5, 0.0),
 	flShininess(0.0), flAlpha(1.0)
 {
 	setValues();

@@ -33,9 +33,10 @@ void Ball::draw()
 	glLightfv(GL_LIGHT1, GL_SPECULAR, light_specular);
 	GLfloat light_position[] = { 0.0, 0.0, 0.0, 1.0 };
 	GLfloat light_direction[] = { vVelocityNew[0], vVelocityNew[1], vVelocityNew[2], 0.0 };
-
+	
 	glTranslatef(vCenter[0], vCenter[1], vCenter[2]);	// Move the ball.
 	glutSolidSphere (radius, slices, stacks);	
+
 
 	// Set a spotlight moving with the ball.
 	glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 50.0);			// Spotlight width.
@@ -56,8 +57,27 @@ void Ball::move(vector_3d dr, bool bReset)
 	if(bReset){
 		vCenter = dr;
 		// If dr is 0, then reset velocity.
+		float sign = 1.;
+		if( generateRand(-1., 1.) < 0)
+			sign = -1.;
+		float vx = sign*flMaxVel;
+		if( generateRand(-1., 1.) < 0)
+			sign = -1.;
+		else
+			sign = 1.;
+		float vy = sign*flMaxVel;
+		if( generateRand(-1., 1.) < 0)
+			sign = -1.;
+		else
+			sign = 1.;
+		float vz = sign*flMaxVel;
 		if( cml::dot(dr, dr) < 1.e-04 )
-			vVelocityNew = vVelocity;			// Assign random velocity here.
+			vVelocityNew = vector_3d(
+				generateRand(0.95*vx, vx), 
+			generateRand(0.95*vy, vy), 
+			generateRand(0.95*vz, vz)
+			);
+			//vVelocity;			// Assign random velocity here.
 	}
 	else
 		vCenter = vCenter + vVelocityNew;
@@ -68,8 +88,8 @@ void Ball::setVelocity(vector_3d n, float factor)	// Reflect and rescale the vel
 	// Check which component should be reflected 
 	// (depending on the normal to the shape with which collision occurs).
 	float dv = factor;
-	if( std::sqrt( cml::dot(vVelocityNew, vVelocityNew) ) > flMaxVel )
-		dv = 0.;
+	//if( std::sqrt( cml::dot(vVelocityNew, vVelocityNew) ) > flMaxVel )
+		//dv = 0.;
 	if( std::fabs(n[0]) > 0.0f )
 		vVelocityNew[0] *= -(1. + dv);
 	else if( std::fabs(n[1]) > 0.0f )

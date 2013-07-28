@@ -4,9 +4,9 @@
 
 /*________________________________*/
 //  SdlScreen implementation.
-SdlScreen::SdlScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
+SdlScreen::SdlScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd) :
-		flWidth(w), flHeight(h), surfaceOnWhichWeRender(s),
+		id(idExt), flWidth(w), flHeight(h), surfaceOnWhichWeRender(s),
 		textures(t), fonts(fnt), system(sys), sounds(snd)
 {
 	 bLeftMouseButton = false;
@@ -23,19 +23,26 @@ void SdlScreen::setScreenSize(float w, float h)
 }
 
 int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w, GLfloat h,
-	TTF_Font *font, Logic &logic)
+	TTF_Font *font, Logic &logic, SDL_Color textColor)
 {
 	int mode;
 
-	SDL_Color textColor;
+	//SDL_Color textColor;
 	SDL_Surface *text;
 	GLuint textTexture;
 
-	textColor.r = 1;
-    textColor.g = 0;
-    textColor.b = 0;
+	//textColor.r = 1;
+    //textColor.g = 0;
+    //textColor.b = 0;
+	SDL_Color bg;
+	bg.r =0 ;
+	bg.g = 0;
+	bg.b = 0;
 	
 	text = TTF_RenderText_Blended(font, txt.c_str(), textColor);
+	//text = TTF_RenderText_Solid(font, txt.c_str(), textColor);
+	
+	//text = TTF_RenderText_Shaded(font, txt.c_str(), textColor, bg);
 
 	if (text->format->BytesPerPixel == 3) {		// RGB 24bit.
 		mode = GL_RGB;
@@ -53,18 +60,23 @@ int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
     glPushMatrix();
 	glDisable(GL_LIGHTING);
 
-    glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
+    //glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
 
     glGenTextures(1, &textTexture);
     glBindTexture(GL_TEXTURE_2D, textTexture);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glBlendFunc(GL_SRC_COLOR , GL_DST_COLOR );
 
 	// Create texture bound to our text surface.
-    glTexImage2D(GL_TEXTURE_2D, 0, 4, text->w, text->h, 0, mode, GL_UNSIGNED_BYTE, text->pixels );
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, text->w, text->h, 0, mode, GL_UNSIGNED_BYTE, text->pixels );
+	//gluBuild2DMipmaps( GL_TEXTURE_2D, 3, text->w, text->h,
+                       //mode, GL_UNSIGNED_BYTE, text->pixels );
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	
-    glColor3f(0.0f, 1.0f, 1.0f);
+    //glColor3f(0.0f, 1.0f, 1.0f);
 
     glTranslatef(x, y, 0.0f);
 
@@ -84,6 +96,35 @@ int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
     glDeleteTextures(1, &textTexture);
 
 	return 0;
+}
+
+void SdlScreen::drawBackgroundTexture(int id, float z)
+{
+	glPushMatrix();
+	glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
+	glLoadIdentity ();				// Clean up the projection matrix.
+
+	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
+	glLoadIdentity ();				// Clean up the modelview matrix.
+
+	glDisable(GL_LIGHTING);
+	glColor3f(1., 1., 1.);
+	glEnable(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, textures[id]->id);
+	
+	glTranslatef(-1., -1., z);
+	glBegin( GL_QUADS );
+	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
+	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(2., 0.0, 0.0);
+	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(2., 2., 0.0);
+	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, 2., 0.0);	
+	glEnd();
+
+	glDisable( GL_TEXTURE_2D );
+	glEnable(GL_LIGHTING);
+
+	glPopMatrix();
 }
 
 void SdlScreen::doInput(Logic &logic, SDL_Event sdlEvent)
@@ -161,9 +202,9 @@ void SdlScreen::notify(Subject* s)
 /*________________________________*/
 // ButtonScreen implementation.
 // Set bIsPressed button flag and get the id of the pressed button.
-ButtonScreen::ButtonScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
+ButtonScreen::ButtonScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd) :
-		SdlScreen(w, h, s, t, fnt, sys, snd)
+		SdlScreen(idExt, w, h, s, t, fnt, sys, snd)
 {
 	bPlayButtonSound = true;
 	bMouseOverButton = false;
@@ -291,7 +332,7 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 	}// End switch(id).
 
 	if(bPlayButtonSound)
-		::playSound(system, sounds[1], channel);
+		::playSound(system, sounds[4], channel);
 }
 
 void ButtonScreen::doDrawing(Logic &logic)
@@ -306,10 +347,39 @@ void ButtonScreen::doDrawing(Logic &logic)
 	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
 	glLoadIdentity ();				// Clean up the modelview matrix.
 
-	glEnable( GL_TEXTURE_2D );
+	// Draw the background image.
+	/*glPushMatrix();
+	glDisable(GL_LIGHTING);
+	glColor3f(1., 1., 1.);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, textures[id]->id);
+	
+	glTranslatef(-1., -1., 0.);
+	glBegin( GL_QUADS );
+	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
+	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(2., 0.0, 0.0);
+	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(2., 2., 0.0);
+	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, 2., 0.0);	
+	glEnd();
+
+	glDisable( GL_TEXTURE_2D );
+	glEnable(GL_LIGHTING);
+	glPopMatrix();*/
+	drawBackgroundTexture(id, 0.);
+
+	// Draw buttons.
+	glEnable(GL_TEXTURE_2D);
 	
 	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++)
 		iterator->second->draw(fonts[0]);
+
+	std::string txt = "Ping Pong 3D";
+	SDL_Color textColor;
+	textColor.b = textColor.g = textColor.r = 0.;
+	drawText(txt, -0.2, 0.8, 0.4, 0.15, fonts[0], logic, textColor);
+
+	txt = "(c) Nikolay Prodanov, 2013. All rights reserved.";
+	drawText(txt, -0.5, 0.6, 1., 0.13, fonts[0], logic, textColor);
 
 	glFlush();
 
@@ -463,10 +533,10 @@ void ButtonScreen::notify(Subject* s)
 /*________________________________*/
 // StartScreen implementation.
 // In StartScreen buttons are added only once, during the creation of the object.
-StartScreen::StartScreen(float w, float h, SDL_Surface* s, 
+StartScreen::StartScreen(int idExt, float w, float h, SDL_Surface* s, 
 	TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 	FMOD::System *sys, std::vector<FMOD::Sound*> snd):
-	ButtonScreen(w, h, s, t, fnt, sys, snd)
+	ButtonScreen(idExt, w, h, s, t, fnt, sys, snd)
 {
 	addButtons();
 	bLeftMouseButton = false;
@@ -480,7 +550,7 @@ StartScreen::~StartScreen()
 void StartScreen::addButtons()
 {
 	float x = -0.5;
-	float y = 0.5;
+	float y = 0.3;
 	float w = 1.;
 	float h = 0.25;
 	std::string name = "Start";
@@ -492,20 +562,20 @@ void StartScreen::addButtons()
 		guiObjects.insert(std::make_pair(START_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
 		// Button 1.
-		y = 0.125;
+		y -= 1.5*h;
 		name = "Options";
 		pGuiObj = new Button(x, y, w, h, OPTIONS_BTN, name, textures[0]->id);	// The same texture id.
 		guiObjects.insert(std::make_pair(OPTIONS_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
 		// Button 2.
-		y = -0.25;
+		y -= 1.5*h;
 		name = "How to play";
 		pGuiObj = new Button(x, y, w, h, HOWTO_BTN, name, textures[0]->id);	// The same texture id.
 		guiObjects.insert(std::make_pair(HOWTO_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
 		// Button 3.
-		y = -0.625;
-		name = "Train on your own";
+		y -= 1.5*h;
+		name = "Training";
 		pGuiObj = new Button(x, y, w, h, TRAIN_BTN, name, textures[0]->id);	// The same texture id.
 		guiObjects.insert(std::make_pair(TRAIN_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 	} // End try.
@@ -518,10 +588,10 @@ void StartScreen::addButtons()
 /*________________________________*/
 // OptionsScreen implementation.
 // In OptionsScreen buttons are added every time this screen is shown, not just during creation.
-OptionsScreen::OptionsScreen(float w, float h, SDL_Surface* s, 
+OptionsScreen::OptionsScreen(int idExt, float w, float h, SDL_Surface* s, 
 	TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 	FMOD::System *sys, std::vector<FMOD::Sound*> snd, Logic &logic) :
-	ButtonScreen(w, h, s, t, fnt, sys, snd)
+	ButtonScreen(idExt, w, h, s, t, fnt, sys, snd)
 {
 	setupNewScreen(logic);
 }
@@ -540,7 +610,7 @@ void OptionsScreen::setupNewScreen(Logic &logic)
 void OptionsScreen::addButtons(Logic &logic)
 {
 	float x = -0.5;
-	float y = 0.5;
+	float y = 0.3;
 	float w = 1.;
 	float h = 0.25;
 	std::string name = "Background Sound";
@@ -560,7 +630,7 @@ void OptionsScreen::addButtons(Logic &logic)
 		guiObjects.insert(std::make_pair(BACKGRSND_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
 		// Button 1.
-		y = 0.125;
+		y -= 1.5*h;
 		name = "Actions Sound";
 		if(logic.bActionsSound)
 			caption = "On";
@@ -571,7 +641,7 @@ void OptionsScreen::addButtons(Logic &logic)
 		guiObjects.insert(std::make_pair(ACTIONSND_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
 		// Button 2.
-		y = -0.25;
+		y -= 1.5*h;
 		name = "Round";
 		caption = std::to_string((_ULonglong)logic.iRound);
 		pGuiObj = new OptionsButton(x, y, w, h, 
@@ -579,7 +649,7 @@ void OptionsScreen::addButtons(Logic &logic)
 		guiObjects.insert(std::make_pair(ROUND_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 
 		// Button 3.
-		y = -0.625;
+		y -= 1.5*h;
 		name = "Back";
 		pGuiObj = new Button(x, y, w, h, 
 			BACK_BTN, name, textures[0]->id/*, caption*/);	// The same texture id.
@@ -593,10 +663,10 @@ void OptionsScreen::addButtons(Logic &logic)
 
 /*________________________________*/
 // HowtoScreen implementation.
-HowtoScreen::HowtoScreen(float w, float h, SDL_Surface* s, 
+HowtoScreen::HowtoScreen(int idExt, float w, float h, SDL_Surface* s, 
 	TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 	FMOD::System *sys, std::vector<FMOD::Sound*> snd) :
-	ButtonScreen(w, h, s, t, fnt, sys, snd)
+	ButtonScreen(idExt, w, h, s, t, fnt, sys, snd)
 {
 	bLeftMouseButton = false;
 }
@@ -617,30 +687,57 @@ void HowtoScreen::doDrawing(Logic &logic)
 	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
 	glLoadIdentity ();				// Clean up the modelview matrix.
 
+	// Draw the background image.
+	glPushMatrix();
+	glDisable(GL_LIGHTING);
+	glColor3f(1., 1., 1.);
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, textures[id]->id);
+	
+	glTranslatef(-1., -1., 0.);
+	glBegin( GL_QUADS );
+	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
+	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(2., 0.0, 0.0);
+	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(2., 2., 0.0);
+	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, 2., 0.0);	
+	glEnd();
+
+	glDisable( GL_TEXTURE_2D );
+	glEnable(GL_LIGHTING);
+	glPopMatrix();
+
+	// Text.
 	glEnable( GL_TEXTURE_2D );
 	
+	SDL_Color textColor;
+	textColor.r = 0;
+	textColor.g = 0.;
+	textColor.b = 0.;
+
 	std::string txt = "Keys:";
-	drawText(txt, -0.75, 0.75, 0.25, 0.125, fonts[0], logic);
+	drawText(txt, -0.75, 0.75, 0.25, 0.125, fonts[0], logic, textColor);
 
 	txt = "B - go back to the start screen";
-	drawText(txt, -0.75, 0.5, 0.5, 0.125, fonts[0], logic);
+	drawText(txt, -0.75, 0.5, 0.5, 0.125, fonts[0], logic, textColor);
 
 	txt = "v/space - pause/unpause";
-	drawText(txt, -0.75, 0.25, 0.5, 0.125, fonts[0], logic);
+	drawText(txt, -0.75, 0.25, 0.5, 0.125, fonts[0], logic, textColor);
 
 	txt = "arrows/asdw - paddle manipulation";
-	drawText(txt, -0.75, 0.0, 0.5, 0.125, fonts[0], logic);
+	drawText(txt, -0.75, 0.0, 0.5, 0.125, fonts[0], logic, textColor);
 
 	txt = "= - reset view to the initial position";
-	drawText(txt, -0.75, -0.25, 0.5, 0.125, fonts[0], logic);
+	drawText(txt, -0.75, -0.25, 0.5, 0.125, fonts[0], logic, textColor);
 
 	txt = "Click or press space to go back.";
-	drawText(txt, -0.75, -0.5, 0.75, 0.25, fonts[0], logic);
+	drawText(txt, -0.75, -0.5, 0.75, 0.25, fonts[0], logic, textColor);
 
 	// Add: zoom m/p, rotate around z with wheel.
 
 	txt = "(c) Nikolay Prodanov, 2013. All rights reserved.";
-	drawText(txt, -0.75, -0.75, 0.75, 0.25, fonts[0], logic);
+	drawText(txt, -0.75, -0.75, 0.75, 0.25, fonts[0], logic, textColor);
+
+	SDL_Delay(25);
 
 	glFlush();
 
@@ -679,10 +776,10 @@ void HowtoScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
 
 /*________________________________*/
 // PlayScreen implementation.
-PlayScreen::PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt, 
+PlayScreen::PlayScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt, 
 	 FMOD::System *sys,std::vector<FMOD::Sound*> snd,
 	 std::vector<std::tr1::shared_ptr<RoundParameters> > & rp) :
-	 SdlScreen(w, h, s, t, fnt, sys, snd), roundParams(rp)
+	 SdlScreen(idExt, w, h, s, t, fnt, sys, snd), roundParams(rp)
 {
 	userWallIdx = -1;
 	compWallIdx = -1;
@@ -704,13 +801,19 @@ void PlayScreen::initMembers(const Logic &logic)
 	flCompPaddleVel = roundParams[iCurRound]->flComputerPaddleVel;
 
 	xViewOld = 0.;
-	angleViewY = 115.;		// Initial angle (around y) of the view.
+	angleViewY = 0.;		// Initial angle (around y) of the view.
+	angleViewYMax = 75.;
+
+	deltaAngleY = angleViewYMax * 0.02;
+
+
 	angleViewZ = 0.;
 	flScaleAll = 1.;
 	bPaddlePicked = false;
 	xPaddleOld = yPaddleOld = 0.;
-	flZaxisDistance = 2.2f;
-	flLengthUnit = 0.4f;
+	flZaxisDistance = 2.f;
+	flLengthUnit = 0.4f;		// This influences the distance from the camera.
+								// The smaller the value, the closer the scene to the camera.
 
 	flScaleMax = 4.;
 	flScaleMin = 0.1;
@@ -730,9 +833,29 @@ void PlayScreen::addShapes(Logic &logic)
 		float shine = 0.;
 		float maxv = 0.05;
 		vector_3d center(0.0f, 0.0f, 0.0f);				// Ball starts at the center of the scene.
-		vector_3d velocity(0.7*flBallVel, 0.5*flBallVel, 0.5*flBallVel);// !ADD Random initial velocity.
-		Shape* pShape = new Ball(BALL, center, 0.05*flBoxHeight, velocity, flBallDeltaVel,
-			ambient, diffuse, specular, shine, alpha, maxv);
+		float sign = 1.;
+		if( generateRand(-1., 1.) < 0)
+			sign = -1.;
+		float vx = sign*flBallVel;
+		if( generateRand(-1., 1.) < 0)
+			sign = -1.;
+		else
+			sign = 1.;
+		float vy = sign*flBallVel;
+		if( generateRand(-1., 1.) < 0)
+			sign = -1.;
+		else
+			sign = 1.;
+		float vz = sign*flBallVel;
+
+
+		vector_3d velocity(
+			generateRand(0.95*vx, vx), 
+			generateRand(0.95*vy, vy), 
+			generateRand(0.95*vz, vz)
+			);
+		Shape* pShape = new Ball(BALL, center, 0.1*flBoxThickness, velocity, flBallDeltaVel,
+			ambient, diffuse, specular, shine, alpha, flBallVel);
 		shapes.insert(std::make_pair(BALL, std::tr1::shared_ptr<Shape>(pShape)));	
 
 		// Add walls.		
@@ -740,63 +863,63 @@ void PlayScreen::addShapes(Logic &logic)
 		center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 		vector_3d n = vector_3d(-1., 0., 0.);
 		pShape = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
-		pShape->setSound(system, sounds[2]);
+		pShape->setSound(system, sounds[5]);
 		userWallIdx = shapes.size();			// Save the index of the user's wall.
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Right wall.
 		center = vector_3d(0.5*flBoxWidth, 0., 0.);
 		n = vector_3d(1., 0., 0.);
-		if(!logic.bTrain){
+		//if(!logic.bTrain){
 			pShape = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
-			pShape->setSound(system, sounds[2]);
+			pShape->setSound(system, sounds[5]);
 			compWallIdx = shapes.size();			// Use this only when absorbing wall.
-		}
+		/*}
 		else{
 			pShape = new Wall( WALL, center, flBoxThickness, flBoxHeight, n);
-			pShape->setSound(system, sounds[1]);
+			pShape->setSound(system, sounds[4]);
 			compWallIdx = -1;
-		}		
+		}*/		
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Top wall.
-		ambient = vector_3d(0.0, 0.0, 0.5);
-		diffuse = vector_3d(0.0, 0.0, 1.0);
-		specular = vector_3d(0.0, 0.0, 0.2);
-		alpha = 0.1;	// A bit transparent wall.
+		ambient = vector_3d(0.0, 0.5, 0.5);
+		diffuse = vector_3d(0.0, 1.0, 1.0);
+		specular = vector_3d(0.0, 0.2, 0.2);
+		alpha = 0.4;	// A bit transparent wall.
 		shine = 20.;
 		center = vector_3d(0., 0.5*flBoxHeight, 0.);
 		n = vector_3d(0., 1., 0.);
 		pShape = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
 			ambient, diffuse, specular, shine, alpha);
-		pShape->setSound(system, sounds[1]);
+		pShape->setSound(system, sounds[4]);
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Bottom wall.
-		ambient = vector_3d(0.0, 0.0, 0.5);
-		diffuse = vector_3d(0.0, 0.0, 1.0);
-		specular = vector_3d(0.0, 0.0, 0.2);
-		alpha = 0.1;	// Abit transparent wall.
+		ambient = vector_3d(0.0, 0.5, 0.5);
+		diffuse = vector_3d(0.0, 1.0, 1.0);
+		specular = vector_3d(0.0, 0.2, 0.2);
+		alpha = 0.4;	// Abit transparent wall.
 		shine = 20.;
 		center = vector_3d(0., -0.5*flBoxHeight, 0.);
 		n = vector_3d(0., -1., 0.);
 		pShape = new Wall( WALL, center, flBoxWidth, flBoxThickness, n,
 			ambient, diffuse, specular, shine, alpha);
-		pShape->setSound(system, sounds[1]);
+		pShape->setSound(system, sounds[4]);
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Front wall.
 		center = vector_3d(0., 0., 0.5*flBoxThickness);
 		n = vector_3d(0., 0., 1.);
 		pShape = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
-		pShape->setSound(system, sounds[1]);
+		pShape->setSound(system, sounds[4]);
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Back wall.
 		center = vector_3d(0., 0., -0.5*flBoxThickness);
 		n = vector_3d(0., 0., -1.);
 		pShape = new Wall( WALL, center, flBoxWidth, flBoxHeight, n);
-		pShape->setSound(system, sounds[1]);
+		pShape->setSound(system, sounds[4]);
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// User (left) paddle.
@@ -811,15 +934,22 @@ void PlayScreen::addShapes(Logic &logic)
 		specular = vector_3d(0.5, 0.5, 0.0);
 		alpha = 0.9;	// A bit transparent paddle.
 		shine = 10.;
-		pShape = new ComputerPaddle( LEFT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
+
+		// Add user or computer paddle depending on the options.
+		if(logic.bTrain)
+			pShape = new ComputerPaddle( LEFT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
+			angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
+			ambient, diffuse, specular, shine, alpha, flBallDeltaVel, flCompPaddleVel);
+		else
+			pShape = new Paddle( LEFT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
 			angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
 			ambient, diffuse, specular, shine, alpha, flBallDeltaVel);
-		pShape->setSound(system, sounds[3]);
+		pShape->setSound(system, sounds[6]);
 		leftPaddleIdx = 7;
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Computer (right) paddle.
-		if(!logic.bTrain){
+		//if(!logic.bTrain){
 			center = vector_3d(0.5*flBoxWidth, 0., 0.);
 			n = vector_3d(1., 0., 0.);			// Norm is x.
 			angle = -90.0;
@@ -830,11 +960,11 @@ void PlayScreen::addShapes(Logic &logic)
 			pShape = 
 				new ComputerPaddle( RIGHT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
 				angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
-				ambient, diffuse, specular, shine, alpha, flBallDeltaVel);
-			pShape->setSound(system, sounds[3]);
+				ambient, diffuse, specular, shine, alpha, flBallDeltaVel, flCompPaddleVel);
+			pShape->setSound(system, sounds[6]);
 			rightPaddleIdx = 8;
 			shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
-		}// End if training.
+		//}// End if training.
 	} // End try.
 	catch(std::bad_alloc& ba) {
 		std::cerr << "Failed to create one of the shapes in PlayScreen: memory error, " + std::string(ba.what()) << std::endl;		
@@ -875,45 +1005,84 @@ void PlayScreen::doInput(Logic &logic, SDL_Event sdlEvent)
 	}
 }
 
+void PlayScreen::drawScoreAndRound(Logic &logic)
+{
+	glPushMatrix();					// Save current matrix.
+
+	glEnable( GL_TEXTURE_2D );
+	glRotatef(-90, 0.0f, 1.0f, 0.0f);
+
+	SDL_Color textColor;
+	textColor.r = 0;
+	textColor.g = 0.;
+	textColor.b = 1.;
+	
+	std::stringstream str0;
+	str0 << "R:" << logic.iRound;
+	drawText(str0.str(), -0.195, -0.5*flBoxHeight, 0.11, 0.095, fonts[0], logic, textColor);
+
+	std::stringstream str1;
+	str1 << "U:" << logic.iUserScore;
+	drawText(str1.str(), -0.075, -0.5*flBoxHeight, 0.11, 0.1, fonts[0], logic, textColor);
+
+	std::stringstream str2;
+	str2 << "C:" << logic.iCompScore;
+	drawText(str2.str(), 0.045, -0.5*flBoxHeight, 0.11, 0.1, fonts[0], logic, textColor);
+
+	glDisable( GL_TEXTURE_2D);
+	
+	glPopMatrix();
+}
+
 void PlayScreen::doDrawing(Logic &logic)
 {
-	initResize();
-	initView();
-	
-	// Draw all the shapes.
-	for(std::size_t i = 0; i < shapes.size(); i++){
-		shapes[i]->draw();
-	}
-
-	// Draw the score.
-	// !Check whether this is the training regime later!
-	//std::to_string( (_ULonglong) logic.iCompScore )
-	//glPushMatrix();					// Save current matrix.
-
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
+// Start of good code.
+	// Draw the background image.
+	//glPushMatrix();
 	//glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
 	//glLoadIdentity ();				// Clean up the projection matrix.
 
 	//glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
 	//glLoadIdentity ();				// Clean up the modelview matrix.
 
-	//glEnable( GL_TEXTURE_2D );
-	//glRotatef(-90, 0., 1., 0.);
-	//drawText(std::string("Comp:"), 
-		//0.1, 0.75, 0.1, 0.1, fonts[0], logic);
-	//drawText(std::string("Comp:") + std::to_string( (_ULonglong) logic.iCompScore ), 
-		//0.1, 0.75, 0.1, 0.1, fonts[0], logic);
-	//drawText(std::string("User:") + std::to_string( (_ULonglong) logic.iUserScore ), 
-		//-0.1, 0.75, 0.1, 0.1, fonts[0], logic);
-	
-	//drawText(std::string("Round:") + std::to_string( (_ULonglong) iCurRound + 1 ), 
-		//-0.7, 0.75, 0.1, 0.1, fonts[0], logic);
-	//glDisable( GL_TEXTURE_2D);
+	//glDisable(GL_LIGHTING);
+	//glColor3f(1., 1., 1.);
+	//glEnable(GL_TEXTURE_2D);
 
-	//std::stringstream str;
-	//str << logic.iCompScore;
-	//std::string msg = str.str();
-	//glutStrokeCharacter(GLUT_STROKE_ROMAN, msg[0]);
+	//glBindTexture(GL_TEXTURE_2D, textures[id+(logic.iRound-1)%3]->id);
+	//
+	//glTranslatef(-1., -1., 0.5);
+	//glBegin( GL_QUADS );
+	//glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
+	//glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(2., 0.0, 0.0);
+	//glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(2., 2., 0.0);
+	//glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, 2., 0.0);	
+	//glEnd();
+
+	//glDisable( GL_TEXTURE_2D );
+	//glEnable(GL_LIGHTING);
+
 	//glPopMatrix();
+	//end
+
+	drawBackgroundTexture( (id+(logic.iRound-1)%3), 0.5);
+
+	initResize();
+	initView();
+
+	//drawAxes();
+	
+	// Draw all the shapes.
+	for(std::size_t i = 0; i < shapes.size(); i++){
+		shapes[i]->draw();
+	}
+
+// End of good code.
+		
+	// Draw the score.	
+	drawScoreAndRound(logic);
+
 	glFlush();
 	
 	//initView();	
@@ -985,7 +1154,7 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
  	switch(sdle.key.keysym.sym)
 	{
 	case SDLK_EQUALS:		// Reset view.
-		angleViewY = 115;	// !Reconsider magic numbers!
+		angleViewY = angleViewYMax;	// !Reconsider magic numbers!
 		angleViewZ = 0.;
 		flScaleAll = 1.;
 		break;
@@ -1111,12 +1280,12 @@ void PlayScreen::initResize()
 
 void PlayScreen::initView()
 {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 	glLoadIdentity ();             // Clear the current matrix.
 	// Move camera to the point (0,0,zdistance) in eye coords, look at point (0,0,0), 
 	// camera orientation - the normal is along (0,1,0)
 	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	
+	//angleViewY += 0.1;
 	glRotatef(angleViewY, 0.0f, 1.0f, 0.0f);
 	glRotatef(angleViewZ, 0.0f, 0.0f, 1.0f);
 	glScalef(flScaleAll, flScaleAll,flScaleAll);
@@ -1141,6 +1310,7 @@ void PlayScreen::drawAxes() const
 	glVertex3f(0.f, 0.f, -0.5f);
 	glVertex3f(0.f, 0.f, 0.5f);*/
 	glEnd();
+
 	glEnable(GL_LIGHTING);
 }
 
@@ -1170,16 +1340,18 @@ void PlayScreen::doLogic(Logic &logic)
 	}
 
 	// Check whether it's time to change the round.
-	if( (logic.iUserScore >= logic.iMaxScore) && (!logic.bTrain)){
+	if(logic.iUserScore >= logic.iMaxScore){
 		logic.iRound = logic.iRound % logic.iRoundMax + 1;
 		logic.bNewRound = true;
+		//SDL_Delay(100);
 	}
     
     // If the player lost, do game over effects
 	// !Add printing game over later.
-	if( (logic.iCompScore >= logic.iMaxScore) && (!logic.bTrain)){
+	if(logic.iCompScore >= logic.iMaxScore){
 		logic.iRound = logic.iRound % logic.iRoundMax + 1;
 		logic.bNewRound = true;
+		//SDL_Delay(100);
 	}
 }
 
@@ -1188,16 +1360,30 @@ void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 	if(logic.bNewRound){
 		setScreenSize(logic.flScreenWidth, logic.flScreenHeight);
 		initResize();
-		logic.bNewRound = false;		
+		
 		setupNewRound(logic);
+
+		logic.bNewRound = false;
+		logic.bRotated = false;
 	}
 
-	doInput(logic, sdlEvent);
+	// Rotate the view at the beginning of a new round.
+	if( (angleViewY < angleViewYMax) && (!logic.bRotated ) ) {
+		angleViewY += deltaAngleY;
+	}
+	else
+		logic.bRotated = true;
+
 	
-	if(!logic.bGamePaused)
-		doLogic(logic);
 	
-	doDrawing(logic);	
+	if(logic.bRotated){
+		doInput(logic, sdlEvent);
+		if( !logic.bGamePaused)
+			doLogic(logic);
+	}
+	
+	//if(!logic.bNewRound)
+		doDrawing(logic);	
 }
 
 void PlayScreen::setupNewRound(Logic &logic)
@@ -1208,6 +1394,7 @@ void PlayScreen::setupNewRound(Logic &logic)
 
 	initMembers(logic);
 	addShapes(logic);
+	logic.notifyObservers();			// Tell the GameApp to use a new round sound.
 	SDL_Delay(200);		// Make a delay.
 }
 

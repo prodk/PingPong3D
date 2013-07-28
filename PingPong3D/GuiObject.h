@@ -46,6 +46,8 @@ protected:
 	float hPressed;
 	std::size_t id;
 	std::string name;
+	float txtW;			// Width of text.
+	float txtX;
 
 	bool bIsPressed;
 	bool bHasFocus;

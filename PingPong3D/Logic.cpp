@@ -18,6 +18,7 @@ Logic::Logic(bool startscreen , bool options, bool howto, bool play,
 	iCompScore = 0;
 	bNewRound = true;
 	bNewOptionsScreen = false;
+	bRotated = false;
 }
 
 

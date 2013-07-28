@@ -14,6 +14,13 @@ FMOD_RESULT playSound(FMOD::System *system, FMOD::Sound *sound, FMOD::Channel *c
 	return result;
 }
 
+float generateRand(float start, float end)
+{
+	float range = (end - start);
+	float rnd = start + float((range * rand()) / (RAND_MAX + 1.0));
+	return rnd;
+}
+
 // Use default constructor for the material.
 Shape::Shape(std::size_t idExt, vector_3d c) : id(idExt), vCenter(c), material()
 {

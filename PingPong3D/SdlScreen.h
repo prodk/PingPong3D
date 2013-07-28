@@ -15,7 +15,7 @@ typedef std::vector<std::tr1::shared_ptr<TEXTURE> > TEXTURE_PTR_ARRAY;
 class SdlScreen : public Observer
 {
 public:
-	SdlScreen(float w, float h, SDL_Surface*, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
+	SdlScreen(int idExt, float w, float h, SDL_Surface*, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	virtual ~SdlScreen(void);
 
@@ -28,7 +28,8 @@ public:
 
 protected:
 	int drawText(const std::string & txt, GLfloat x, GLfloat y, GLfloat w, GLfloat h,
-		TTF_Font *font, Logic &logic);
+		TTF_Font *font, Logic &logic, SDL_Color textColor);
+	void drawBackgroundTexture(int id, float z);
 
 	virtual void handleKeyDown(const SDL_Event& sdle, Logic &l);
 	virtual void handleKeyUp(const SDL_Event& sdle, Logic &l);
@@ -41,6 +42,7 @@ protected:
 	enum{START_BTN, OPTIONS_BTN, HOWTO_BTN, TRAIN_BTN,			// Start screen buttons.
 		 BACKGRSND_BTN, ACTIONSND_BTN, ROUND_BTN, BACK_BTN};	// Options screen buttons.
 
+	int id;
 	float flWidth;								// Screen width.
 	float flHeight;								// Screen height.
 	SDL_Surface* surfaceOnWhichWeRender;
@@ -60,7 +62,7 @@ protected:
 class ButtonScreen : public SdlScreen
 {
 public:
-	ButtonScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
+	ButtonScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	virtual ~ButtonScreen();
 	virtual void doDrawing(Logic &logic);
@@ -94,7 +96,7 @@ protected:
 class StartScreen : public ButtonScreen
 {
 public:
-	StartScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
+	StartScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	~StartScreen(void);
 	
@@ -107,7 +109,7 @@ private:
 class OptionsScreen : public ButtonScreen
 {
 public:
-	OptionsScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
+	OptionsScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd, Logic &logic);
 	~OptionsScreen(void);
 
@@ -122,7 +124,7 @@ private:
 class HowtoScreen : public ButtonScreen
 {
 public:
-	HowtoScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
+	HowtoScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	~HowtoScreen(void);
 
@@ -139,7 +141,7 @@ private:
 class PlayScreen : public SdlScreen
 {
 public:
-	PlayScreen(float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt, 
+	PlayScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt, 
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd, 
 		RoundParamsVector & rp);
 	~PlayScreen(void);
@@ -173,6 +175,7 @@ private:
 	int pickObject(int x, int y);	// Returns the type of the object under cursor.
 	void initMembers(const Logic &l);
 	void addShapes(Logic &l);
+	void drawScoreAndRound(Logic &l);
 
 	// Inline: calculate the angle used in the perspective.
 	float calculateAngle(float size, double zAxisDistance)
@@ -200,6 +203,8 @@ private:
 	float angleViewY;				// Angle to rotate the view around Y.
 	float angleViewZ;				// Rotate view around X.
 	float flScaleAll;				// Zooming factor.
+	float angleViewYMax;
+	float deltaAngleY;
 
 	float xPaddleOld;				// Previous positions of a paddle.
 	float yPaddleOld;

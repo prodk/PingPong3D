@@ -51,7 +51,7 @@ public:
 	ComputerPaddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n, 
 				float r, float h, float a, float top, float front,
 				vector_3d ambient, vector_3d diffuse, vector_3d specular, 
-				float shine, float alpha, float dv);
+				float shine, float alpha, float dv, float v);
 	~ComputerPaddle(void);
 
 	void move(vector_3d dr, bool bReset);

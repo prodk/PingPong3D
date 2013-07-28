@@ -5,11 +5,12 @@
 
 GameApp::GameApp(void) :
 flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong 3D"), 
-	flZaxisDistance(1.f), flLengthUnit(0.25f), bBackgroundSound(true),
+	//flZaxisDistance(1.f), flLengthUnit(0.25f), 
+	bBackgroundSound(true),
 	//Logic(start, options, howto, play, run, pause, over, bsound, asound);
 	logic(true, false, false, false, true, false, false,  bBackgroundSound, true, 
 	flScreenWidth, flScreenHeight),
-	iNumOfSounds(5), iNumOfFonts(1), iNumOfTextures(1)
+	iNumOfSounds(7), iNumOfFonts(1), iNumOfTextures(7)
 {
 	// Exceptions and bad values are caught/checked inside the functions.
 	initLibraries();
@@ -54,7 +55,11 @@ int GameApp::setupSDL()
 	int bpp = info->vfmt->BitsPerPixel;
 
 	// Set window's icon.
-	// void SDL_WM_SetIcon(SDL_Surface *icon, Uint8 *mask);
+	SDL_Surface* s = IMG_Load("../data/textures/pp3d.png");
+	if(surface != NULL){
+		SDL_WM_SetIcon(s, NULL);
+		SDL_FreeSurface(s);
+	}
 
 	int flags = SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE | SDL_DOUBLEBUF;
 
@@ -74,28 +79,39 @@ void GameApp::loadSounds()
 	FMOD_RESULT result;
 	sounds.resize(iNumOfSounds);
 	
-	result = system->createStream("../data/audio/optionscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[0]);
-	checkErr(result, std::string("../data/audio/optionscreen.mp3"));
+	result = system->createStream("../data/audio/startscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[0]);
+	checkErr(result, std::string("../data/audio/startscreen.mp3"));
 
-	result = system->createStream("../data/audio/normalwall.wav", FMOD_DEFAULT, 0, &sounds[1]);
+	result = system->createStream("../data/audio/round1.mp3", FMOD_LOOP_NORMAL, 0, &sounds[1]);
+	checkErr(result, std::string("../data/audio/round1.mp3"));
+
+	result = system->createStream("../data/audio/round2.mp3", FMOD_LOOP_NORMAL, 0, &sounds[2]);
+	checkErr(result, std::string("../data/audio/round2.mp3"));
+
+	result = system->createStream("../data/audio/round3.mp3", FMOD_LOOP_NORMAL, 0, &sounds[3]);
+	checkErr(result, std::string("../data/audio/round3.mp3"));
+
+	result = system->createStream("../data/audio/normalwall.wav", FMOD_DEFAULT, 0, &sounds[4]);
 	checkErr(result, std::string("../data/audio/normalwall.wav"));
 
-	result = system->createStream("../data/audio/absorbwall.wav", FMOD_DEFAULT, 0, &sounds[2]);
+	result = system->createStream("../data/audio/absorbwall.wav", FMOD_DEFAULT, 0, &sounds[5]);
 	checkErr(result, std::string("../data/audio/absorbwall.wav"));
 
-	result = system->createStream("../data/audio/paddle.wav", FMOD_DEFAULT, 0, &sounds[3]);
-	checkErr(result, std::string("../data/audio/paddle.wav"));
-
-	result = system->createStream("../data/audio/playscreen.mp3", FMOD_LOOP_NORMAL, 0, &sounds[4]);
-	checkErr(result, std::string("../data/audio/playscreen.mp3"));
+	result = system->createStream("../data/audio/paddle.mp3", FMOD_DEFAULT, 0, &sounds[6]);
+	checkErr(result, std::string("../data/audio/paddle.mp3"));
 
 	// Start paused sounds.
+	channelRound.resize(3);
 	// Options.
 	if( (sounds[0] != NULL) && (system != NULL) )
 		result = system->playSound(sounds[0], 0, true, &channelOptions);
-	// Play sound.
-	if( (sounds[4] != NULL) && (system != NULL) )
-		result = system->playSound(sounds[4], 0, true, &channelPlay);
+	// Rounds sound.
+	if( (sounds[1] != NULL) && (system != NULL) )
+		result = system->playSound(sounds[1], 0, true, &channelRound[0]);
+	if( (sounds[2] != NULL) && (system != NULL) )
+		result = system->playSound(sounds[2], 0, true, &channelRound[1]);
+	if( (sounds[3] != NULL) && (system != NULL) )
+		result = system->playSound(sounds[3], 0, true, &channelRound[2]);
 }
 
 void GameApp::loadFonts()
@@ -117,7 +133,19 @@ void GameApp::loadData()
 {
 	// Load textures.
 	textures.resize(iNumOfTextures);
-	textures[0] = loadTexture("../data/textures/Button.png");	// Check the return value later!
+	textures[0] = loadTexture("../data/textures/button.png");
+	textures[START_SCREEN] = loadTexture("../data/textures/start.png");
+	textures[OPTIONS_SCREEN] = loadTexture("../data/textures/options.png");
+	textures[HOWTO_SCREEN] = loadTexture("../data/textures/howto.png");
+	textures[PLAY_SCREEN] = loadTexture("../data/textures/round1.png");
+	textures[PLAY_SCREEN+1] = loadTexture("../data/textures/round2.png");
+	textures[PLAY_SCREEN+2] = loadTexture("../data/textures/round3.png");
+	/*textures[PLAY_SCREEN+3] = loadTexture("../data/textures/round4.png");
+	textures[PLAY_SCREEN+4] = loadTexture("../data/textures/round5.png");
+	textures[PLAY_SCREEN+5] = loadTexture("../data/textures/round6.png");
+	textures[PLAY_SCREEN+6] = loadTexture("../data/textures/round7.png");
+	textures[PLAY_SCREEN+7] = loadTexture("../data/textures/round8.png");
+	textures[PLAY_SCREEN+8] = loadTexture("../data/textures/round9.png");*/
 
 	// Load sounds and fonts.
 	loadSounds();
@@ -151,6 +179,8 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
         exit(1);
     }
 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // Create one texture name.
     glGenTextures(1, &textureid);
 
@@ -158,8 +188,11 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     glBindTexture(GL_TEXTURE_2D, textureid);
 
     // Read from the sdl surface and put it into an opengl texture.
-	gluBuild2DMipmaps( GL_TEXTURE_2D, 3, surface->w, surface->h,
+	gluBuild2DMipmaps( GL_TEXTURE_2D, GL_RGBA, surface->w, surface->h,
                        mode, GL_UNSIGNED_BYTE, surface->pixels );
+	
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, mode, 
+		//GL_UNSIGNED_BYTE, surface->pixels );
 
     // Allocate memory for Texture structure and fill it up.
 	std::tr1::shared_ptr<TEXTURE> texture(new TEXTURE());
@@ -195,7 +228,7 @@ void GameApp::setupRenderingContext()
 	// Antialiasing.
 	glEnable (GL_LINE_SMOOTH);
 	glHint (GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
-	glLineWidth (1.5);
+	glLineWidth (3.);
 
 	// Blending (transparency).
 	glEnable (GL_BLEND);
@@ -241,19 +274,23 @@ void GameApp::createScreens()
 {
 	try {
 		startScreen = std::tr1::shared_ptr<StartScreen>(
-			new StartScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			new StartScreen(START_SCREEN, 
+			flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
 			system, sounds) );
 
 		optionsScreen = std::tr1::shared_ptr<OptionsScreen>(
-			new OptionsScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			new OptionsScreen(OPTIONS_SCREEN,
+			flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
 			system, sounds, logic) );
 
 		howtoScreen = std::tr1::shared_ptr<HowtoScreen>(
-			new HowtoScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			new HowtoScreen(HOWTO_SCREEN,
+			flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
 			system, sounds) );
 
 		playScreen = std::tr1::shared_ptr<PlayScreen>(
-			new PlayScreen(flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			new PlayScreen(PLAY_SCREEN,
+			flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
 			system, sounds, roundParams) );
 	}// End try.
 	catch(std::bad_alloc& ba) {
@@ -278,6 +315,7 @@ void GameApp::manageGame()
 		}
 		else if(logic.bShowOptionsScreen){
 			if(logic.bNewOptionsScreen){			// Initialize buttons if required.
+				optionsScreen->setScreenSize(logic.flScreenWidth, logic.flScreenHeight);
 				logic.bNewOptionsScreen = false;
 				optionsScreen->setupNewScreen(logic);
 			}
@@ -296,15 +334,7 @@ void GameApp::manageGame()
 	} // End while(logic.bAppRunning).
 }
 
-void GameApp::initResize()
-{
-	glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
-	glLoadIdentity ();				// Clean up the projection matrix.
-	gluPerspective(calculateAngle(flLengthUnit, flZaxisDistance), 
-		flScreenWidth/flScreenHeight, 1.0, 1024.0);	// Set up the projection matrix with the same units in x and y.
-	glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
-	glLoadIdentity ();
-}
+
 
 void GameApp::swapBuffers()
 {	
@@ -425,21 +455,32 @@ void GameApp::playBackgroundSound()
 	{		
 		// Play Options background sound.
 		if(logic.bShowStartScreen || logic.bShowOptionsScreen || logic.bShowHowtoScreen){
-			channelPlay->setPaused(true);			
+			//channelPlay->setPaused(true);
+			for(std::size_t i = 0; i < channelRound.size(); i++)
+				channelRound[i]->setPaused(true);
 			channelOptions->setPaused(false);
 		}
 		else if(logic.bShowPlayScreen){		// Play the game sound using the corresp. theme.	
 			channelOptions->setPaused(true);
 			if(!logic.bGamePaused)
-				channelPlay->setPaused(false);
+				//channelPlay->setPaused(false);
+				for(std::size_t i = 0; i < channelRound.size(); i++){
+					if(i != (logic.iRound - 1)%3 )
+						channelRound[i]->setPaused(true);
+					else
+						channelRound[i]->setPaused(false);
+				}
 			else
-				channelPlay->setPaused(true);
+				for(std::size_t i = 0; i < channelRound.size(); i++)
+					channelRound[i]->setPaused(true);
 		}
 	}
 	else	// Pause all the sounds.
 	{
 		channelOptions->setPaused(true);
-		channelPlay->setPaused(true);
+		//channelPlay->setPaused(true);
+		for(std::size_t i = 0; i < channelRound.size(); i++)
+			channelRound[i]->setPaused(true);
 	}
 }
 
@@ -447,22 +488,22 @@ void GameApp::setupRoundParams()
 {
 	roundParams.resize(logic.iRoundMax);
 
-	float flBoxWidth = 1.3f;
+	float flBoxWidth = 1.2f;
 	float flBoxHeight = 1.0f;
-	float flBoxThickness = 0.5f;
-	float flBallVel = 8e-03;
-	float flCompPaddleVel = 0.01;
+	float flBoxThickness = 0.6f;
+	float flBallVel = 4e-03;
+	float flCompPaddleVel = 0.03;
 
 	std::size_t nRounds = roundParams.size();
 	// Specify different values of the parameters for each round.
 	for(std::size_t i = 0; i < nRounds; i++){
 		RoundParameters *pParams =
-			new RoundParameters(flBoxWidth*(1. - 1./(double)(nRounds - i + 1.)), 
+			new RoundParameters(flBoxWidth*(1. - 0.5/(double)(nRounds - i + 1.)), 
 			flBoxHeight, 
-			flBallVel*(1. + 1./(double)(nRounds - i + 1.)), 
+			flBallVel,//*(1. - 1./(double)(nRounds - i + 1.)), 
 			0.02*(1. + i),
-			flCompPaddleVel*(i + 1.), 
-			0.05*flBoxWidth);
+			flCompPaddleVel*(1. + 0.5/(double)(nRounds - i + 1.)), 
+			0.07*flBoxWidth*(1. - 0.5/(double)(nRounds - i + 1.)) );
 		roundParams[i] = std::tr1::shared_ptr<RoundParameters>(pParams);
 	}
 }

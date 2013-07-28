@@ -85,6 +85,7 @@ void Wall::draw()
 
 	glNormal3f(-vNormal[0], -vNormal[1], -vNormal[2]);
 	glVertex3f(v[3][0],v[3][1],v[3][2]);
+	
 	glEnd();
 }
 
@@ -223,11 +224,11 @@ void AbsorbingWall::drawSpot()
 	vector_3d diffuse = vector_3d(1.0, 0.0, 0.0);
 	vector_3d specular = vector_3d(1.0, 0.0, 0.0);
 	float alpha = 1.0;	// Opaque ball.
-	float shine = 0.;
+	float shine = 1.;
 	Material m(ambient, diffuse, specular, shine, alpha);
 	m.setValues();
 
 	glTranslatef(vSpot[0], vSpot[1], vSpot[2]);
-	glutSolidSphere (0.008*flHeight, slices, stacks);
+	glutSolidSphere (0.012*flHeight, slices, stacks);
 	glPopMatrix();
 }

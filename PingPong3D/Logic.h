@@ -36,6 +36,7 @@ public:
 
 	float flScreenWidth;
 	float flScreenHeight;
+	bool bRotated;
 
 	const std::size_t iRoundMax;
 	const int iMaxScore;	

@@ -14,6 +14,8 @@ GuiObject::GuiObject(float xExt, float yExt, float wExt, float hExt,
 	hPressed = 0.98*h;
 	xPressed = x + 0.5*(w - wPressed);
 	yPressed = y - 0.5*(h - hPressed);
+	txtW = 0.06*w*n.length();
+	txtX = x + 0.5*(w - txtW);
 }
 
 GuiObject::~GuiObject(void)
@@ -165,10 +167,11 @@ void Button::drawPressed(TTF_Font *font)
 
 	glBindTexture( GL_TEXTURE_2D, textureId );
 	
+	
 	if(bHasFocus)
 		glColor4f(0.0, 1.0, 0.0, 1.0);
 	else
-		glColor4f(1.0, 0.0, 0.0, 1.0);
+		glColor4f(1.0, 1.0, 1.0, 1.0);
 	glTranslatef(xPressed, yPressed, 0.);
 
 	glBegin( GL_QUADS );
@@ -191,12 +194,17 @@ void Button::drawUnpressed(TTF_Font *font)
 	glPushMatrix();
 	glDisable(GL_LIGHTING);
 
+	//glEnable( GL_BLEND );
+	//glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	glBindTexture( GL_TEXTURE_2D, textureId );
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 	
 	if(bHasFocus)
 		glColor4f(0.0, 1.0, 0.0, 1.0);
 	else
-		glColor4f(1.0, 0.0, 0.0, 1.0);
+		glColor4f(1.0, 1.0, 1.0, 1.0);
 	glTranslatef(x, y, 0.);
 
 	glBegin( GL_QUADS );
@@ -211,7 +219,8 @@ void Button::drawUnpressed(TTF_Font *font)
 	
 	// Print button's text.
 	SDL_Delay(4);				// Additional delay because we draw only one text.
-	drawText(name, x, y, w, h, font);
+
+	drawText(name, txtX, y, txtW, h, font);
 }
 
 /*________________________________*/
@@ -239,7 +248,7 @@ void OptionsButton::drawPressed(TTF_Font *font)
 	if(bHasFocus)
 		glColor4f(0.0, 1.0, 0.0, 1.0);
 	else
-		glColor4f(1.0, 0.0, 0.0, 1.0);
+		glColor4f(1.0, 1.0, 1.0, 1.0);
 	glTranslatef(xPressed, yPressed, 0.);
 
 	// Draw larger button.
@@ -276,7 +285,7 @@ void OptionsButton::drawUnpressed(TTF_Font *font)
 	if(bHasFocus)
 		glColor4f(0.0, 1.0, 0.0, 1.0);
 	else
-		glColor4f(1.0, 0.0, 0.0, 1.0);
+		glColor4f(1.0, 1.0, 1.0, 1.0);
 	glTranslatef(x, y, 0.);
 
 	// Draw larger button.
@@ -299,7 +308,8 @@ void OptionsButton::drawUnpressed(TTF_Font *font)
 	glEnable(GL_LIGHTING);
 	glPopMatrix();
 
-	drawText(name, x, y, w, h, font);					// Button's name.
+	//drawText(name, x, y, w, h, font);					// Button's name.
+	drawText(name, txtX, y, txtW, h, font);
 	drawText(caption, x+xSmall, y, wSmall, h, font);	// Parameter's value.
 }
 

@@ -13,6 +13,8 @@
 // Use a global, non-member function to play sound.
 FMOD_RESULT playSound(FMOD::System *system, FMOD::Sound *sound, FMOD::Channel *channel);
 
+float generateRand(float start, float end);
+
 class Shape
 {
 public:
