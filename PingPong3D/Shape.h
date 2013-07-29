@@ -1,5 +1,5 @@
 // Shape.h - abstract Shape class declaration.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #ifndef SHAPE_H
 #define SHAPE_H
 

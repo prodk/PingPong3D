@@ -1,5 +1,5 @@
 // Logic.h - declaration of the Logic and RoundParameters classes.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #ifndef LOGIC_H
 #define LOGIC_H
 
@@ -23,12 +23,14 @@ public:
 	bool bShowPlayScreen;
 	bool bAppRunning;			// True if the game is going on.
 	bool bGamePaused;
-	bool bGameOver;		// True if the player has lost. Maybe delete this var!
+	bool bGameOver;				// True if the user has lost.
 	bool bBackgroundSound;
-	bool bActionsSound;
-	bool bTrain;
-	bool bNewRound;
-	bool bNewOptionsScreen;
+	bool bActionsSound;			// True if play actions sounds.
+	bool bTrain;				// True if we want to see how comp is playing.
+	bool bNewRound;				// True if a new round has to be started.
+	bool bNewOptionsScreen;		// When we switch to the options screen, create new buttons.
+	bool bRoundFinished;		// To show the message when someone looses.
+	//bool bDrawScore;
 
 	std::size_t iRound;	
 	int iUserScore;

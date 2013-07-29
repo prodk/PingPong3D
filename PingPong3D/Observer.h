@@ -1,5 +1,5 @@
 // Observer.h - declaration of the Observer class.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #ifndef OBSERVER_H
 #define OBSERVER_H
 

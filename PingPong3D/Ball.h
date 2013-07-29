@@ -1,5 +1,5 @@
 // Ball.h - declaration of Ball class.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #ifndef BALL_H
 #define BALL_H
 

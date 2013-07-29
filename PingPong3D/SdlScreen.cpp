@@ -1,5 +1,5 @@
 // SdlScreen.cpp - implementation of the SdlScreen class and all its child classes.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #include "SdlScreen.h"
 
 /*________________________________*/
@@ -26,23 +26,15 @@ int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
 	TTF_Font *font, Logic &logic, SDL_Color textColor)
 {
 	int mode;
-
-	//SDL_Color textColor;
 	SDL_Surface *text;
 	GLuint textTexture;
-
-	//textColor.r = 1;
-    //textColor.g = 0;
-    //textColor.b = 0;
 	SDL_Color bg;
+
 	bg.r =0 ;
 	bg.g = 0;
 	bg.b = 0;
 	
 	text = TTF_RenderText_Blended(font, txt.c_str(), textColor);
-	//text = TTF_RenderText_Solid(font, txt.c_str(), textColor);
-	
-	//text = TTF_RenderText_Shaded(font, txt.c_str(), textColor, bg);
 
 	if (text->format->BytesPerPixel == 3) {		// RGB 24bit.
 		mode = GL_RGB;
@@ -51,32 +43,26 @@ int SdlScreen::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
         mode = GL_RGBA;
     } 
     else {
-        std::cerr << "Could not determine pixel format of the surface" << std::endl;
+		std::cerr << "Could not determine pixel format of the surface." << std::endl;
         SDL_FreeSurface(text);
         exit(1);
     }
 
-	// Draw the surface onto the OGL screen using gextures.
+	// Draw the surface onto the OGL screen using textures.
     glPushMatrix();
 	glDisable(GL_LIGHTING);
-
-    //glColor4f(0.0f, 1.0f, 0.0f, 1.0f);
 
     glGenTextures(1, &textTexture);
     glBindTexture(GL_TEXTURE_2D, textTexture);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glBlendFunc(GL_SRC_COLOR , GL_DST_COLOR );
 
 	// Create texture bound to our text surface.
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, text->w, text->h, 0, mode, GL_UNSIGNED_BYTE, text->pixels );
-	//gluBuild2DMipmaps( GL_TEXTURE_2D, 3, text->w, text->h,
-                       //mode, GL_UNSIGNED_BYTE, text->pixels );
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, text->w, text->h, 
+		0, mode, GL_UNSIGNED_BYTE, text->pixels );
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	
-    //glColor3f(0.0f, 1.0f, 1.0f);
 
     glTranslatef(x, y, 0.0f);
 
@@ -108,12 +94,12 @@ void SdlScreen::drawBackgroundTexture(int id, float z)
 	glLoadIdentity ();				// Clean up the modelview matrix.
 
 	glDisable(GL_LIGHTING);
-	glColor3f(1., 1., 1.);
+	glColor3f(1., 1., 1.);			// White light.
 	glEnable(GL_TEXTURE_2D);
 
 	glBindTexture(GL_TEXTURE_2D, textures[id]->id);
 	
-	glTranslatef(-1., -1., z);
+	glTranslatef(-1., -1., z);		// The coordinate of the bottom left corner of the OGL.
 	glBegin( GL_QUADS );
 	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
 	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(2., 0.0, 0.0);
@@ -137,7 +123,7 @@ void SdlScreen::doInput(Logic &logic, SDL_Event sdlEvent)
 		break;
 
 	case SDL_MOUSEBUTTONUP:
-		if(bLeftMouseButton){
+		if(bLeftMouseButton){		// Prevent button captions from flickering.
 			bLeftMouseButton = false;
 			handleMouseButtonUp(sdlEvent, logic);	
 		}
@@ -175,7 +161,6 @@ void SdlScreen::handleKeyUp(const SDL_Event& sdle, Logic &l)
 
 void SdlScreen::handleResize(const SDL_Event& sdle, Logic &l)
 {
-	SDL_SetVideoMode( sdlEvent.resize.w, sdlEvent.resize.h, 32, SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE );
 	glViewport (0, 0, (GLsizei) sdle.resize.w, (GLsizei) sdle.resize.h);
 	flWidth = sdle.resize.w;
 	flHeight = sdle.resize.h;
@@ -201,7 +186,6 @@ void SdlScreen::notify(Subject* s)
 
 /*________________________________*/
 // ButtonScreen implementation.
-// Set bIsPressed button flag and get the id of the pressed button.
 ButtonScreen::ButtonScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd) :
 		SdlScreen(idExt, w, h, s, t, fnt, sys, snd)
@@ -267,17 +251,17 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 	case START_BTN:
 		logic.bShowStartScreen = false;
 		logic.bShowOptionsScreen = false;
-		logic.bShowPlayScreen = true;
+		logic.bShowPlayScreen = true;		// Start the game.
 		logic.bGamePaused = false;
 		logic.bTrain = false;
-		logic.notifyObservers(); // Tell registered observers to change their settings.
+		logic.notifyObservers();		// Tell registered observers to change their settings.
 		break;
 
 	case OPTIONS_BTN:
 		logic.bShowStartScreen = false;
 		logic.bShowOptionsScreen = true;
 		logic.bShowPlayScreen = false;
-		logic.bNewOptionsScreen = true;
+		logic.bNewOptionsScreen = true;	// Create new buttons with the correct settings.
 		break;
 
 	case HOWTO_BTN:
@@ -295,7 +279,7 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 		logic.notifyObservers();
 		break;
 
-	case BACKGRSND_BTN:
+	case BACKGRSND_BTN:					// Switch the bacground sound On/Off.
 		if(logic.bBackgroundSound){
 			logic.bBackgroundSound = false;
 			((OptionsButton*)guiObjects[id].get())->setCaption(std::string("Off"));
@@ -348,23 +332,6 @@ void ButtonScreen::doDrawing(Logic &logic)
 	glLoadIdentity ();				// Clean up the modelview matrix.
 
 	// Draw the background image.
-	/*glPushMatrix();
-	glDisable(GL_LIGHTING);
-	glColor3f(1., 1., 1.);
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, textures[id]->id);
-	
-	glTranslatef(-1., -1., 0.);
-	glBegin( GL_QUADS );
-	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
-	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(2., 0.0, 0.0);
-	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(2., 2., 0.0);
-	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, 2., 0.0);	
-	glEnd();
-
-	glDisable( GL_TEXTURE_2D );
-	glEnable(GL_LIGHTING);
-	glPopMatrix();*/
 	drawBackgroundTexture(id, 0.);
 
 	// Draw buttons.
@@ -373,17 +340,18 @@ void ButtonScreen::doDrawing(Logic &logic)
 	for(map_iter iterator = guiObjects.begin(); iterator != guiObjects.end(); iterator++)
 		iterator->second->draw(fonts[0]);
 
+	// Draw text at the top of the screen.
 	std::string txt = "Ping Pong 3D";
 	SDL_Color textColor;
 	textColor.b = textColor.g = textColor.r = 0.;
 	drawText(txt, -0.2, 0.8, 0.4, 0.15, fonts[0], logic, textColor);
 
 	txt = "(c) Nikolay Prodanov, 2013. All rights reserved.";
-	drawText(txt, -0.5, 0.6, 1., 0.13, fonts[0], logic, textColor);
-
-	glFlush();
+	drawText(txt, -0.5, 0.6, 1., 0.11, fonts[0], logic, textColor);
 
 	glDisable( GL_TEXTURE_2D );
+
+	glFlush();	
 
     glPopMatrix();					// Restore the previous state.
 }
@@ -395,7 +363,7 @@ void ButtonScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
 	case SDL_BUTTON_LEFT:
 		{
 			// Normalize screen coordinates.
-			// OpenGL coords (used for rendering) go from -1 to 1 with the origin in the middle.
+			// OpenGL coords (used for rendering) go from -1 to 1 with the origin in the middle of the screen.
 			// Clicking coords have (0, 0) in the upper left corner.
 			float xnorm = (sdle.button.x - 0.5*flWidth) / (0.5*flWidth);
 			float ynorm = (0.5*flHeight - sdle.button.y) / (0.5*flHeight);
@@ -403,7 +371,7 @@ void ButtonScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
 			pressButton(xnorm, ynorm);
 		}
 		break;
-	}// end switch
+	}// End switch.
 }
 
 void ButtonScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
@@ -593,7 +561,7 @@ OptionsScreen::OptionsScreen(int idExt, float w, float h, SDL_Surface* s,
 	FMOD::System *sys, std::vector<FMOD::Sound*> snd, Logic &logic) :
 	ButtonScreen(idExt, w, h, s, t, fnt, sys, snd)
 {
-	setupNewScreen(logic);
+	setupNewScreen(logic);			// Create new buttons to use the uptodate logic values.
 }
 
 OptionsScreen::~OptionsScreen()
@@ -609,6 +577,7 @@ void OptionsScreen::setupNewScreen(Logic &logic)
 
 void OptionsScreen::addButtons(Logic &logic)
 {
+	// 'magic numbers'.
 	float x = -0.5;
 	float y = 0.3;
 	float w = 1.;
@@ -652,7 +621,7 @@ void OptionsScreen::addButtons(Logic &logic)
 		y -= 1.5*h;
 		name = "Back";
 		pGuiObj = new Button(x, y, w, h, 
-			BACK_BTN, name, textures[0]->id/*, caption*/);	// The same texture id.
+			BACK_BTN, name, textures[0]->id);	// The same texture id.
 		guiObjects.insert(std::make_pair(BACK_BTN, std::tr1::shared_ptr<GuiObject>(pGuiObj)));
 	}// End try.
 	catch(std::bad_alloc& ba) {
@@ -688,23 +657,7 @@ void HowtoScreen::doDrawing(Logic &logic)
 	glLoadIdentity ();				// Clean up the modelview matrix.
 
 	// Draw the background image.
-	glPushMatrix();
-	glDisable(GL_LIGHTING);
-	glColor3f(1., 1., 1.);
-	glEnable(GL_TEXTURE_2D);
-	glBindTexture(GL_TEXTURE_2D, textures[id]->id);
-	
-	glTranslatef(-1., -1., 0.);
-	glBegin( GL_QUADS );
-	glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
-	glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(2., 0.0, 0.0);
-	glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(2., 2., 0.0);
-	glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, 2., 0.0);	
-	glEnd();
-
-	glDisable( GL_TEXTURE_2D );
-	glEnable(GL_LIGHTING);
-	glPopMatrix();
+	drawBackgroundTexture(id, 0.);
 
 	// Text.
 	glEnable( GL_TEXTURE_2D );
@@ -713,31 +666,69 @@ void HowtoScreen::doDrawing(Logic &logic)
 	textColor.r = 0;
 	textColor.g = 0.;
 	textColor.b = 0.;
+	// 'magic numbers'.
+	std::string txt = "Keys (click or space to exit from here)";
+	drawText(txt, -0.55, 0.75, 1.1, 0.15, fonts[0], logic, textColor);
+	txt = "_______________________________________";
+	drawText(txt, -0.55, 0.73, 1.1, 0.15, fonts[0], logic, textColor);
 
-	std::string txt = "Keys:";
-	drawText(txt, -0.75, 0.75, 0.25, 0.125, fonts[0], logic, textColor);
+	// 'magic numbers' are below.
+	float y = 0.55;
+	float h = 0.15;
+	float txtX = -0.8;
+	float fixedX = 0.3;
+	// Keys.
+	txt = "Action";
+	drawText(txt, txtX, y, 0.2, h, fonts[0], logic, textColor);
+	txt = "Key(s)/Mouse";
+	drawText(txt, fixedX, y, 0.42, h, fonts[0], logic, textColor);
 
-	txt = "B - go back to the start screen";
-	drawText(txt, -0.75, 0.5, 0.5, 0.125, fonts[0], logic, textColor);
+	y -= 0.2*h;
+	txt = "______";
+	drawText(txt, txtX, y, 0.2, h, fonts[0], logic, textColor);
+	txt = "____________";
+	drawText(txt, fixedX, y, 0.42, h, fonts[0], logic, textColor);
 
-	txt = "v/space - pause/unpause";
-	drawText(txt, -0.75, 0.25, 0.5, 0.125, fonts[0], logic, textColor);
+	y -= 1.5*h;
+	txt = "go back to the start screen:";
+	drawText(txt, txtX, y, 0.8, h, fonts[0], logic, textColor);
+	txt = "b";
+	drawText(txt, fixedX, y, 0.045, h, fonts[0], logic, textColor);
 
-	txt = "arrows/asdw - paddle manipulation";
-	drawText(txt, -0.75, 0.0, 0.5, 0.125, fonts[0], logic, textColor);
+	y -= 1.3*h;
+	txt = "pause/unpause:";
+	drawText(txt, txtX, y, 0.45, h, fonts[0], logic, textColor);
+	txt = "v/space";
+	drawText(txt, fixedX, y, 0.23, h, fonts[0], logic, textColor);
 
-	txt = "= - reset view to the initial position";
-	drawText(txt, -0.75, -0.25, 0.5, 0.125, fonts[0], logic, textColor);
+	y -= 1.3*h;
+	txt = "paddle manipulation:";
+	drawText(txt, txtX, y, 0.65, h, fonts[0], logic, textColor);
+	txt = "arrows/asdw/mouse";
+	drawText(txt, fixedX, y, 0.57, h, fonts[0], logic, textColor);
 
-	txt = "Click or press space to go back.";
-	drawText(txt, -0.75, -0.5, 0.75, 0.25, fonts[0], logic, textColor);
+	y -= 1.3*h;
+	txt = "reset view to the initial position:";
+	drawText(txt, txtX, y, 1.0, h, fonts[0], logic, textColor);
+	txt = "=";
+	drawText(txt, fixedX, y, 0.05, h, fonts[0], logic, textColor);
 
-	// Add: zoom m/p, rotate around z with wheel.
+	y -= 1.3*h;
+	txt = "zoom:";
+	drawText(txt, txtX, y, 0.2, h, fonts[0], logic, textColor);
+	txt = "m/p";
+	drawText(txt, fixedX, y, 0.12, h, fonts[0], logic, textColor);
 
+	y -= 1.3*h;
+	txt = "rotate around y/z axes:";
+	drawText(txt, txtX, y, 0.67, h, fonts[0], logic, textColor);
+	txt = "mouse(left)/wheel";
+	drawText(txt, fixedX, y, 0.51, h, fonts[0], logic, textColor);
+	
 	txt = "(c) Nikolay Prodanov, 2013. All rights reserved.";
-	drawText(txt, -0.75, -0.75, 0.75, 0.25, fonts[0], logic, textColor);
+	drawText(txt, -0.5, -0.92, 1., 0.11, fonts[0], logic, textColor);
 
-	SDL_Delay(25);
+	SDL_Delay(50);
 
 	glFlush();
 
@@ -771,7 +762,7 @@ void HowtoScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
 	case SDL_QUIT:
 		logic.bAppRunning = false;
 		break;
-	}// end switch
+	}
 }
 
 /*________________________________*/
@@ -783,6 +774,9 @@ PlayScreen::PlayScreen(int idExt, float w, float h, SDL_Surface* s, TEXTURE_PTR_
 {
 	userWallIdx = -1;
 	compWallIdx = -1;
+	iShowMessageCount = 0;
+	flDeltaAngleViewZ = 0.3;
+	flDeltaScale = 0.01;
 }
 
 PlayScreen::~PlayScreen()
@@ -800,21 +794,18 @@ void PlayScreen::initMembers(const Logic &logic)
 	flBallDeltaVel = roundParams[iCurRound]->flBallDeltaVel;
 	flCompPaddleVel = roundParams[iCurRound]->flComputerPaddleVel;
 
+	// 'magic numbers'.
 	xViewOld = 0.;
-	angleViewY = 0.;		// Initial angle (around y) of the view.
-	angleViewYMax = 75.;
-
-	deltaAngleY = angleViewYMax * 0.02;
-
-
+	angleViewY = 0.;					// Initial angle (around y) of the view.
+	angleViewYMax = 75.;				// Final initial angle view.
+	deltaAngleY = angleViewYMax * 0.02;	// Increments of the angle to rotate at the beginning.
 	angleViewZ = 0.;
-	flScaleAll = 1.;
 	bPaddlePicked = false;
 	xPaddleOld = yPaddleOld = 0.;
 	flZaxisDistance = 2.f;
-	flLengthUnit = 0.4f;		// This influences the distance from the camera.
-								// The smaller the value, the closer the scene to the camera.
-
+	flLengthUnit = 0.42f;			// This influences the distance from the camera.
+									// The smaller the value, the closer the scene to the camera.
+	flScaleAll = 1.;					// Scaling factor.
 	flScaleMax = 4.;
 	flScaleMin = 0.1;
 }
@@ -824,15 +815,18 @@ void PlayScreen::addShapes(Logic &logic)
 	// Cleanup the shapes from the previous round.
 	shapes.clear();
 	// Add shapes to the game.
+	// 'magic numbers' - a lot of them are below.
 	try {
 		// Add ball.
 		vector_3d ambient = vector_3d(0.0, 0.5, 0.0);
 		vector_3d diffuse = vector_3d(0.0, 1.0, 0.0);
 		vector_3d specular = vector_3d(0.0, 0.0, 0.0);
-		float alpha = 1.0;					// Opaque ball.
+		float alpha = 1.0;						// Opaque ball.
 		float shine = 0.;
 		float maxv = 0.05;
-		vector_3d center(0.0f, 0.0f, 0.0f);				// Ball starts at the center of the scene.
+		vector_3d center(0.0f, 0.0f, 0.0f);		// Ball starts at the center of the scene.
+		// Random velocity.
+		// x component.
 		float sign = 1.;
 		if( generateRand(-1., 1.) < 0)
 			sign = -1.;
@@ -841,14 +835,14 @@ void PlayScreen::addShapes(Logic &logic)
 			sign = -1.;
 		else
 			sign = 1.;
+		// y component.
 		float vy = sign*flBallVel;
 		if( generateRand(-1., 1.) < 0)
 			sign = -1.;
 		else
 			sign = 1.;
+		// z component.
 		float vz = sign*flBallVel;
-
-
 		vector_3d velocity(
 			generateRand(0.95*vx, vx), 
 			generateRand(0.95*vy, vy), 
@@ -870,16 +864,10 @@ void PlayScreen::addShapes(Logic &logic)
 		// Right wall.
 		center = vector_3d(0.5*flBoxWidth, 0., 0.);
 		n = vector_3d(1., 0., 0.);
-		//if(!logic.bTrain){
-			pShape = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
-			pShape->setSound(system, sounds[5]);
-			compWallIdx = shapes.size();			// Use this only when absorbing wall.
-		/*}
-		else{
-			pShape = new Wall( WALL, center, flBoxThickness, flBoxHeight, n);
-			pShape->setSound(system, sounds[4]);
-			compWallIdx = -1;
-		}*/		
+		pShape = new AbsorbingWall( WALL, center, flBoxThickness, flBoxHeight, n);
+		pShape->setSound(system, sounds[5]);
+		compWallIdx = shapes.size();			// Use this only when absorbing wall.
+
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Top wall.
@@ -899,7 +887,7 @@ void PlayScreen::addShapes(Logic &logic)
 		ambient = vector_3d(0.0, 0.5, 0.5);
 		diffuse = vector_3d(0.0, 1.0, 1.0);
 		specular = vector_3d(0.0, 0.2, 0.2);
-		alpha = 0.4;	// Abit transparent wall.
+		alpha = 0.4;	// A bit transparent wall.
 		shine = 20.;
 		center = vector_3d(0., -0.5*flBoxHeight, 0.);
 		n = vector_3d(0., -1., 0.);
@@ -922,12 +910,12 @@ void PlayScreen::addShapes(Logic &logic)
 		pShape->setSound(system, sounds[4]);
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
+		// Paddles.
 		// User (left) paddle.
 		center = vector_3d(-0.5*flBoxWidth, 0., 0.);
 		n = vector_3d(-1., 0., 0.);			// Norm is -x.
 		float angle = 90.0;
 
-		// Paddles.
 		// Setup colors.
 		ambient = vector_3d(0.5, 0.5, 0.0);
 		diffuse = vector_3d(1.0, 1.0, 0.0);
@@ -949,22 +937,20 @@ void PlayScreen::addShapes(Logic &logic)
 		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 
 		// Computer (right) paddle.
-		//if(!logic.bTrain){
-			center = vector_3d(0.5*flBoxWidth, 0., 0.);
-			n = vector_3d(1., 0., 0.);			// Norm is x.
-			angle = -90.0;
-			// Setup colors.
-			ambient = vector_3d(0.5, 0.0, 0.5);
-			diffuse = vector_3d(1.0, 0.0, 1.0);
-			specular = vector_3d(0.5, 0.0, 0.5);
-			pShape = 
-				new ComputerPaddle( RIGHT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
-				angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
-				ambient, diffuse, specular, shine, alpha, flBallDeltaVel, flCompPaddleVel);
-			pShape->setSound(system, sounds[6]);
-			rightPaddleIdx = 8;
-			shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
-		//}// End if training.
+		center = vector_3d(0.5*flBoxWidth, 0., 0.);
+		n = vector_3d(1., 0., 0.);			// Norm is x.
+		angle = -90.0;
+		// Setup colors.
+		ambient = vector_3d(0.5, 0.0, 0.5);
+		diffuse = vector_3d(1.0, 0.0, 1.0);
+		specular = vector_3d(0.5, 0.0, 0.5);
+		pShape = 
+			new ComputerPaddle( RIGHT_PADDLE, center, n, flPaddleRadius, 0.01*flBoxWidth, 
+			angle, 0.5*flBoxHeight, 0.5*flBoxThickness,
+			ambient, diffuse, specular, shine, alpha, flBallDeltaVel, flCompPaddleVel);
+		pShape->setSound(system, sounds[6]);
+		rightPaddleIdx = 8;
+		shapes.insert(std::make_pair(shapes.size(), std::tr1::shared_ptr<Shape>(pShape)));
 	} // End try.
 	catch(std::bad_alloc& ba) {
 		std::cerr << "Failed to create one of the shapes in PlayScreen: memory error, " + std::string(ba.what()) << std::endl;		
@@ -1018,16 +1004,21 @@ void PlayScreen::drawScoreAndRound(Logic &logic)
 	textColor.b = 1.;
 	
 	std::stringstream str0;
-	str0 << "R:" << logic.iRound;
-	drawText(str0.str(), -0.195, -0.5*flBoxHeight, 0.11, 0.095, fonts[0], logic, textColor);
+	str0 << "R:" << logic.iRound << " U:" << logic.iUserScore << " C:" << logic.iCompScore;
+	drawText(str0.str(), -0.195, -0.5*flBoxHeight, 0.35, 0.1, fonts[0], logic, textColor);
 
-	std::stringstream str1;
-	str1 << "U:" << logic.iUserScore;
-	drawText(str1.str(), -0.075, -0.5*flBoxHeight, 0.11, 0.1, fonts[0], logic, textColor);
-
-	std::stringstream str2;
-	str2 << "C:" << logic.iCompScore;
-	drawText(str2.str(), 0.045, -0.5*flBoxHeight, 0.11, 0.1, fonts[0], logic, textColor);
+	if(logic.bRoundFinished){
+		glTranslatef(0., 0., 0.3);
+		std::string str3;
+		if(logic.bGameOver){
+			str3 = "You lost!";
+			drawText(str3, -0.195, -0.5*flBoxHeight, 0.4, 0.1, fonts[0], logic, textColor);
+		}
+		else{
+			str3 = "Comp lost!";
+			drawText(str3, -0.195, -0.5*flBoxHeight, 0.4, 0.1, fonts[0], logic, textColor);
+		}		
+	}
 
 	glDisable( GL_TEXTURE_2D);
 	
@@ -1037,57 +1028,23 @@ void PlayScreen::drawScoreAndRound(Logic &logic)
 void PlayScreen::doDrawing(Logic &logic)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
-// Start of good code.
-	// Draw the background image.
-	//glPushMatrix();
-	//glMatrixMode (GL_PROJECTION);	// Switch to the projection matrix.
-	//glLoadIdentity ();				// Clean up the projection matrix.
-
-	//glMatrixMode (GL_MODELVIEW);	// Switch to the modelview matrix.
-	//glLoadIdentity ();				// Clean up the modelview matrix.
-
-	//glDisable(GL_LIGHTING);
-	//glColor3f(1., 1., 1.);
-	//glEnable(GL_TEXTURE_2D);
-
-	//glBindTexture(GL_TEXTURE_2D, textures[id+(logic.iRound-1)%3]->id);
-	//
-	//glTranslatef(-1., -1., 0.5);
-	//glBegin( GL_QUADS );
-	//glTexCoord3d(0.0, 1.0, 0.0); glVertex3d(0.0, 0.0, 0.0);
-	//glTexCoord3d(1.0, 1.0, 0.0); glVertex3d(2., 0.0, 0.0);
-	//glTexCoord3d(1.0, 0.0, 0.0); glVertex3d(2., 2., 0.0);
-	//glTexCoord3d(0.0, 0.0, 0.0); glVertex3d(0.0, 2., 0.0);	
-	//glEnd();
-
-	//glDisable( GL_TEXTURE_2D );
-	//glEnable(GL_LIGHTING);
-
-	//glPopMatrix();
-	//end
-
+	// Draw the background image.	
 	drawBackgroundTexture( (id+(logic.iRound-1)%3), 0.5);
-
 	initResize();
 	initView();
 
-	//drawAxes();
-	
 	// Draw all the shapes.
 	for(std::size_t i = 0; i < shapes.size(); i++){
 		shapes[i]->draw();
 	}
 
-// End of good code.
-		
-	// Draw the score.	
+	// Draw the score.
 	drawScoreAndRound(logic);
 
 	glFlush();
-	
-	//initView();	
 }
 
+// 'magic numbers' are below.
 void PlayScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
 {
 	int objName = 0;
@@ -1104,13 +1061,13 @@ void PlayScreen::handleMouseButtonDown(const SDL_Event& sdle, Logic &logic)
 		break;
 
 	case SDL_BUTTON_WHEELUP:
-		angleViewZ -= 0.3;			// Rotate around the horizontal axis.
+		angleViewZ -= flDeltaAngleViewZ;			// Rotate around the horizontal axis.
 		break;
 
 	case SDL_BUTTON_WHEELDOWN:
-		angleViewZ += 0.3;			// !!Replace this magic number by a var.
+		angleViewZ += flDeltaAngleViewZ;
 		break;
-	}// end switch
+	}// End switch.
 }
 
 void PlayScreen::handleMouseButtonUp(const SDL_Event& sdle, Logic &logic)
@@ -1133,8 +1090,7 @@ void PlayScreen::handleMouseMotion(const SDL_Event& sdle, Logic &logic)
 			xViewOld = sdle.motion.x;
 		}
 		else{
-			//vector_3d dr(0., -0.0025*(sdle.motion.y - yPaddleOld), 
-				//0.0025*(sdle.motion.x - xPaddleOld) );
+			// 'magic numbers'.
 			float ratioX = 3./flWidth;		// Make these members.
 			float ratioY = 2.8/flHeight;
 			vector_3d dr(0., -ratioX*(sdle.motion.y - yPaddleOld), 
@@ -1153,8 +1109,8 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 	// Check keyboard.
  	switch(sdle.key.keysym.sym)
 	{
-	case SDLK_EQUALS:		// Reset view.
-		angleViewY = angleViewYMax;	// !Reconsider magic numbers!
+	case SDLK_EQUALS:					// Reset view.
+		angleViewY = angleViewYMax;
 		angleViewZ = 0.;
 		flScaleAll = 1.;
 		break;
@@ -1169,17 +1125,17 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 
 	case SDLK_p:	 //Scale.
 		if(flScaleAll < flScaleMax)
-			flScaleAll += 0.01;			// !Reconsider magic numbers!
+			flScaleAll += flDeltaScale;			// 'magic number'.
 		break;
 
 	case SDLK_m:
 		if(flScaleAll > flScaleMin)
-			flScaleAll -= 0.01;
+			flScaleAll -= flDeltaScale;
 		break;
 
 	case SDLK_v:
 		logic.bGamePaused = true;
-		logic.bNewRound = false;		// May be redundant! Check later!
+		logic.bNewRound = false;
 		logic.notifyObservers();
 		break;
 
@@ -1221,7 +1177,6 @@ void PlayScreen::handleKeyDown(const SDL_Event& sdle, Logic &logic)
 
 void PlayScreen::handleResize(const SDL_Event& sdle, Logic &logic)
 {
-	SDL_SetVideoMode( sdlEvent.resize.w, sdlEvent.resize.h, 32, SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE );
 	glViewport (0, 0, (GLsizei) sdle.resize.w, (GLsizei) sdle.resize.h);
 	flWidth = sdle.resize.w;
 	flHeight = sdle.resize.h;
@@ -1280,12 +1235,10 @@ void PlayScreen::initResize()
 
 void PlayScreen::initView()
 {
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 	glLoadIdentity ();             // Clear the current matrix.
 	// Move camera to the point (0,0,zdistance) in eye coords, look at point (0,0,0), 
 	// camera orientation - the normal is along (0,1,0)
 	gluLookAt (0.0, 0.0, flZaxisDistance, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	//angleViewY += 0.1;
 	glRotatef(angleViewY, 0.0f, 1.0f, 0.0f);
 	glRotatef(angleViewZ, 0.0f, 0.0f, 1.0f);
 	glScalef(flScaleAll, flScaleAll,flScaleAll);
@@ -1328,11 +1281,10 @@ void PlayScreen::doLogic(Logic &logic)
 		if(bCollided){
 			if(bPlaySound)
 				shapes[i]->playSound();
-			// Make a pause here!
 			if(i == userWallIdx){		// User lost.
 				logic.iCompScore += 1;
 			}
-			if(i == compWallIdx){		// User lost.
+			if(i == compWallIdx){		// Comp lost.
 				logic.iUserScore += 1;
 			}
 			break;
@@ -1342,16 +1294,13 @@ void PlayScreen::doLogic(Logic &logic)
 	// Check whether it's time to change the round.
 	if(logic.iUserScore >= logic.iMaxScore){
 		logic.iRound = logic.iRound % logic.iRoundMax + 1;
-		logic.bNewRound = true;
-		//SDL_Delay(100);
+		logic.bRoundFinished = true;	// This flag provides a pause.
 	}
     
     // If the player lost, do game over effects
-	// !Add printing game over later.
 	if(logic.iCompScore >= logic.iMaxScore){
-		logic.iRound = logic.iRound % logic.iRoundMax + 1;
-		logic.bNewRound = true;
-		//SDL_Delay(100);
+		logic.bGameOver = true;
+		logic.bRoundFinished = true;
 	}
 }
 
@@ -1365,6 +1314,7 @@ void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 
 		logic.bNewRound = false;
 		logic.bRotated = false;
+		logic.bGameOver = false;
 	}
 
 	// Rotate the view at the beginning of a new round.
@@ -1372,18 +1322,28 @@ void PlayScreen::play(Logic &logic, SDL_Event sdlEvent)
 		angleViewY += deltaAngleY;
 	}
 	else
-		logic.bRotated = true;
-
+		logic.bRotated = true;	
 	
-	
-	if(logic.bRotated){
+	// Process input if the round started and is going on.
+	if(logic.bRotated  && !logic.bRoundFinished){
 		doInput(logic, sdlEvent);
 		if( !logic.bGamePaused)
 			doLogic(logic);
 	}
+
+	// If round finished, show a msg about who has lost.
+	if(logic.bRoundFinished){
+		if(iShowMessageCount < 100)
+			++iShowMessageCount;
+		else{
+			iShowMessageCount = 0;
+			logic.bRoundFinished = false;
+			logic.bNewRound = true;
+		}
+	}
 	
-	//if(!logic.bNewRound)
-		doDrawing(logic);	
+	// Draw the scene.
+	doDrawing(logic);	
 }
 
 void PlayScreen::setupNewRound(Logic &logic)
@@ -1395,7 +1355,6 @@ void PlayScreen::setupNewRound(Logic &logic)
 	initMembers(logic);
 	addShapes(logic);
 	logic.notifyObservers();			// Tell the GameApp to use a new round sound.
-	SDL_Delay(200);		// Make a delay.
 }
 
 // Observer pattern method.

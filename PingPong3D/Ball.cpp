@@ -1,5 +1,5 @@
 // Ball.cpp - implementation of the Ball class.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #include "Ball.h"
 
 Ball::Ball(std::size_t idExt, vector_3d center, float r, vector_3d velocity, float dv,

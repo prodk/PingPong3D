@@ -1,5 +1,5 @@
 // SdlScreen.h - declaration of the SdlScreen class and all its children.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #ifndef SDL_SCREEN
 #define SDL_SCREEN
 
@@ -24,6 +24,7 @@ public:
 	virtual void doDrawing(Logic &logic) = 0;
 	virtual void notify(Subject* s);
 
+	// Class specific method with fixed implementation.
 	void setScreenSize(float w, float h);
 
 protected:
@@ -31,6 +32,7 @@ protected:
 		TTF_Font *font, Logic &logic, SDL_Color textColor);
 	void drawBackgroundTexture(int id, float z);
 
+	// Event handlers.
 	virtual void handleKeyDown(const SDL_Event& sdle, Logic &l);
 	virtual void handleKeyUp(const SDL_Event& sdle, Logic &l);
 	virtual void handleResize(const SDL_Event& sdle, Logic &l);
@@ -47,14 +49,13 @@ protected:
 	float flHeight;								// Screen height.
 	SDL_Surface* surfaceOnWhichWeRender;
 	bool bLeftMouseButton;						// Whether left mouse button was pressed.
+	SDL_Event sdlEvent;
 
 	TEXTURE_PTR_ARRAY textures;
 	FMOD::System *system;
 	std::vector<FMOD::Sound*> sounds;
 	FMOD::Channel *channel;
-	TTF_Font** fonts;
-
-	SDL_Event sdlEvent;
+	TTF_Font** fonts;	
 };
 
 /*_________________________*/
@@ -92,7 +93,7 @@ protected:
 };
 
 /*________________________________*/
-// StartScreen.
+// StartScreen is a ButtonScreen.
 class StartScreen : public ButtonScreen
 {
 public:
@@ -105,7 +106,7 @@ private:
 };
 
 /*________________________________*/
-// OptionsScreen declaration.
+// OptionsScreen is a ButtonScreen.
 class OptionsScreen : public ButtonScreen
 {
 public:
@@ -120,7 +121,7 @@ private:
 };
 
 /*________________________________*/
-// HowtoScreen declaration.
+// HowtoScreen is a ButtonScreen.
 class HowtoScreen : public ButtonScreen
 {
 public:
@@ -160,7 +161,7 @@ private:
 	void doLogic(Logic &l);
 	void setupNewRound(Logic &logic);
 
-	// I/O.
+	// Event handlers overridden.
 	void handleKeyDown(const SDL_Event& sdle, Logic &l);
 	void handleResize(const SDL_Event& sdle, Logic &l);
 	void handleMouseMotion(const SDL_Event& sdle, Logic &l);
@@ -178,8 +179,7 @@ private:
 	void drawScoreAndRound(Logic &l);
 
 	// Inline: calculate the angle used in the perspective.
-	float calculateAngle(float size, double zAxisDistance)
-	{
+	float calculateAngle(float size, double zAxisDistance) {
 		double radtheta, degtheta;
 		radtheta = 2.0 * std::atan2 (size/2.0, zAxisDistance);
 		degtheta = (180.0 * radtheta) / atan(1.);
@@ -196,20 +196,20 @@ private:
 	// Game drawing related.
 	float flAngleFrustum;
 	float flZaxisDistance;			// Distance from which we view the scene
-	float flLengthUnit;				// Unit of measurement of length.
+	float flLengthUnit;				// Unit of measurement of length. The smaller - the closer we see the scene.
 
 	// View rotation with mouse.
 	float xViewOld;					// Vars for rotate view.
 	float angleViewY;				// Angle to rotate the view around Y.
-	float angleViewZ;				// Rotate view around X.
+	float angleViewZ;				// Rotate view around Z.
 	float flScaleAll;				// Zooming factor.
-	float angleViewYMax;
-	float deltaAngleY;
+	float angleViewYMax;			// Initial rotation before a round starts.
+	float deltaAngleY;				// Increments of the initial rotation.
 
 	float xPaddleOld;				// Previous positions of a paddle.
 	float yPaddleOld;
 
-	bool bPaddlePicked;
+	bool bPaddlePicked;				// True if paddle is picked by the mouse.
 	RoundParamsVector roundParams;
 	std::size_t iCurRound;
 	bool bPlaySound;
@@ -220,14 +220,19 @@ private:
 	float flBoxThickness;
 	float flPaddleRadius;
 	float flBallVel;
-	float flBallDeltaVel;
+	float flBallDeltaVel;			// Increment of the Ball's velocity after reflection.
 	float flCompPaddleVel;
 	int leftPaddleIdx;
 	int rightPaddleIdx;
 	int userWallIdx;
 	int compWallIdx;
-	float flScaleMax;
+	float flScaleMax;				// Limit scaling the scene.
 	float flScaleMin;
+
+	float flDeltaAngleViewZ;
+	float flDeltaScale;
+
+	int iShowMessageCount;			// How many frames the msg "You/Comp lost!" is shown.
 };
 
 #endif // SDL_SCREEN

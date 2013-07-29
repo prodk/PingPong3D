@@ -1,5 +1,5 @@
 // Material.h - declaration of the Material class.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 
 // Here we also define TEXTURE structure.
 // Most of the headers files are included here, because Material.h is included 

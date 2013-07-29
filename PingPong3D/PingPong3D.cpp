@@ -1,5 +1,5 @@
 // PingPong3D.cpp - entry point for the game.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 
 #include "PingPong3D.h"
 

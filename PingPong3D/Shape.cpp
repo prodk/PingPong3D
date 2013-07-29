@@ -1,5 +1,5 @@
 // Shape.cpp - abstract Shape class implementation.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 
 #include "Shape.h"
 

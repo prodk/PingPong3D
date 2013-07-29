@@ -1,5 +1,5 @@
 // GuiObject.h - declaration of the GuiObject class and all its child classes.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #ifndef GUIOBJECT_H
 #define GUIOBJECT_H
 

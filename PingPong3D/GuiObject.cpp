@@ -1,5 +1,5 @@
 // GuiObject.cpp - implementation of the GuiObject class and all its child classes.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #include "GuiObject.h"
 
 /*________________________________*/

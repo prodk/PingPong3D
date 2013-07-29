@@ -1,18 +1,17 @@
 // GameApp.cpp - implementation of the GameApp class.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 
 #include "PingPong3D.h"
 
 GameApp::GameApp(void) :
 flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong 3D"), 
-	//flZaxisDistance(1.f), flLengthUnit(0.25f), 
 	bBackgroundSound(true),
 	//Logic(start, options, howto, play, run, pause, over, bsound, asound);
 	logic(true, false, false, false, true, false, false,  bBackgroundSound, true, 
 	flScreenWidth, flScreenHeight),
 	iNumOfSounds(7), iNumOfFonts(1), iNumOfTextures(7)
 {
-	// Exceptions and bad values are caught/checked inside the functions.
+	// Exceptions and bad values are caught/checked inside the functions. Printed on stderr.
 	initLibraries();
 	loadData();
 	setupRoundParams();	// Set the parameters of all the rounds.
@@ -28,7 +27,7 @@ GameApp::~GameApp(void)
 int GameApp::initLibraries()
 {	
 	if( setupSDL() < 0 ){		// Initialize SDL.
-		std::cerr << "Failed to initialize SDL" << std::endl; 
+		std::cerr << "Failed to initialize SDL." << std::endl; 
 		exit(1);
 	}    
     
@@ -49,24 +48,24 @@ int GameApp::setupSDL()
 	// Get some video information.
     const SDL_VideoInfo* info = SDL_GetVideoInfo();
 	if(!info) {
-		std::cerr << "Failed to get videInfo structue." << std::endl;
+		std::cerr << "Failed to get videoInfo structure." << std::endl;
 		exit(1);
 	}
 	int bpp = info->vfmt->BitsPerPixel;
 
 	// Set window's icon.
 	SDL_Surface* s = IMG_Load("../data/textures/pp3d.png");
-	if(surface != NULL){
+	if(s != NULL){
 		SDL_WM_SetIcon(s, NULL);
 		SDL_FreeSurface(s);
 	}
 
 	int flags = SDL_OPENGL | SDL_HWSURFACE | SDL_RESIZABLE | SDL_DOUBLEBUF;
 
-    surface = SDL_SetVideoMode((int)flScreenWidth, (int)flScreenHeight, bpp, flags);
+    surfaceGame = SDL_SetVideoMode((int)flScreenWidth, (int)flScreenHeight, bpp, flags);
 
-	if(surface == NULL){
-		std::cerr << "SDL set video mode failed: %s\n" << SDL_GetError() << std::endl;
+	if(surfaceGame == NULL){
+		std::cerr << "SDL set video mode failed: %s.\n" << SDL_GetError() << std::endl;
 		exit(1);
 	}
 	SDL_WM_SetCaption(strGameName.c_str(), strGameName.c_str());
@@ -119,12 +118,12 @@ void GameApp::loadFonts()
 	// Load fonts.
 	fonts.resize(iNumOfFonts);
 	if( TTF_Init() == -1 ) { 
-		std::cerr << "Failed to initialize TTF library" << std::endl;
+		std::cerr << "Failed to initialize TTF library." << std::endl;
 		exit(1); 
 	}
 	fonts[0] = TTF_OpenFont( "../data/fonts/Line-01.ttf", 28 );
 	if( fonts[0] == NULL ){ 
-		std::cerr << "Failed to Load font:" << "Line-01.ttf" << std::endl;
+		std::cerr << "Failed to Load font: Line-01.ttf." << std::endl;
 		exit(1); 
 	}
 }
@@ -140,27 +139,19 @@ void GameApp::loadData()
 	textures[PLAY_SCREEN] = loadTexture("../data/textures/round1.png");
 	textures[PLAY_SCREEN+1] = loadTexture("../data/textures/round2.png");
 	textures[PLAY_SCREEN+2] = loadTexture("../data/textures/round3.png");
-	/*textures[PLAY_SCREEN+3] = loadTexture("../data/textures/round4.png");
-	textures[PLAY_SCREEN+4] = loadTexture("../data/textures/round5.png");
-	textures[PLAY_SCREEN+5] = loadTexture("../data/textures/round6.png");
-	textures[PLAY_SCREEN+6] = loadTexture("../data/textures/round7.png");
-	textures[PLAY_SCREEN+7] = loadTexture("../data/textures/round8.png");
-	textures[PLAY_SCREEN+8] = loadTexture("../data/textures/round9.png");*/
 
 	// Load sounds and fonts.
 	loadSounds();
 	loadFonts();
 }
 
-std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
+std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(const std::string &fileName)
 {
     SDL_Surface* surface;
     GLuint textureid;
     int mode;
 
-	surface = IMG_Load(fileName.c_str());
-    
-    // Could not load image.
+	surface = IMG_Load(fileName.c_str());    
     if (!surface) {
         std::cerr << "Could not load image: " << fileName.c_str() << std::endl;
         exit(1);
@@ -174,7 +165,7 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
         mode = GL_RGBA;
     } 
     else {
-        std::cerr << "Could not determine pixel format of image " << fileName.c_str() << std::endl;
+        std::cerr << "Could not determine pixel format of the image " << fileName.c_str() << std::endl;
         SDL_FreeSurface(surface);
         exit(1);
     }
@@ -187,12 +178,9 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(std::string fileName)
     // Tell OGL to use the generated texture name.
     glBindTexture(GL_TEXTURE_2D, textureid);
 
-    // Read from the sdl surface and put it into an opengl texture.
+    // Read from the SDL surface and put it into an opengl texture.
 	gluBuild2DMipmaps( GL_TEXTURE_2D, GL_RGBA, surface->w, surface->h,
                        mode, GL_UNSIGNED_BYTE, surface->pixels );
-	
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, mode, 
-		//GL_UNSIGNED_BYTE, surface->pixels );
 
     // Allocate memory for Texture structure and fill it up.
 	std::tr1::shared_ptr<TEXTURE> texture(new TEXTURE());
@@ -216,8 +204,8 @@ void GameApp::setupRenderingContext()
 {
 	glShadeModel( GL_SMOOTH );				// Shading model - Gouraud (smooth).
 
-	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);	// Background color.
-	glShadeModel(GL_SMOOTH);				//Smooth shading.
+	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);	// 'magic num': background color.
+	glShadeModel(GL_SMOOTH);				// Smooth shading.
 
 	// Depth buffer.
 	glClearDepth(1.0);
@@ -234,7 +222,7 @@ void GameApp::setupRenderingContext()
 	glEnable (GL_BLEND);
 	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glAlphaFunc(GL_GREATER, (GLclampf)0.01); // Skip pixels which alpha channel is lower than 0.01.
-	glEnable(GL_ALPHA_TEST);  // Enable Alpha.
+	glEnable(GL_ALPHA_TEST);				 // Enable Alpha.
 
 	glViewport(0, 0, (GLsizei)flScreenWidth, (GLsizei)flScreenHeight); // Set viewport to window dimensions.
 	
@@ -242,10 +230,10 @@ void GameApp::setupRenderingContext()
 	glEnable(GL_LIGHTING);
 	
 	// Set up light0.
-	GLfloat ambientLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	GLfloat specularLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	GLfloat position[] = {  0.0, 40.0, -20.0, 1.0 };		// Adjust this position!
+	GLfloat ambientLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };	// 'magic number'
+	GLfloat diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };	// 'magic number'
+	GLfloat specularLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };	// 'magic number'
+	GLfloat position[] = {  0.0, 40.0, -20.0, 1.0 };		// 'magic number'
 
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
@@ -256,7 +244,7 @@ void GameApp::setupRenderingContext()
 	glEnable(GL_LIGHT1);		// Light moving with the ball.
 
 	// Global light settings.
-	GLfloat global_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };
+	GLfloat global_ambient[] = { 0.3f, 0.3f, 0.3f, 1.0f };	// 'magic number'
 	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
 	glPointSize(20);			// Size of points.
@@ -264,7 +252,6 @@ void GameApp::setupRenderingContext()
 
 void GameApp::setupMatrices()
 { 
-	//initResize();
     // Reset texture view matrix stack.
     glMatrixMode(GL_TEXTURE);
     glLoadIdentity();
@@ -275,22 +262,22 @@ void GameApp::createScreens()
 	try {
 		startScreen = std::tr1::shared_ptr<StartScreen>(
 			new StartScreen(START_SCREEN, 
-			flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			flScreenWidth, flScreenHeight, surfaceGame, textures, &fonts[0],
 			system, sounds) );
 
 		optionsScreen = std::tr1::shared_ptr<OptionsScreen>(
 			new OptionsScreen(OPTIONS_SCREEN,
-			flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			flScreenWidth, flScreenHeight, surfaceGame, textures, &fonts[0],
 			system, sounds, logic) );
 
 		howtoScreen = std::tr1::shared_ptr<HowtoScreen>(
 			new HowtoScreen(HOWTO_SCREEN,
-			flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			flScreenWidth, flScreenHeight, surfaceGame, textures, &fonts[0],
 			system, sounds) );
 
 		playScreen = std::tr1::shared_ptr<PlayScreen>(
 			new PlayScreen(PLAY_SCREEN,
-			flScreenWidth, flScreenHeight, surface, textures, &fonts[0],
+			flScreenWidth, flScreenHeight, surfaceGame, textures, &fonts[0],
 			system, sounds, roundParams) );
 	}// End try.
 	catch(std::bad_alloc& ba) {
@@ -300,18 +287,19 @@ void GameApp::createScreens()
 	}
 }
 
+// Main game loop.
 void GameApp::manageGame()
 {
 	playBackgroundSound();
 
 	while(logic.bAppRunning) 
 	{		
-		SDL_PollEvent(&sdlEvent);					// Important: use only one PollEvent!!!
+		SDL_PollEvent(&sdlEvent);		// Important: use only one PollEvent for all the screens!!!
 
 		if(logic.bShowStartScreen){
-			startScreen->setScreenSize(logic.flScreenWidth, logic.flScreenHeight);
-			startScreen->doDrawing(logic);	
-			startScreen->doInput(logic, sdlEvent);	// Put These in a separate method.			
+			startScreen->setScreenSize(logic.flScreenWidth, logic.flScreenHeight);// For resize event.
+			startScreen->doInput(logic, sdlEvent);	
+			startScreen->doDrawing(logic);					
 		}
 		else if(logic.bShowOptionsScreen){
 			if(logic.bNewOptionsScreen){			// Initialize buttons if required.
@@ -319,12 +307,12 @@ void GameApp::manageGame()
 				logic.bNewOptionsScreen = false;
 				optionsScreen->setupNewScreen(logic);
 			}
-			optionsScreen->doDrawing(logic);
 			optionsScreen->doInput(logic, sdlEvent);
+			optionsScreen->doDrawing(logic);			
 		}
 		else if(logic.bShowHowtoScreen){
-			howtoScreen->doDrawing(logic);
 			howtoScreen->doInput(logic, sdlEvent);
+			howtoScreen->doDrawing(logic);			
 		}
 		else if(logic.bShowPlayScreen){
 			playScreen->play(logic, sdlEvent);		// Play the game.	
@@ -365,57 +353,14 @@ void GameApp::shutDown()
 	// Cleanup fonts.
 	for(i = 0; i < fonts.size(); i++)
 		TTF_CloseFont(fonts[i]);
-
-	if(surface != NULL){
-		SDL_FreeSurface(surface);
-		surface = NULL;
-	}
+	
+	SDL_FreeSurface(surfaceGame);
+	surfaceGame = NULL;
+	
     SDL_Quit();
 	// Most object pointers (e.g. screens) are cleaned up through the smart pointers.
 	// That's why no delete operators here.
 }
-
-//
-//void GameApp::draw2DTextureEx(float _x, float _y, float _z, float _alpha,  TEXTURE* _tex) 
-//{
-//    /* only use when currently rendering in ortho projection matrix */
-//    //if(rendering_ortho)
-//    //{
-//        /* Temporarily disable lighting */
-//        glDisable(GL_LIGHTING);
-//        
-//        //cleanObject();
-//        glTranslatef(_x, _y, _z);
-//        glScalef(_tex->width, _tex->height, 1.0f); /* Blow up quad to texture size */
-//        glBindTexture(GL_TEXTURE_2D, _tex->id);
-//        /* Do proper blending with alpha channel */
-//        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); 
-//        
-//        glColor4f ( 1.0f, 1.0f, 1.0f, _alpha );
-//        
-//        glEnable(GL_TEXTURE_2D);
-//        glBegin(GL_QUADS);
-//            /* top left */
-//            glTexCoord2f(0, 0);
-//            glVertex2f(0, 0);
-//            
-//            /* bottom left */
-//            glTexCoord2f(0, 1);
-//            glVertex2f(0, 1);
-//    
-//            /* bottom right */
-//            glTexCoord2f(1, 1);
-//            glVertex2f(1, 1);
-//            
-//            /* top right */
-//            glTexCoord2f(1, 0);
-//            glVertex2f(1, 0);
-//        glEnd();  
-//        glDisable(GL_TEXTURE_2D);
-//        
-//        glEnable(GL_LIGHTING);
-//    //}
-//}
 
 int GameApp::setupSound()
 {
@@ -453,24 +398,22 @@ void GameApp::playBackgroundSound()
 {
 	if(bBackgroundSound)
 	{		
-		// Play Options background sound.
+		// Play Start/Options/Howto screens background sounds.
 		if(logic.bShowStartScreen || logic.bShowOptionsScreen || logic.bShowHowtoScreen){
-			//channelPlay->setPaused(true);
-			for(std::size_t i = 0; i < channelRound.size(); i++)
+			for(std::size_t i = 0; i < channelRound.size(); i++)// Pause all game sounds.
 				channelRound[i]->setPaused(true);
 			channelOptions->setPaused(false);
 		}
 		else if(logic.bShowPlayScreen){		// Play the game sound using the corresp. theme.	
-			channelOptions->setPaused(true);
-			if(!logic.bGamePaused)
-				//channelPlay->setPaused(false);
+			channelOptions->setPaused(true);// Pause other screens sound.
+			if(!logic.bGamePaused)			
 				for(std::size_t i = 0; i < channelRound.size(); i++){
 					if(i != (logic.iRound - 1)%3 )
 						channelRound[i]->setPaused(true);
 					else
 						channelRound[i]->setPaused(false);
 				}
-			else
+			else							// If game is paused, then no sound at all.
 				for(std::size_t i = 0; i < channelRound.size(); i++)
 					channelRound[i]->setPaused(true);
 		}
@@ -478,7 +421,6 @@ void GameApp::playBackgroundSound()
 	else	// Pause all the sounds.
 	{
 		channelOptions->setPaused(true);
-		//channelPlay->setPaused(true);
 		for(std::size_t i = 0; i < channelRound.size(); i++)
 			channelRound[i]->setPaused(true);
 	}
@@ -488,29 +430,31 @@ void GameApp::setupRoundParams()
 {
 	roundParams.resize(logic.iRoundMax);
 
+	// These are all 'magic numbers' found empirically.
 	float flBoxWidth = 1.2f;
 	float flBoxHeight = 1.0f;
 	float flBoxThickness = 0.6f;
-	float flBallVel = 4e-03;
-	float flCompPaddleVel = 0.03;
+	float flBallVel = 5.4e-03;
+	float flCompPaddleVel = 0.021;
 
 	std::size_t nRounds = roundParams.size();
 	// Specify different values of the parameters for each round.
 	for(std::size_t i = 0; i < nRounds; i++){
 		RoundParameters *pParams =
-			new RoundParameters(flBoxWidth*(1. - 0.5/(double)(nRounds - i + 1.)), 
+			new RoundParameters(
+			flBoxWidth*(1. - 0.5/(double)(nRounds - i + 1.)), 
 			flBoxHeight, 
-			flBallVel,//*(1. - 1./(double)(nRounds - i + 1.)), 
+			flBallVel*(1. + 0.65/(double)(nRounds - i + 1.)), 
 			0.02*(1. + i),
-			flCompPaddleVel*(1. + 0.5/(double)(nRounds - i + 1.)), 
-			0.07*flBoxWidth*(1. - 0.5/(double)(nRounds - i + 1.)) );
+			flCompPaddleVel*(1. + 3.1/(double)(nRounds - i + 1.)), 
+			0.07*flBoxWidth*(1. - 0.5/(double)(nRounds - i + 1.)) 
+			);
 		roundParams[i] = std::tr1::shared_ptr<RoundParameters>(pParams);
 	}
 }
 
 void GameApp::checkErr(FMOD_RESULT r, std::string &msg)
 {
-	if( r != FMOD_OK){
-		std::cerr << msg << std::endl;
-	}
+	if( r != FMOD_OK)
+		std::cerr << msg << std::endl;	
 }

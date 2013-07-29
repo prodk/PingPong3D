@@ -1,5 +1,5 @@
 // GameApp.h - GameApp class declaration.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #ifndef GAMEAPP_H
 #define GAMEAPP_H
 
@@ -18,15 +18,15 @@ public:
 	// Private methods.
 private:
 	int initLibraries();			// Initialize: SDL, OGL, sound, game params, rand numbers.
-	void loadData();					// Load sounds, textures.
+	void loadData();				// Load sounds, textures.
 	void setupRoundParams();		// Initialize the parameters of all the rounds.
 	void createScreens();
-	void registerObservers();		// What objects should be tracked by the Subject.
+	void registerObservers();		// What objects should be tracked by the Subject in the Observer pattern.
 	int setupSDL();
 	int setupSound();				// Init fmod library.
 
 	// Data load.
-	std::tr1::shared_ptr<TEXTURE> loadTexture(std::string fileName);// Factory function
+	std::tr1::shared_ptr<TEXTURE> loadTexture(const std::string &fileName);// Factory function
 	void loadSounds();
 	void loadFonts();
 	
@@ -39,50 +39,35 @@ private:
 	// OpenGl-specific.
 	void setupRenderingContext();	// OGL initial state: depth, lights, materials, etc.
 	void setupMatrices();			// Init transforms: modelview, projection and other matrices.
-	//void initResize();				// Avoid code dupl. in setupMatrices() and handleResize().
 	void swapBuffers();				// Swap double buffers.	
-
-	// Inline: calculate the angle used in the perspective, we use size as a unit of length.
-	float calculateAngle(float size, double zAxisDistance)
-	{
-		double radtheta, degtheta;
-		radtheta = 2.0 * std::atan2 (size/2.0, zAxisDistance);
-		degtheta = (180.0 * radtheta) / atan(1.);
-		return (degtheta);
-	}
-
-	//void draw2DTextureEx(float _x, float _y, float _z, float _alpha,  TEXTURE* _tex);
 
 	// Private members.
 private:
-	enum {START_SCREEN = 1, OPTIONS_SCREEN, HOWTO_SCREEN, PLAY_SCREEN};
+	enum {START_SCREEN = 1, OPTIONS_SCREEN, HOWTO_SCREEN, PLAY_SCREEN};// 0 is for Button.
 	float flScreenWidth;			// Screen width.
 	float flScreenHeight;			// Screen height.
-	//float flLengthUnit;				// Scaling factor in the perspective.
-	//float flZaxisDistance;			// Distance from the camera to the scene.
 
 	// Game logic related.
-	Logic logic;					// Contains all the flats controlling the flow of the app.
+	Logic logic;					// Contains all the flags controlling the flow of the app.
 	bool bBackgroundSound;			// Whether to play background sound.
+	RoundParamsVector roundParams;	// Parameters of the rounds. Now only 3 themes.
 
 	// Screens.
 	std::tr1::shared_ptr<StartScreen> startScreen;
 	std::tr1::shared_ptr<OptionsScreen> optionsScreen;
 	std::tr1::shared_ptr<HowtoScreen> howtoScreen;
 	std::tr1::shared_ptr<PlayScreen> playScreen;
-	RoundParamsVector roundParams;
 	SDL_Event sdlEvent;
 
 	// FMOD sound.
 	std::vector<FMOD::Sound*> sounds;
 	FMOD::System *system;
 	FMOD::Channel *channelOptions;
-	std::vector<FMOD::Channel *> channelRound;
-	
+	std::vector<FMOD::Channel *> channelRound;	
 
 	// Data.	
 	std::string strGameName;
-	SDL_Surface* surface;			// SDL surface on which everything is rendered.
+	SDL_Surface* surfaceGame;			// SDL surface on which everything is rendered.
 	std::vector<TTF_Font* > fonts;	
 	std::vector<std::tr1::shared_ptr<TEXTURE> > textures;
 

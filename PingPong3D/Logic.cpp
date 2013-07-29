@@ -1,5 +1,5 @@
 // Logic.cpp - implementation of the Logic class.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 
 #include "Logic.h"
 
@@ -19,6 +19,8 @@ Logic::Logic(bool startscreen , bool options, bool howto, bool play,
 	bNewRound = true;
 	bNewOptionsScreen = false;
 	bRotated = false;
+	bRoundFinished = false;			// To show the message when someone looses.
+	//bDrawScore = true;
 }
 
 

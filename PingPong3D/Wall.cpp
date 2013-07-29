@@ -1,5 +1,5 @@
 // Wall.cpp - implementation of the Wall and AbsorbingWall classes.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #include "Wall.h"
 #include "Ball.h"
 

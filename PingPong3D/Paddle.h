@@ -1,5 +1,5 @@
 // Paddle.h - declaration of the Paddle class.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #ifndef PADDLE_H
 #define PADDLE_H
 

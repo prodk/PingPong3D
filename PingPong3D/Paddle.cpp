@@ -1,5 +1,5 @@
 // Paddle.cpp - implementation of the Paddle class.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 
 #include "Paddle.h"
 #include "Ball.h"
@@ -135,7 +135,7 @@ bool Paddle::collide(Shape *s)
 			s->setVelocity(vNormal, flBallDeltaVel);
 			// !Very important - subtle bug that leads to instability:
 			// !move the ball a bit back!!!
-			c -= (1.05*dr)*vNormal;
+			c -= (1.01*dr)*vNormal;
 			s->move(c, true);		// Reset is true to move to the vector c.
 			collided = true;
 		}

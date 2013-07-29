@@ -1,5 +1,5 @@
 // Wall.h - declaration of the Wall and AbsorbingWall classes.
-// (c) Nikolay Prodanov, Juelich, summer 2013.
+// (c) Nikolay Prodanov, summer 2013, Juelich, Germany.
 #ifndef WALL_H
 #define WALL_H
 
