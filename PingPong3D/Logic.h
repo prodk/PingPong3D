@@ -6,9 +6,8 @@
 #include "Observer.h"
 #include "Material.h"
 
-class Logic : public Subject
+class Logic : public Subject	// Logic is a subject in the Observer pattern.
 {
-	// Public methods.
 public:
 	Logic(bool startscreen, bool options, bool howto, bool play, 
 		bool run, bool pause, 
@@ -30,17 +29,16 @@ public:
 	bool bNewRound;				// True if a new round has to be started.
 	bool bNewOptionsScreen;		// When we switch to the options screen, create new buttons.
 	bool bRoundFinished;		// To show the message when someone looses.
-	//bool bDrawScore;
 
-	std::size_t iRound;	
+	std::size_t iRound;			// Current round.
 	int iUserScore;
 	int iCompScore;
 
 	float flScreenWidth;
 	float flScreenHeight;
-	bool bRotated;
+	bool bRotated;				// True if the view has been rotated at the beginning of a round.
 
-	const std::size_t iRoundMax;
+	const std::size_t iRoundMax;// Maximum number of rounds, it is == 9.
 	const int iMaxScore;	
 };
 
@@ -50,19 +48,12 @@ public:
 	RoundParameters(float w, float h, float bv, float bdv, float pv, float pr);
 	~RoundParameters();
 
-	// Members.
-	//Material ballMaterial;
-	//Material paddleMaterial;
-	//Material wallMaterial;
-
 	float flBoxWidth;
 	float flBoxHeight;
 	float flBallVelocity;
 	float flBallDeltaVel;			// Scale the velocity by this value after collisions with a paddle.
 	float flComputerPaddleVel;
 	float flPaddleRadius;
-
-	// Add textures and lights later.
 };
 
 typedef std::vector<std::tr1::shared_ptr<RoundParameters> > RoundParamsVector;

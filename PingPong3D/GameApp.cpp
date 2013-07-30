@@ -11,7 +11,7 @@ flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong 3D"),
 	flScreenWidth, flScreenHeight),
 	iNumOfSounds(7), iNumOfFonts(1), iNumOfTextures(7)
 {
-	// Exceptions and bad values are caught/checked inside the functions. Printed on stderr.
+	// Exceptions and bad values are caught/checked inside the functions and printed to stderr.
 	initLibraries();
 	loadData();
 	setupRoundParams();	// Set the parameters of all the rounds.
@@ -115,7 +115,6 @@ void GameApp::loadSounds()
 
 void GameApp::loadFonts()
 {
-	// Load fonts.
 	fonts.resize(iNumOfFonts);
 	if( TTF_Init() == -1 ) { 
 		std::cerr << "Failed to initialize TTF library." << std::endl;
@@ -182,7 +181,7 @@ std::tr1::shared_ptr<TEXTURE> GameApp::loadTexture(const std::string &fileName)
 	gluBuild2DMipmaps( GL_TEXTURE_2D, GL_RGBA, surface->w, surface->h,
                        mode, GL_UNSIGNED_BYTE, surface->pixels );
 
-    // Allocate memory for Texture structure and fill it up.
+    // Allocate memory for TEXTURE structure and fill it up.
 	std::tr1::shared_ptr<TEXTURE> texture(new TEXTURE());
     if (!texture.get()) {
         std::cerr << "Could not create TEXTURE struct for image " << fileName.c_str() << std::endl;
@@ -204,7 +203,7 @@ void GameApp::setupRenderingContext()
 {
 	glShadeModel( GL_SMOOTH );				// Shading model - Gouraud (smooth).
 
-	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);	// 'magic num': background color.
+	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);	// 'magic num': background color (not visible with textures).
 	glShadeModel(GL_SMOOTH);				// Smooth shading.
 
 	// Depth buffer.
@@ -322,8 +321,6 @@ void GameApp::manageGame()
 	} // End while(logic.bAppRunning).
 }
 
-
-
 void GameApp::swapBuffers()
 {	
 	glFlush();
@@ -400,7 +397,7 @@ void GameApp::playBackgroundSound()
 	{		
 		// Play Start/Options/Howto screens background sounds.
 		if(logic.bShowStartScreen || logic.bShowOptionsScreen || logic.bShowHowtoScreen){
-			for(std::size_t i = 0; i < channelRound.size(); i++)// Pause all game sounds.
+			for(std::size_t i = 0; i < channelRound.size(); i++)// Pause all Playgame sounds.
 				channelRound[i]->setPaused(true);
 			channelOptions->setPaused(false);
 		}
@@ -442,11 +439,15 @@ void GameApp::setupRoundParams()
 	for(std::size_t i = 0; i < nRounds; i++){
 		RoundParameters *pParams =
 			new RoundParameters(
-			flBoxWidth*(1. - 0.5/(double)(nRounds - i + 1.)), 
+			// Decrease the box width as the round increases.
+			flBoxWidth*(1. - 0.5/(double)(nRounds - i + 1.)),
 			flBoxHeight, 
-			flBallVel*(1. + 0.65/(double)(nRounds - i + 1.)), 
-			0.02*(1. + i),
+			// Increase the initial velocity of the ball as the round increases.
+			flBallVel*(1. + 0.65/(double)(nRounds - i + 1.)),
+			0.02*(1. + i),	// Increase the reflection velocity with the round.
+			// Make computer paddle faster with the round.
 			flCompPaddleVel*(1. + 3.1/(double)(nRounds - i + 1.)), 
+			// Make paddle radius smaller for higher rounds.
 			0.07*flBoxWidth*(1. - 0.5/(double)(nRounds - i + 1.)) 
 			);
 		roundParams[i] = std::tr1::shared_ptr<RoundParameters>(pParams);

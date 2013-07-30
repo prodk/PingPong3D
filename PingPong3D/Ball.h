@@ -36,5 +36,4 @@ private:							// id and vCenter are inherited from the Shape.
 	const int slices;				// Slices to render a sphere.
 	const int stacks;	
 };
-
 #endif // BALL_H

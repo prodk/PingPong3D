@@ -43,17 +43,14 @@ int GuiObject::drawText(const std::string &txt, GLfloat x, GLfloat y, GLfloat w,
 	text = TTF_RenderText_Blended(font, txt.c_str(), textColor);
 	SDL_Delay(4);			// Small delay to prevent from full CPU load.
 
-	if (text->format->BytesPerPixel == 3) // RGB 24bit.
-    { 
-        mode = GL_RGB;
+	if (text->format->BytesPerPixel == 3) {// RGB 24bit.
+		mode = GL_RGB;
     } 
-    else if (text->format->BytesPerPixel == 4) // RGBA 32bit.
-    { 
-        mode = GL_RGBA;
+    else if (text->format->BytesPerPixel == 4) { // RGBA 32bit.
+		mode = GL_RGBA;
     } 
-    else 
-    {
-		std::cerr << "Could not determine pixel format of the surface" << std::endl;
+    else {
+		std::cerr << "Could not determine pixel format of the surface in GuiObject!" << std::endl;
         SDL_FreeSurface(text);
         exit(1);
     }
@@ -147,7 +144,6 @@ void GuiObject::draw(TTF_Font *font)
 		drawUnpressed(font);
 }
 
-
 /*________________________________*/
 //Button class implementation.
 Button::Button(float xExt, float yExt, float wExt, float hExt, 
@@ -164,14 +160,13 @@ void Button::drawPressed(TTF_Font *font)
 {		
 	glPushMatrix();
 	glDisable(GL_LIGHTING);
-
-	glBindTexture( GL_TEXTURE_2D, textureId );
-	
+	// Select texture
+	glBindTexture( GL_TEXTURE_2D, textureId );	
 	
 	if(bHasFocus)
-		glColor4f(0.0, 1.0, 0.0, 1.0);
+		glColor4f(0.0, 1.0, 0.0, 1.0);		// Green color for the button under cursor.
 	else
-		glColor4f(1.0, 1.0, 1.0, 1.0);
+		glColor4f(1.0, 1.0, 1.0, 1.0);		// White color for buttons not under cursor.
 	glTranslatef(xPressed, yPressed, 0.);
 
 	glBegin( GL_QUADS );
@@ -193,9 +188,7 @@ void Button::drawUnpressed(TTF_Font *font)
 {		
 	glPushMatrix();
 	glDisable(GL_LIGHTING);
-
-	//glEnable( GL_BLEND );
-	//glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	// Select texture.
 	glBindTexture( GL_TEXTURE_2D, textureId );
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );

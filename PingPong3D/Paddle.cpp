@@ -14,6 +14,8 @@ Paddle::Paddle(std::size_t idExt, vector_3d shiftCenter, vector_3d n,
 	vVelocity = vector_3d(0., 0., 0.);
 	vSpot = vCenter;
 	quadratic = gluNewQuadric();
+	flAlpha = 8.;
+	flBeta = 0.2;
 	generateCircle();				// Generate circle coordinates only once.
 }
 
@@ -75,17 +77,16 @@ void Paddle::draw()
 	drawCircle();
 	glPopMatrix();
 
-	float alpha = 8., beta = 0.2;		// !Make these member variables!
 	// Thin part of the handle.
 	glPushMatrix();
-	glTranslatef(0., 0., -alpha*flHeight);
-	gluCylinder(quadratic, beta*flRadius, beta*flRadius, alpha*flHeight, slices, stacks);
+	glTranslatef(0., 0., -flAlpha*flHeight);
+	gluCylinder(quadratic, flBeta*flRadius, flBeta*flRadius, flAlpha*flHeight, slices, stacks);
 	glPopMatrix();
 
 	// Handle.
 	glPushMatrix();
-	glTranslatef(0., 0., -alpha*flHeight);
-	glutSolidSphere (2*beta*flRadius, slices, stacks);
+	glTranslatef(0., 0., -flAlpha*flHeight);
+	glutSolidSphere (2*flBeta*flRadius, slices, stacks);
 	glPopMatrix();
 
 	glPopMatrix();
@@ -135,7 +136,7 @@ bool Paddle::collide(Shape *s)
 			s->setVelocity(vNormal, flBallDeltaVel);
 			// !Very important - subtle bug that leads to instability:
 			// !move the ball a bit back!!!
-			c -= (1.01*dr)*vNormal;
+			c -= dr*vNormal;
 			s->move(c, true);		// Reset is true to move to the vector c.
 			collided = true;
 		}

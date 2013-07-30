@@ -10,11 +10,12 @@
 #include "Material.h"
 #include "Logic.h"
 
-// Use a global, non-member function to play sound.
+// Use a global, non-member functions to play sound and generate random numbers.
 FMOD_RESULT playSound(FMOD::System *system, FMOD::Sound *sound, FMOD::Channel *channel);
-
 float generateRand(float start, float end);
+float generateRandomSignInterval(float start, float end);
 
+/*________________________*/
 class Shape
 {
 public:

@@ -70,7 +70,7 @@ void Wall::draw()
 
 	material.setValues();
 
-	// Set negatives normals (pointing inside the box) such that the light is reflected.
+	// Set negative normals (pointing inside the box) such that the light is reflected.
 	glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
 	glBegin(GL_POLYGON);
 
@@ -106,7 +106,7 @@ bool Wall::collide(Shape * s)
 		s->setVelocity(vNormal, 0.);
 		// !Very important - subtle bug that leads to instability:
 		// !move the ball a bit back!!!
-		c -= (dr)*vNormal;
+		c -= dr*vNormal;
 		s->move(c, true);	// Reset is true to move to the c.
 		collided = true;
 	}

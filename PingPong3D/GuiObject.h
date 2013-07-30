@@ -18,7 +18,7 @@ public:
 	virtual void draw(TTF_Font *font);
 
 	// Fixed implementation methods.
-	bool isPressed(float ptx, float pty);	// Confusion, not pressed, but under the cursor.
+	bool isPressed(float ptx, float pty);	// Confusion, it is not pressed, but under the cursor.
 	bool isPressed();						// True only if the object is really pressed.
 	void setPressed(bool pressed);
 	void setFocus(bool focus);

@@ -39,6 +39,8 @@ protected:
 	// Rendering-related.
 	vector_3d vSpot;
 	GLUquadricObj *quadratic;
+	float flAlpha;				// Handle related.
+	float flBeta;				// Handle related.
 	const int slices;
 	const int stacks;
 	std::vector<vector_3d> circleVerteces;

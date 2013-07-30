@@ -65,12 +65,13 @@ private:
 	FMOD::Channel *channelOptions;
 	std::vector<FMOD::Channel *> channelRound;	
 
-	// Data.	
+	// Data.
 	std::string strGameName;
 	SDL_Surface* surfaceGame;			// SDL surface on which everything is rendered.
 	std::vector<TTF_Font* > fonts;	
 	std::vector<std::tr1::shared_ptr<TEXTURE> > textures;
 
+	// Data-related constants.
 	const std::size_t iNumOfSounds;
 	const std::size_t iNumOfFonts;
 	const std::size_t iNumOfTextures;

@@ -25,7 +25,7 @@ protected:
 protected:
 	float flWidth;
 	float flHeight;
-	vector_3d vNormal;					// Normal to the plane of the Wall, point outside the box.
+	vector_3d vNormal;					// Normal to the plane of the Wall, points outside the box.
 	std::vector<vector_3d> v;			// Vertices.
 	const int numOfVerteces;
 

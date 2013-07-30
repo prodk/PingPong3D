@@ -12,14 +12,14 @@
 typedef std::vector<std::tr1::shared_ptr<TEXTURE> > TEXTURE_PTR_ARRAY;
 
 // Abstract base class for screens.
-class SdlScreen : public Observer
+class SdlScreen : public Observer		// All screens are observers.
 {
 public:
 	SdlScreen(int idExt, float w, float h, SDL_Surface*, TEXTURE_PTR_ARRAY t, TTF_Font** fnt,
 		FMOD::System *sys, std::vector<FMOD::Sound*> snd);
 	virtual ~SdlScreen(void);
 
-	// Public methods to override. Inherit interfaces with the default implementation.
+	// Public methods to override. Some of them have the default implementation.
 	virtual void doInput(Logic &l, SDL_Event sdlEvent);	// Not pure virtual, Keyboard/mouse.
 	virtual void doDrawing(Logic &logic) = 0;
 	virtual void notify(Subject* s);
@@ -169,14 +169,14 @@ private:
 	void handleMouseButtonUp(const SDL_Event& sdle, Logic &l);
 
 	// OpenGl-specific.
-	void drawAxes() const;
+	void drawAxes() const;			// Currently not used, but exists just in case.
 	void initView();				// Avoid code duplication in doDrawing() and pickObjects().
 	void initResize();				// Avoid code dupl. in setupMatrices() and handleResize().
 	void rotateView(float dx);
 	int pickObject(int x, int y);	// Returns the type of the object under cursor.
 	void initMembers(const Logic &l);
 	void addShapes(Logic &l);
-	void drawScoreAndRound(Logic &l);
+	void drawScoreAndRound(Logic &l);// Currently not used, as it is too computationally demanding.
 
 	// Inline: calculate the angle used in the perspective.
 	float calculateAngle(float size, double zAxisDistance) {
@@ -186,11 +186,18 @@ private:
 		return (degtheta);
 	}
 
+	// Optimized text output.
+	std::tr1::shared_ptr<TEXTURE> createStringTexture(const std::string &txt, 
+		TTF_Font *font, SDL_Color textColor);	// Create string texture only once.
+	void drawStringTexture(int symbolIdx, float x, float y, float z, float w, float h, 
+		float angley);
+	void drawScoreAndRoundOptimized(Logic &logic);
+
 	// Private members.
 private:
 	enum {BALL, WALL, LEFT_PADDLE, RIGHT_PADDLE};	// Enum hack for shape types.
 
-	// A vector of pointers to Shapes. Ball is stored in the 1st item.	
+	// A vector of pointers to Shapes. Ball is stored in the 0th item.	
 	std::map<std::size_t, std::tr1::shared_ptr<Shape> > shapes;// Smart pointers for memory management.
 
 	// Game drawing related.
@@ -205,7 +212,6 @@ private:
 	float flScaleAll;				// Zooming factor.
 	float angleViewYMax;			// Initial rotation before a round starts.
 	float deltaAngleY;				// Increments of the initial rotation.
-
 	float xPaddleOld;				// Previous positions of a paddle.
 	float yPaddleOld;
 
@@ -230,9 +236,20 @@ private:
 	float flScaleMin;
 
 	float flDeltaAngleViewZ;
-	float flDeltaScale;
+	float flDeltaScale;				// Scaling factor increment for keyboard handling.
+	float flDeltaPaddle;			// Move paddle by this amount using keyboard.
 
 	int iShowMessageCount;			// How many frames the msg "You/Comp lost!" is shown.
+	int iMaxShowMessageCount;			// How many frames the msg "You/Comp lost!" is shown.
+
+	// Members for optimized text output.
+	int iNumOfStringTextures;
+	// Enum hack - contains all the symbols we want to render on the scene.	
+	enum{ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE,
+		R, C, U, YOU_LOST, COMP_LOST};
+	// String texture array created in constructor for optimized string output.
+	std::vector<std::tr1::shared_ptr<TEXTURE> > stringTextures;
+	void loadStringTextures();
 };
 
 #endif // SDL_SCREEN

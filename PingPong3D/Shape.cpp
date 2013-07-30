@@ -21,6 +21,16 @@ float generateRand(float start, float end)
 	return rnd;
 }
 
+// Returns a rand number from the specified interval of absolute values with a random sign.
+float generateRandomSignInterval(float start, float end)
+{
+	float sign = 1.;
+	if( generateRand(-1., 1.) < 0)
+		sign = -1.;
+
+	return generateRand(sign*start, sign*end);
+}
+
 // Use default constructor for the material.
 Shape::Shape(std::size_t idExt, vector_3d c) : id(idExt), vCenter(c), material()
 {
@@ -29,7 +39,7 @@ Shape::Shape(std::size_t idExt, vector_3d c) : id(idExt), vCenter(c), material()
 
 Shape::Shape(std::size_t idExt, vector_3d c, 
 		vector_3d ambient, vector_3d diffuse, vector_3d specular, float shine, float alpha) :
-id(idExt), vCenter(c), material(ambient, diffuse, specular, shine, alpha)
+		id(idExt), vCenter(c), material(ambient, diffuse, specular, shine, alpha)
 {
 }
 

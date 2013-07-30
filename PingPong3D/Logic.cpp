@@ -20,9 +20,7 @@ Logic::Logic(bool startscreen , bool options, bool howto, bool play,
 	bNewOptionsScreen = false;
 	bRotated = false;
 	bRoundFinished = false;			// To show the message when someone looses.
-	//bDrawScore = true;
 }
-
 
 Logic::~Logic(void)
 {
