@@ -1023,7 +1023,7 @@ void PlayScreen::doDrawing(Logic &logic)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // Clear buffer for new data.
 	// Draw the background image.	
 	drawBackgroundTexture( (id+(logic.iRound-1)%3), 0.5);
-	// Initialize the screne/scene.
+	// Initialize the screen/scene.
 	initResize();
 	initView();
 
@@ -1284,7 +1284,7 @@ void PlayScreen::doLogic(Logic &logic)
 	// Check whether it's time to change the round.
 	if(logic.iUserScore >= logic.iMaxScore){
 		logic.iRound = logic.iRound % logic.iRoundMax + 1;
-		logic.bRoundFinished = true;	// This flag provides a pause.
+		logic.bRoundFinished = true;	// This flag provides a pause between rounds.
 	}
     
     // If the player lost, repeat the round again.

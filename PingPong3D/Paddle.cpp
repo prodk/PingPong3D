@@ -136,7 +136,7 @@ bool Paddle::collide(Shape *s)
 			s->setVelocity(vNormal, flBallDeltaVel);
 			// !Very important - subtle bug that leads to instability:
 			// !move the ball a bit back!!!
-			c -= dr*vNormal;
+			c -= 1.001*dr*vNormal;
 			s->move(c, true);		// Reset is true to move to the vector c.
 			collided = true;
 		}

@@ -1,14 +1,9 @@
 Debug
-Release
+PingPong3D/*.dll
+PingPong3D/Release
 *sdf
 *.ncb
-dlls
-*.dll
 ipch
 *.suo
 *.user
-data*
-*.mp3
-*.wav
-*.ogg
-*.ttf
+*.pdb
