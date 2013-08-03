@@ -7,7 +7,7 @@ GameApp::GameApp(void) :
 flScreenWidth(1024), flScreenHeight(640), strGameName("Ping Pong 3D"), 
 	bBackgroundSound(true),
 	//Logic(start, options, howto, play, run, pause, over, bsound, asound);
-	logic(true, false, false, false, true, false, false,  bBackgroundSound, true, 
+	logic(true, false, false, false, true, false, false,  true, true, 
 	flScreenWidth, flScreenHeight),
 	iNumOfSounds(7), iNumOfFonts(1), iNumOfTextures(7)
 {
@@ -298,16 +298,16 @@ void GameApp::manageGame()
 		if(logic.bShowStartScreen){
 			startScreen->setScreenSize(logic.flScreenWidth, logic.flScreenHeight);// For resize event.
 			startScreen->doInput(logic, sdlEvent);	
-			startScreen->doDrawing(logic);					
+			startScreen->doDrawing(logic);			
 		}
-		else if(logic.bShowOptionsScreen){
+		else if(logic.bShowOptionsScreen){			
 			if(logic.bNewOptionsScreen){			// Initialize buttons if required.
 				optionsScreen->setScreenSize(logic.flScreenWidth, logic.flScreenHeight);
 				logic.bNewOptionsScreen = false;
 				optionsScreen->setupNewScreen(logic);
-			}
+			}			
+			optionsScreen->doDrawing(logic);	
 			optionsScreen->doInput(logic, sdlEvent);
-			optionsScreen->doDrawing(logic);			
 		}
 		else if(logic.bShowHowtoScreen){
 			howtoScreen->doInput(logic, sdlEvent);

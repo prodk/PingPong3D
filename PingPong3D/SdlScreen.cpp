@@ -264,6 +264,7 @@ void ButtonScreen::processButton(std::size_t id, Logic & logic)
 		logic.bShowOptionsScreen = true;
 		logic.bShowPlayScreen = false;
 		logic.bNewOptionsScreen = true;	// Create new buttons with the correct settings.
+		logic.notifyObservers();
 		break;
 
 	case HOWTO_BTN:
@@ -568,8 +569,8 @@ OptionsScreen::~OptionsScreen()
 
 void OptionsScreen::setupNewScreen(Logic &logic)
 {
-	addButtons(logic);
 	bLeftMouseButton = false;
+	addButtons(logic);	
 	iPrevFocusButton = BACKGRSND_BTN;
 }
 
